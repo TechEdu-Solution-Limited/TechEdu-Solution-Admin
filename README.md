@@ -1,1 +1,1 @@
-# TechEdu-Solution-Admin
+# tech-eduk
