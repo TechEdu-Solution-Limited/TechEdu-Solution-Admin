@@ -23,20 +23,28 @@ interface Session {
   bookingId: string;
   productId: string;
   productType: string;
-  bookingPurpose?: string;
-  instructorId?: string;
+  bookingPurpose: string;
+  instructorId: string;
   scheduleAt: string;
   endAt?: string;
-  minutesPerSession?: number;
-  numberOfExpectedParticipants?: number;
+  minutesPerSession: number;
+  numberOfExpectedParticipants: number;
   meetingLink?: string;
-  sessionType?: string;
-  status: string;
+  sessionType: "group" | "1-on-1";
+  status: "upcoming" | "confirmed" | "completed" | "cancelled";
+  avgRating?: number;
   userNotes?: string;
   internalNotes?: string;
-  avgRating?: number;
+  participants: Array<{
+    participantType: string;
+    platformRole: string;
+    profileId?: string;
+    email: string;
+    fullName: string;
+  }>;
+  createdBy: string;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 interface CompletionForm {
@@ -84,7 +92,6 @@ export default function CompleteSessionPage() {
           `/api/sessions/${sessionId}`,
           token
         );
-        console.log("Session API response:", response);
 
         if (response?.data?.success) {
           const sessionData = response.data.data;
@@ -197,14 +204,11 @@ export default function CompleteSessionPage() {
         attendance: form.attendance,
       };
 
-      console.log("Completing session with payload:", payload);
-
       const response = await updateApiRequest(
         `/api/sessions/${sessionId}/complete`,
         token,
         payload
       );
-      console.log("Session completion response:", response);
 
       if (response?.data?.success) {
         setSuccess(true);

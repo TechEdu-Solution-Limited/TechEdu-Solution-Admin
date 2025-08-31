@@ -22,20 +22,28 @@ interface Session {
   bookingId: string;
   productId: string;
   productType: string;
-  bookingPurpose?: string;
-  instructorId?: string;
+  bookingPurpose: string;
+  instructorId: string;
   scheduleAt: string;
   endAt?: string;
-  minutesPerSession?: number;
-  numberOfExpectedParticipants?: number;
+  minutesPerSession: number;
+  numberOfExpectedParticipants: number;
   meetingLink?: string;
-  sessionType?: string;
-  status: string;
+  sessionType: "group" | "1-on-1";
+  status: "upcoming" | "confirmed" | "completed" | "cancelled";
+  avgRating?: number;
   userNotes?: string;
   internalNotes?: string;
-  avgRating?: number;
+  participants: Array<{
+    participantType: string;
+    platformRole: string;
+    profileId?: string;
+    email: string;
+    fullName: string;
+  }>;
+  createdBy: string;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export default function CancelSessionPage() {
@@ -65,7 +73,6 @@ export default function CancelSessionPage() {
           `/api/sessions/${params.id}`,
           token
         );
-        console.log("Session detail API response:", response);
 
         if (response?.data?.success) {
           const sessionData = response.data.data;
@@ -112,14 +119,11 @@ export default function CancelSessionPage() {
         cancellationReason: cancellationReason.trim(),
       };
 
-      console.log("Cancelling session with payload:", payload);
-
       const response = await updateApiRequest(
         `/api/sessions/${params.id as string}/cancel`,
         token,
         payload
       );
-      console.log("Session cancellation response:", response);
 
       if (response?.data?.success) {
         setSuccess(true);
