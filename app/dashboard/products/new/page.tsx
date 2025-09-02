@@ -630,7 +630,7 @@ export default function CreateProductPage() {
                   <p className="text-slate-600 mb-4">
                     Let's start with the fundamental details of your product
                   </p>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  {/* <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
                     <h3 className="font-semibold text-slate-800 mb-2">
                       Service Types:
                     </h3>
@@ -655,7 +655,7 @@ export default function CreateProductPage() {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
