@@ -156,26 +156,11 @@ export const dashboardSidebarConfig = {
             icon: BookOpen,
             href: "/dashboard/users",
           },
-          {
-            label: "Academic Services",
-            icon: BookOpen,
-            href: "/dashboard/products",
-          },
-          {
-            label: "Bookings",
-            icon: BookOpen,
-            href: "/dashboard/bookings",
-          },
-          {
-            label: "Classrooms",
-            icon: BookOpen,
-            href: "/dashboard/classrooms/instructor",
-          },
-          {
-            label: "Sessions",
-            icon: Video,
-            href: "/dashboard/sessions/instructor",
-          },
+          // {
+          //   label: "Academic Services",
+          //   icon: BookOpen,
+          //   href: "/dashboard/products",
+          // },
         ],
       },
       {
@@ -187,27 +172,32 @@ export const dashboardSidebarConfig = {
             href: "/dashboard/enrolled-students",
           },
           {
+            label: "Classrooms",
+            icon: BookOpen,
+            href: "/dashboard/classrooms/instructor",
+          },
+          {
+            label: "Sessions",
+            icon: Video,
+            href: "/dashboard/sessions/instructor",
+          },
+          {
             label: "Attendance",
             icon: FileText,
             href: "/dashboard/attendance",
           },
-          {
-            label: "Live Sessions",
-            icon: Calendar,
-            href: "/dashboard/sessions",
-          },
         ],
       },
-      {
-        title: "Reports & Insights",
-        items: [
-          {
-            label: "Feedback",
-            icon: MessageCircle,
-            href: "/dashboard/feedback",
-          },
-        ],
-      },
+      // {
+      //   title: "Reports & Insights",
+      //   items: [
+      //     {
+      //       label: "Feedback",
+      //       icon: MessageCircle,
+      //       href: "/dashboard/feedback",
+      //     },
+      //   ],
+      // },
       {
         title: "System",
         items: [
