@@ -35,6 +35,9 @@ export default function CalendlyCallbackPage() {
       const state = searchParams.get("state");
       const error = searchParams.get("error");
 
+      // Debug OAuth parameters
+      // console.log("OAuth parameters:", { code, state, error });
+
       if (error) {
         setStatus("error");
         setMessage(`OAuth error: ${error}`);
@@ -49,7 +52,7 @@ export default function CalendlyCallbackPage() {
 
       try {
         // Complete the OAuth flow
-        const response = await postApiRequest(
+        const response: any = await postApiRequest(
           `/api/instructors/${
             userData._id || userData.id
           }/calendly-oauth/complete`,
@@ -57,12 +60,31 @@ export default function CalendlyCallbackPage() {
           {
             code,
             state,
+            // Add ownerUri if backend requires it
+            ownerUri: `https://api.calendly.com/users/${userData.id}`,
+            scope: "user", // or remove if not needed
           }
         );
 
         if (response?.data?.success) {
           setStatus("success");
           setMessage("Calendly connected successfully!");
+
+          // Log the Calendly data for debugging
+          // console.log("Calendly response:", response);
+          // console.log("Response data:", response.data);
+          // console.log("Calendly OAuth completed:", response.data.data);
+
+          // You can access the Calendly data here:
+          // const calendlyData = response.data.data;
+          // if (calendlyData) {
+          //   console.log("Calendly User ID:", calendlyData.calendlyUserId);
+          //   console.log("Calendly User URI:", calendlyData.calendlyUserUri);
+          //   console.log("Timezone:", calendlyData.timezone);
+          //   console.log("Working Hours:", calendlyData.workingHours);
+          // } else {
+          //   console.log("No Calendly data found in response");
+          // }
 
           // Redirect to instructor availability page after 2 seconds
           setTimeout(() => {
