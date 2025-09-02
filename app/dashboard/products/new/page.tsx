@@ -310,7 +310,6 @@ export default function CreateProductPage() {
         toast.error(response.message || "Failed to create category");
       }
     } catch (error: any) {
-      console.error("Error creating category:", error);
       toast.error("Failed to create category");
     } finally {
       setCreatingCategory(false);
@@ -377,7 +376,6 @@ export default function CreateProductPage() {
         toast.error(response.message || "Failed to create subcategory");
       }
     } catch (error: any) {
-      console.error("Error creating subcategory:", error);
       toast.error("Failed to create subcategory");
     } finally {
       setCreatingSubcategory(false);
@@ -915,7 +913,7 @@ export default function CreateProductPage() {
                           ? "Loading instructors..."
                           : isBookableServiceType(form.productType)
                           ? "Select Instructor (Required)"
-                          : "Select Instructor (Optional)"}
+                          : "Select Instructor (Required)"}
                       </option>
                       {instructors.map((instructor) => (
                         <option

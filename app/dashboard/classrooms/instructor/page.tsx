@@ -67,7 +67,7 @@ export default function InstructorClassroomsPage() {
       }
 
       try {
-        const endpoint = "/api/classrooms/instructor/my-instructor-classroom";
+        const endpoint = "/api/classrooms/instructor/my-classrooms";
         const response = await getApiRequest(endpoint, token);
 
         if (response?.data?.success) {
