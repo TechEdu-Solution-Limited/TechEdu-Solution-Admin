@@ -133,6 +133,9 @@ export default function CreateProductPage() {
       "Academic Support Services",
       "Career Development & Mentorship",
       "Institutional & Team Services",
+      "AI-Powered or Automation Services",
+      "Career Connect",
+      "Marketing, Consultation & Free Services",
     ].includes(productType);
   };
 
