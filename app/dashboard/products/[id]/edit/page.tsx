@@ -263,29 +263,6 @@ export default function ProductEditPage() {
         {/* Form */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-8">
-            {/* Success/Error Messages */}
-            {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                  </div>
-                  <span className="text-green-700 font-medium">{success}</span>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                  </div>
-                  <span className="text-red-700 font-medium">{error}</span>
-                </div>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Basic Information */}
               <div className="space-y-6">
@@ -633,6 +610,28 @@ export default function ProductEditPage() {
                 </button>
               </div>
             </div>
+            {/* Success/Error Messages */}
+            {success && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                  </div>
+                  <span className="text-green-700 font-medium">{success}</span>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                  </div>
+                  <span className="text-red-700 font-medium">{error}</span>
+                </div>
+              </div>
+            )}
           </form>
         </div>
       </div>
