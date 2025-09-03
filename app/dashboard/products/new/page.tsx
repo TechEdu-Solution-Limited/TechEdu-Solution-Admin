@@ -919,7 +919,7 @@ export default function CreateProductPage() {
                       </option>
                       {instructors.map((instructor) => (
                         <option
-                          key={instructor.userId}
+                          key={instructor._id}
                           value={instructor.userId}
                           className="rounded-[10px]"
                         >

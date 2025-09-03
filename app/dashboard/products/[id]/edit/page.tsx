@@ -318,7 +318,7 @@ export default function ProductEditPage() {
                   >
                     <option value="">Select Instructor (Optional)</option>
                     {instructors.map((instructor) => (
-                      <option key={instructor.userId} value={instructor.userId}>
+                      <option key={instructor._id} value={instructor.userId}>
                         {instructor.fullName} - {instructor.title}
                       </option>
                     ))}
