@@ -86,7 +86,7 @@ export const dashboardSidebarConfig = {
           {
             label: "Attendance",
             icon: FileText,
-            href: "/dashboard/attendance",
+            href: "/dashboard/attendance-management",
           },
           {
             label: "Live Sessions",
