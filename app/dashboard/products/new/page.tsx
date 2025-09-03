@@ -1404,7 +1404,7 @@ export default function CreateProductPage() {
                       <div>
                         <span className="font-medium">Instructor:</span>{" "}
                         {form.instructorId
-                          ? instructors.find((i) => i._id === form.instructorId)
+                          ? instructors.find((i) => i.userId === form.instructorId)
                               ?.fullName || "Selected"
                           : "Not assigned"}
                       </div>
