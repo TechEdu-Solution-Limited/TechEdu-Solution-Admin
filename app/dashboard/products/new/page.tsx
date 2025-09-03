@@ -190,6 +190,7 @@ export default function CreateProductPage() {
             },
           }
         );
+        console.log("Instructor Data", instructorsResponse);
 
         if (!instructorsResponse.ok) {
           throw new Error("Failed to fetch instructors");
@@ -197,6 +198,7 @@ export default function CreateProductPage() {
 
         const instructorsData = await instructorsResponse.json();
         setInstructors(instructorsData.data?.instructors || []);
+        console.log("Instructor Data", instructorsData);
       } catch (err: any) {
         setCategoryError(err.message || "Failed to fetch categories");
         setInstructorsError(err.message || "Failed to fetch instructors");
@@ -917,8 +919,8 @@ export default function CreateProductPage() {
                       </option>
                       {instructors.map((instructor) => (
                         <option
-                          key={instructor._id}
-                          value={instructor._id}
+                          key={instructor.userId}
+                          value={instructor.userId}
                           className="rounded-[10px]"
                         >
                           {instructor.fullName} - {instructor.title}
@@ -1404,8 +1406,9 @@ export default function CreateProductPage() {
                       <div>
                         <span className="font-medium">Instructor:</span>{" "}
                         {form.instructorId
-                          ? instructors.find((i) => i.userId === form.instructorId)
-                              ?.fullName || "Selected"
+                          ? instructors.find(
+                              (i) => i.userId === form.instructorId
+                            )?.fullName || "Selected"
                           : "Not assigned"}
                       </div>
                     )}
