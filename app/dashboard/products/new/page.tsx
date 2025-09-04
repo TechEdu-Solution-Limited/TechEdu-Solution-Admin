@@ -177,13 +177,13 @@ export default function CreateProductPage() {
           `/api/users/admin/instructors`,
           token
         );
-        console.log("Instructor Data", instructorsResponse);
+        // console.log("Instructor Data", instructorsResponse);
 
         if (instructorsResponse?.data?.success) {
           const instructorData =
             instructorsResponse.data.data?.instructors || [];
           setInstructors(instructorData);
-          console.log("Instructor Data", instructorData);
+          // console.log("Instructor Data", instructorData);
         } else {
           throw new Error("Failed to fetch instructors");
         }

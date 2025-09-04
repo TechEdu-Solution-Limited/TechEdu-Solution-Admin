@@ -84,7 +84,7 @@ export default function ProductEditPage() {
           getApiRequest("/api/users/admin/instructors", token),
         ]);
 
-        console.log("Instructor Data", instructorsResponse);
+        // console.log("Instructor Data", instructorsResponse);
 
         if (productResponse?.data?.success) {
           const product = productResponse.data.data;
