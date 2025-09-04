@@ -365,8 +365,8 @@ export default function InstructorSessionsPage() {
           </div>
         )}
 
-        {/* Sessions Table */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+        {/* Sessions Cards */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
           {loading ? (
             <div className="p-12 text-center">
               <div className="inline-flex items-center gap-3">
@@ -374,198 +374,160 @@ export default function InstructorSessionsPage() {
                 <p className="text-slate-600 text-lg">Loading sessions...</p>
               </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-slate-50 to-blue-50">
-                  <tr>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Session
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Product Type
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Session Type
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Schedule
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Participants
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Meeting
-                    </th>
-                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Rating
-                    </th>
-                    <th className="px-8 py-6 text-left text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white/50 divide-y divide-slate-200">
-                  {paginatedSessions.length > 0 ? (
-                    paginatedSessions.map((session) => (
-                      <tr
-                        key={session._id}
-                        className="hover:bg-blue-50/50 transition-all duration-300 group"
+          ) : paginatedSessions.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {paginatedSessions.map((session) => (
+                <div
+                  key={session._id}
+                  className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 p-6 hover:shadow-xl hover:border-blue-200 transition-all duration-300 group"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-slate-900 group-hover:text-blue-600 transition-colors duration-300 mb-1">
+                        {session.bookingPurpose || "Mentoring Session"}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        ID: {session._id.slice(-8)}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(
+                        session.status
+                      )}`}
+                    >
+                      {getStatusIcon(session.status)}
+                      {session.status}
+                    </span>
+                  </div>
+
+                  {/* Product Type & Session Type */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border border-blue-200">
+                      {session.productType}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border ${getSessionTypeColor(
+                        session.sessionType
+                      )}`}
+                    >
+                      {getSessionTypeIcon(session.sessionType)}
+                      {session.sessionType}
+                    </span>
+                  </div>
+
+                  {/* Schedule */}
+                  <div className="mb-4 p-4 bg-slate-50/80 rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-4 h-4 text-slate-600" />
+                      <span className="text-sm font-medium text-slate-700">
+                        Schedule
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-900 font-medium">
+                      {formatDate(session.scheduleAt)}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {session.minutesPerSession} minutes •{" "}
+                      {getTimeUntilSession(session.scheduleAt)}
+                    </div>
+                  </div>
+
+                  {/* Participants */}
+                  <div className="mb-4 p-4 bg-slate-50/80 rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4 text-slate-600" />
+                      <span className="text-sm font-medium text-slate-700">
+                        Participants
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-900">
+                        {session.numberOfExpectedParticipants} expected
+                      </span>
+                      {session.participants &&
+                        session.participants.length > 0 && (
+                          <span className="text-xs text-slate-500">
+                            {session.participants.length} confirmed
+                          </span>
+                        )}
+                    </div>
+                  </div>
+
+                  {/* Meeting Link & Rating */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1">
+                      {session.meetingLink ? (
+                        <a
+                          href={session.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200 hover:from-green-200 hover:to-emerald-200 transition-all duration-300"
+                        >
+                          <Video className="w-4 h-4" />
+                          Join Meeting
+                        </a>
+                      ) : (
+                        <span className="text-sm text-slate-500">
+                          No meeting link
+                        </span>
+                      )}
+                    </div>
+                    {session.avgRating && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="text-sm font-semibold text-slate-900">
+                          {session.avgRating.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-4 border-t border-slate-200">
+                    <Link href={`/dashboard/sessions/${session._id}`}>
+                      <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white/50 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all duration-300">
+                        <Eye className="w-4 h-4" />
+                        View
+                      </button>
+                    </Link>
+                    {session.status === "upcoming" && (
+                      <Link href={`/dashboard/sessions/${session._id}/edit`}>
+                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white/50 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-700 transition-all duration-300">
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </button>
+                      </Link>
+                    )}
+                    {session.status === "confirmed" && (
+                      <Link
+                        href={`/dashboard/sessions/${session._id}/complete`}
                       >
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
-                              {session.bookingPurpose || "Mentoring Session"}
-                            </div>
-                            <div className="text-sm text-slate-500">
-                              ID: {session._id.slice(-8)}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border border-blue-200">
-                            {session.productType}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <span
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border ${getSessionTypeColor(
-                                session.sessionType
-                              )}`}
-                            >
-                              {getSessionTypeIcon(session.sessionType)}
-                              {session.sessionType}
-                            </span>
-                            {session.participants &&
-                              session.participants.length > 0 && (
-                                <div className="text-xs text-slate-500">
-                                  {session.participants.length} registered
-                                </div>
-                              )}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="text-sm text-slate-900">
-                            {formatDate(session.scheduleAt)}
-                          </div>
-                          <div className="text-xs text-slate-500 mt-1">
-                            {session.minutesPerSession} minutes
-                          </div>
-                          <div className="text-xs text-slate-500 font-medium">
-                            {getTimeUntilSession(session.scheduleAt)}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(
-                              session.status
-                            )}`}
-                          >
-                            {getStatusIcon(session.status)}
-                            {session.status}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-slate-500" />
-                              <span className="text-sm font-semibold text-slate-900">
-                                {session.numberOfExpectedParticipants}
-                              </span>
-                            </div>
-                            {session.participants &&
-                              session.participants.length > 0 && (
-                                <div className="text-xs text-slate-500">
-                                  {session.participants.length} confirmed
-                                </div>
-                              )}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          {session.meetingLink ? (
-                            <a
-                              href={session.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200 hover:from-green-200 hover:to-emerald-200 transition-all duration-300"
-                            >
-                              <Video className="w-4 h-4" />
-                              Join
-                            </a>
-                          ) : (
-                            <span className="text-sm text-slate-500">
-                              No link
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          {session.avgRating ? (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                              <span className="text-sm font-semibold text-slate-900">
-                                {session.avgRating.toFixed(1)}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-slate-500">
-                              No rating
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Link href={`/dashboard/sessions/${session._id}`}>
-                              <button className="p-2 rounded-full hover:bg-blue-100 transition-all duration-300 group-hover:bg-blue-100">
-                                <Eye className="w-4 h-4 text-slate-600 group-hover:text-blue-600 transition-colors duration-300" />
-                              </button>
-                            </Link>
-                            {session.status === "upcoming" && (
-                              <Link
-                                href={`/dashboard/sessions/${session._id}/edit`}
-                              >
-                                <button className="p-2 rounded-full hover:bg-yellow-100 transition-all duration-300 group-hover:bg-yellow-100">
-                                  <Edit className="w-4 h-4 text-slate-600 group-hover:text-yellow-600 transition-colors duration-300" />
-                                </button>
-                              </Link>
-                            )}
-                            {session.status === "confirmed" && (
-                              <Link
-                                href={`/dashboard/sessions/${session._id}/complete`}
-                              >
-                                <button className="p-2 rounded-full hover:bg-green-100 transition-all duration-300 group-hover:bg-green-100">
-                                  <CheckCircle className="w-4 h-4 text-slate-600 group-hover:text-green-600 transition-colors duration-300" />
-                                </button>
-                              </Link>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={9} className="px-8 py-16 text-center">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="w-20 h-20 bg-gradient-to-r from-slate-100 to-blue-100 rounded-full flex items-center justify-center">
-                            <BookOpen className="w-10 h-10 text-slate-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                              No sessions found
-                            </h3>
-                            <p className="text-slate-600">
-                              Get started by creating your first session
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300">
+                          <CheckCircle className="w-4 h-4" />
+                          Complete
+                        </button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-20 h-20 bg-gradient-to-r from-slate-100 to-blue-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-10 h-10 text-slate-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                    No sessions found
+                  </h3>
+                  <p className="text-slate-600">
+                    Get started by creating your first session
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
