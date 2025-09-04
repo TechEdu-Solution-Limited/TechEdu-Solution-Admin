@@ -67,6 +67,15 @@ export default function CalendlyCallbackPage() {
         );
 
         if (response?.data?.success) {
+          try {
+            const token = getTokenFromCookies();
+            if (token) {
+              // Optionally verify calendly connected via integration status
+              await fetch(`/api/integrations/calendly/status`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+            }
+          } catch {}
           setStatus("success");
           setMessage("Calendly connected successfully!");
 
@@ -89,7 +98,7 @@ export default function CalendlyCallbackPage() {
           // Redirect to instructor availability page after 2 seconds
           setTimeout(() => {
             router.push("/dashboard/instructor-availability");
-          }, 2000);
+          }, 1500);
         } else {
           setStatus("error");
           setMessage(
