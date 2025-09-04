@@ -241,11 +241,11 @@ export default function InstructorAttendancePage() {
     present: boolean
   ) => {
     // TODO: Implement attendance marking functionality
-    console.log(
-      `Marking ${participantEmail} as ${
-        present ? "present" : "absent"
-      } for attendance ${attendanceId}`
-    );
+    // console.log(
+    //   `Marking ${participantEmail} as ${
+    //     present ? "present" : "absent"
+    //   } for attendance ${attendanceId}`
+    // );
   };
 
   const handleAddFeedback = async (
@@ -253,9 +253,9 @@ export default function InstructorAttendancePage() {
     participantEmail: string
   ) => {
     // TODO: Implement feedback functionality
-    console.log(
-      `Adding feedback for ${participantEmail} in attendance ${attendanceId}`
-    );
+    // console.log(
+    //   `Adding feedback for ${participantEmail} in attendance ${attendanceId}`
+    // );
   };
 
   return (
