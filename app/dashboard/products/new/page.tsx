@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { getTokenFromCookies } from "@/lib/cookies";
-import { postApiRequest } from "@/lib/apiFetch";
+import { getApiRequest, postApiRequest } from "@/lib/apiFetch";
 import { Switch } from "@/components/ui/switch";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/button";
@@ -164,41 +164,29 @@ export default function CreateProductPage() {
         setCategoryError(null);
 
         // Fetch categories
-        const categoriesResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/product-categories`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const categoriesResponse = await getApiRequest(
+          `/api/product-categories`,
+          token
         );
-
-        if (!categoriesResponse.ok) {
-          throw new Error("Failed to fetch categories");
-        }
-
-        const categoriesData = await categoriesResponse.json();
+        const categoriesData = categoriesResponse?.data || [];
         setCategoryOptions(categoriesData.data || []);
 
         // Fetch instructors
         setInstructorsLoading(true);
-        const instructorsResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/admin/instructors`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const instructorsResponse = await getApiRequest(
+          `/api/users/admin/instructors`,
+          token
         );
         console.log("Instructor Data", instructorsResponse);
 
-        if (!instructorsResponse.ok) {
+        if (instructorsResponse?.data?.success) {
+          const instructorData =
+            instructorsResponse.data.data?.instructors || [];
+          setInstructors(instructorData);
+          console.log("Instructor Data", instructorData);
+        } else {
           throw new Error("Failed to fetch instructors");
         }
-
-        const instructorsData = await instructorsResponse.json();
-        setInstructors(instructorsData.data?.instructors || []);
-        console.log("Instructor Data", instructorsData);
       } catch (err: any) {
         setCategoryError(err.message || "Failed to fetch categories");
         setInstructorsError(err.message || "Failed to fetch instructors");
