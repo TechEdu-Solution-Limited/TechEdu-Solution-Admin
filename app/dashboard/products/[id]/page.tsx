@@ -105,7 +105,7 @@ export default function ProductViewPage() {
                 setInstructor(instructorData);
               }
             } catch (instructorErr) {
-              throw.error("Failed to fetch instructor:", instructorErr);
+              console.error("Failed to fetch instructor:", instructorErr);
             }
           }
         } else {
