@@ -388,7 +388,14 @@ export default function InstructorAvailabilityPage() {
         // Redirect to Calendly authorization URL
         window.location.href = response.data.authorizationUrl;
       } else {
-        setError(response?.data?.message || "Failed to connect to Calendly");
+        // Handle specific error cases
+        if (response?.data?.error === "ALREADY_CONNECTED") {
+          setError(
+            "Calendly is already connected for this instructor. Please disconnect first if you want to reconnect."
+          );
+        } else {
+          setError(response?.data?.message || "Failed to connect to Calendly");
+        }
       }
     } catch (err: any) {
       setError(err.message || "Failed to connect to Calendly");

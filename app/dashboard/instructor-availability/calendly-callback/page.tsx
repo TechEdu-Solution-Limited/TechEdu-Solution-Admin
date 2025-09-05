@@ -61,7 +61,9 @@ export default function CalendlyCallbackPage() {
             code,
             state,
             // Add ownerUri if backend requires it
-            ownerUri: `https://api.calendly.com/users/${userData.id}`,
+            ownerUri: `https://api.calendly.com/users/${
+              userData._id || userData.id
+            }`,
             scope: "organization", // or remove if not needed
           }
         );
@@ -87,8 +89,8 @@ export default function CalendlyCallbackPage() {
           // You can access the Calendly data here:
           // const calendlyData = response.data.data;
           // if (calendlyData) {
-          //   console.log("Calendly User ID:", calendlyData.calendlyUserId);
-          //   console.log("Calendly User URI:", calendlyData.calendlyUserUri);
+          //   console.log("Calendly User ID:", calendlyData.userId);
+          //   console.log("Calendly User URI:", calendlyData.userUri);
           //   console.log("Timezone:", calendlyData.timezone);
           //   console.log("Working Hours:", calendlyData.workingHours);
           // } else {
