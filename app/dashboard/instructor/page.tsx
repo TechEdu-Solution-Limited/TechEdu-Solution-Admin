@@ -252,13 +252,13 @@ export default function InstructorDashboard() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Link
+              {/* <Link
                 href="/dashboard/instructor/profile"
                 className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl hover:bg-slate-50 transition-all duration-300 flex items-center gap-2"
               >
                 <Settings className="w-4 h-4" />
                 Profile Settings
-              </Link>
+              </Link> */}
               <Link
                 href="/dashboard/instructor-availability"
                 className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-300 flex items-center gap-2"
