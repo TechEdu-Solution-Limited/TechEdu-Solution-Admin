@@ -10,6 +10,9 @@ import {
   deleteUserIdFromCookies,
 } from "@/lib/cookies";
 import { getDeviceInfo } from "@/utils/getDeviceInfo";
+import { safeConsole } from "@/lib/console";
+import { debug } from "@/lib/debug";
+import { isDevelopment } from "@/lib/env";
 
 /**
  * Base URL for API requests. For Next.js API routes, we use relative URLs
@@ -95,11 +98,17 @@ export const apiRequest = async <T = any>(
     body: method !== "GET" && body ? JSON.stringify(body) : undefined,
   };
   try {
+    // Debug logging for development
+    debug.api.request(endpoint, method, body);
+
     const response = await fetch(`${BASE_URL}${endpoint}`, requestOptions);
     const contentType = response.headers.get("content-type");
     const isJson = contentType && contentType.includes("application/json");
     const responseText = await response.text();
     const data = isJson && responseText ? JSON.parse(responseText) : {};
+
+    // Debug logging for development
+    debug.api.response(endpoint, response.status, data);
 
     if (!response.ok) {
       // Throw the entire backend error object if available
@@ -108,6 +117,8 @@ export const apiRequest = async <T = any>(
 
     return { data, status: response.status, message: data.message };
   } catch (error: any) {
+    // Debug logging for development
+    debug.api.error(endpoint, error);
     // If error is already an object from backend, just throw it
     if (error && typeof error === "object") {
       throw error;
@@ -218,7 +229,7 @@ export const logoutUser = async (): Promise<ApiResponse<any>> => {
   } catch (error) {
     // If the API call fails, we still want to logout locally
     // This handles cases where the API endpoint doesn't exist or is down
-    console.warn(
+    safeConsole.warn(
       "Logout API call failed, proceeding with local logout:",
       error
     );
@@ -403,7 +414,7 @@ export const apiRequestWithRefresh = async <T = any>(
           }
         }
       } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
+        safeConsole.error("Token refresh failed:", refreshError);
         // If refresh fails, clear tokens and throw original error
         throw error;
       }
