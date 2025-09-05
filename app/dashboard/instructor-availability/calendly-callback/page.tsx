@@ -71,6 +71,8 @@ export default function CalendlyCallbackPage() {
           requestData
         );
 
+        console.log("OAuth completion response:", response);
+
         if (response?.data?.success) {
           try {
             const token = getTokenFromCookies();

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getApiRequest, postApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { useRole } from "@/contexts/RoleContext";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -77,6 +78,7 @@ const DAYS_OF_WEEK = [
 
 export default function InstructorAvailabilityPage() {
   const { userData, isAuthenticated, loading: authLoading } = useRole();
+  const router = useRouter();
   const [availabilities, setAvailabilities] = useState<
     InstructorAvailability[]
   >([]);
@@ -105,10 +107,10 @@ export default function InstructorAvailabilityPage() {
     const fetchAvailabilities = async () => {
       // Don't fetch if userData is not loaded yet
       if (!userData._id && !userData.id) {
-        // If auth is not loading and user is not authenticated, show error
+        // If auth is not loading and user is not authenticated, redirect to login
         if (!authLoading && !isAuthenticated) {
-          setError("Please log in to view instructor availability.");
-          setLoading(false);
+          router.push("/login");
+          return;
         }
         return;
       }
@@ -118,8 +120,7 @@ export default function InstructorAvailabilityPage() {
 
       const token = getTokenFromCookies();
       if (!token) {
-        setError("Authentication required. Please log in.");
-        setLoading(false);
+        router.push("/login");
         return;
       }
 
@@ -362,12 +363,12 @@ export default function InstructorAvailabilityPage() {
   const handleConnectCalendly = async () => {
     const token = getTokenFromCookies();
     if (!token) {
-      setError("Authentication required. Please log in.");
+      router.push("/login");
       return;
     }
 
     if (!userData._id && !userData.id) {
-      setError("Instructor ID not found. Please log in again.");
+      router.push("/login");
       return;
     }
 
@@ -407,7 +408,7 @@ export default function InstructorAvailabilityPage() {
   const handleEmergencyBlock = async (instructorId: string, reason: string) => {
     const token = getTokenFromCookies();
     if (!token) {
-      setError("Authentication required. Please log in.");
+      router.push("/login");
       return;
     }
 
@@ -678,23 +679,13 @@ export default function InstructorAvailabilityPage() {
               {calendlyStatus?.connected ||
               profileSettings?.calendly?.isConnected ||
               availabilities[0]?.calendly?.userId ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowCalendlyStatus(!showCalendlyStatus)}
-                    className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    Calendly Connected
-                  </button>
-                  <button
-                    onClick={handleRevokeCalendly}
-                    disabled={loading}
-                    className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <XCircle className="w-5 h-5" />
-                    Disconnect
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowCalendlyStatus(!showCalendlyStatus)}
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  Calendly Connected
+                </button>
               ) : (
                 <button
                   onClick={handleConnectCalendly}
@@ -772,6 +763,25 @@ export default function InstructorAvailabilityPage() {
                       Features: {calendlyStatus.features.join(", ")}
                     </div>
                   ) : null}
+
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      onClick={handleConnectCalendly}
+                      disabled={loading}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Reconnect
+                    </button>
+                    <button
+                      onClick={handleRevokeCalendly}
+                      disabled={loading}
+                      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Disconnect
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">

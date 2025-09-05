@@ -103,8 +103,7 @@ export default function EditInstructorAvailabilityPage() {
 
       const token = getTokenFromCookies();
       if (!token) {
-        setError("Authentication required. Please log in.");
-        setLoading(false);
+        router.push("/login");
         return;
       }
 
@@ -242,7 +241,7 @@ export default function EditInstructorAvailabilityPage() {
     try {
       const token = getTokenFromCookies();
       if (!token) {
-        setError("Authentication required. Please log in.");
+        router.push("/login");
         return;
       }
 

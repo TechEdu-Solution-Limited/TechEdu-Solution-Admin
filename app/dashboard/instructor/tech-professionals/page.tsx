@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { useRole } from "@/contexts/RoleContext";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   Search,
@@ -78,6 +79,7 @@ interface TechProfessionalStats {
 
 export default function TechProfessionalsPage() {
   const { userData } = useRole();
+  const router = useRouter();
   const [professionals, setProfessionals] = useState<
     AssignedTechProfessional[]
   >([]);
@@ -96,7 +98,7 @@ export default function TechProfessionalsPage() {
         setLoading(true);
         const token = getTokenFromCookies();
         if (!token) {
-          setError("Authentication required. Please log in.");
+          router.push("/login");
           return;
         }
 

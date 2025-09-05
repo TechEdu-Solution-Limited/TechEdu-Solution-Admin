@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { useRole } from "@/contexts/RoleContext";
+import { useRouter } from "next/navigation";
 import {
   Users,
   GraduationCap,
@@ -67,6 +68,7 @@ interface RecentActivity {
 
 export default function InstructorDashboard() {
   const { userData } = useRole();
+  const router = useRouter();
   const [profile, setProfile] = useState<InstructorProfile | null>(null);
   const [stats, setStats] = useState<InstructorStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
@@ -79,7 +81,7 @@ export default function InstructorDashboard() {
         setLoading(true);
         const token = getTokenFromCookies();
         if (!token) {
-          setError("Authentication required. Please log in.");
+          router.push("/login");
           return;
         }
 

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { useRole } from "@/contexts/RoleContext";
+import { useRouter } from "next/navigation";
 import {
   BarChart3,
   TrendingUp,
@@ -75,6 +76,7 @@ interface AnalyticsData {
 
 export default function InstructorAnalyticsPage() {
   const { userData } = useRole();
+  const router = useRouter();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export default function InstructorAnalyticsPage() {
       setLoading(true);
       const token = getTokenFromCookies();
       if (!token) {
-        setError("Authentication required. Please log in.");
+        router.push("/login");
         return;
       }
 

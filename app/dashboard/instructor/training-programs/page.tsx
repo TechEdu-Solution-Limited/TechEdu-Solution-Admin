@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { useRole } from "@/contexts/RoleContext";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Search,
@@ -82,6 +83,7 @@ interface ProgramStats {
 
 export default function TrainingProgramsPage() {
   const { userData } = useRole();
+  const router = useRouter();
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [stats, setStats] = useState<ProgramStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,7 @@ export default function TrainingProgramsPage() {
         setLoading(true);
         const token = getTokenFromCookies();
         if (!token) {
-          setError("Authentication required. Please log in.");
+          router.push("/login");
           return;
         }
 

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { useRole } from "@/contexts/RoleContext";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Search,
@@ -63,6 +64,7 @@ interface StudentStats {
 
 export default function AssignedStudentsPage() {
   const { userData } = useRole();
+  const router = useRouter();
   const [students, setStudents] = useState<AssignedStudent[]>([]);
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,7 @@ export default function AssignedStudentsPage() {
         setLoading(true);
         const token = getTokenFromCookies();
         if (!token) {
-          setError("Authentication required. Please log in.");
+          router.push("/login");
           return;
         }
 

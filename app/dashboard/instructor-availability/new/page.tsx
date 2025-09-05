@@ -146,7 +146,7 @@ export default function NewInstructorAvailabilityPage() {
     try {
       const token = getTokenFromCookies();
       if (!token) {
-        setError("Authentication required. Please log in.");
+        router.push("/login");
         return;
       }
 
