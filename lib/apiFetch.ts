@@ -221,6 +221,15 @@ export const logoutUser = async (): Promise<ApiResponse<any>> => {
 
   try {
     // Try to call the logout API endpoint
+    if (!token) {
+      // If no token, just return a success response for local logout
+      return {
+        data: null,
+        status: 200,
+        message: "Logged out successfully (no token found)",
+      };
+    }
+
     const response = await postApiRequest(
       "/api/auth/logout",
       token,
