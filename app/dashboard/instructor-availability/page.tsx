@@ -88,17 +88,6 @@ export default function InstructorAvailabilityPage() {
     features?: string[];
   } | null>(null);
 
-  // Helper to fetch Calendly status via API
-  const fetchCalendlyStatusApi = async (token: string) => {
-    const res = await fetch(`/api/integrations/calendly/status`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const json = await res.json();
-    if (!res.ok)
-      throw new Error(json?.message || "Failed to fetch Calendly status");
-    return json?.data || json;
-  };
-
   useEffect(() => {
     const fetchAvailabilities = async () => {
       // Don't fetch if userData is not loaded yet
@@ -656,74 +645,12 @@ export default function InstructorAvailabilityPage() {
                   Add Availability
                 </button>
               </Link>
-              <Link href="/dashboard/instructor/profile-settings">
+              {/* <Link href="/dashboard/instructor/profile-settings">
                 <button className="px-6 py-3 bg-white text-slate-700 font-semibold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all duration-300 shadow-sm flex items-center gap-2">
                   <Settings className="w-5 h-5" />
                   View Instructor Profile Settings
                 </button>
-              </Link>
-              <button
-                onClick={async () => {
-                  setLoading(true);
-                  setError(null);
-                  try {
-                    const token = getTokenFromCookies();
-                    if (!token) throw new Error("Authentication required");
-                    const status = await fetchCalendlyStatusApi(token);
-                    setCalendlyStatus({
-                      connected: !!status.connected,
-                      oauthConfigured: !!status.oauthConfigured,
-                      webhookConfigured: !!status.webhookConfigured,
-                      features: status.features || [],
-                    });
-
-                    const instructorId = userData._id || userData.id;
-                    if (instructorId) {
-                      const availabilityResponse = await getApiRequest(
-                        `/api/instructor-availability/${instructorId}`,
-                        token
-                      );
-                      if (availabilityResponse?.data?.success) {
-                        const availability = availabilityResponse.data.data;
-                        const transformedData = [
-                          {
-                            _id: availability._id,
-                            instructorId: {
-                              _id: availability.instructorId,
-                              fullName: userData.fullName,
-                              email: userData.email,
-                              profilePicture: userData.avatar,
-                            },
-                            isActive: availability.isActive || false,
-                            workingHours: availability.workingHours || [],
-                            bufferTimeMinutes:
-                              availability.bufferTimeMinutes || 30,
-                            timezone: availability.timezone || "UTC",
-                            calendlyUserId: availability.calendlyUserId,
-                            calendlyUserUri: availability.calendlyUserUri,
-                            lastAvailabilityUpdate:
-                              availability.lastAvailabilityUpdate || new Date(),
-                            emergencyBlockReason:
-                              availability.emergencyBlockReason,
-                            emergencyBlockedAt: availability.emergencyBlockedAt,
-                            isCurrentlyAvailable:
-                              availability.isCurrentlyAvailable || false,
-                          },
-                        ];
-                        setAvailabilities(transformedData);
-                      }
-                    }
-                  } catch (e: any) {
-                    setError(e.message || "Failed to refresh Calendly status");
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="px-6 py-3 bg-slate-100 text-slate-800 font-semibold rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all duration-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
-              >
-                {loading ? "Syncing..." : "Sync Calendly status"}
-              </button>
+              </Link> */}
               {calendlyStatus?.connected ||
               profileSettings?.calendly?.isConnected ? (
                 <div className="flex gap-2">
