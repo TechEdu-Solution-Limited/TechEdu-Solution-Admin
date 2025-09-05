@@ -1,5 +1,3 @@
-const ConsoleRemoverPlugin = require('./lib/webpack-console-remover');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -19,17 +17,6 @@ const nextConfig = {
     swcMinify: true,
     compress: true,
   }),
-  // Webpack configuration for additional console removal
-  webpack: (config, { isServer }) => {
-    if (process.env.NODE_ENV === 'production') {
-      config.plugins.push(
-        new ConsoleRemoverPlugin({
-          exclude: ['error', 'warn'] // Keep console.error and console.warn
-        })
-      );
-    }
-    return config;
-  },
 };
 
 module.exports = nextConfig;
