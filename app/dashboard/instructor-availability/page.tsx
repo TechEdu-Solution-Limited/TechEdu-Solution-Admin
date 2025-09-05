@@ -860,14 +860,100 @@ export default function InstructorAvailabilityPage() {
           )}
 
         {calendlyStatus && (
-          <div className="mb-6 text-sm text-slate-700 flex flex-wrap gap-4">
-            <span>Connected: {calendlyStatus.connected ? "Yes" : "No"}</span>
-            <span>OAuth: {calendlyStatus.oauthConfigured ? "Yes" : "No"}</span>
-            <span>
-              Webhook: {calendlyStatus.webhookConfigured ? "Yes" : "No"}
-            </span>
+          <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Calendly Integration Status
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    calendlyStatus.connected ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></div>
+                <span className="text-sm font-medium text-slate-700">
+                  Connection
+                </span>
+                <span
+                  className={`text-sm font-semibold ${
+                    calendlyStatus.connected ? "text-green-700" : "text-red-700"
+                  }`}
+                >
+                  {calendlyStatus.connected ? "Active" : "Inactive"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    calendlyStatus.oauthConfigured
+                      ? "bg-green-500"
+                      : "bg-red-500"
+                  }`}
+                ></div>
+                <span className="text-sm font-medium text-slate-700">
+                  OAuth
+                </span>
+                <span
+                  className={`text-sm font-semibold ${
+                    calendlyStatus.oauthConfigured
+                      ? "text-green-700"
+                      : "text-red-700"
+                  }`}
+                >
+                  {calendlyStatus.oauthConfigured
+                    ? "Configured"
+                    : "Not Configured"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    calendlyStatus.webhookConfigured
+                      ? "bg-green-500"
+                      : "bg-red-500"
+                  }`}
+                ></div>
+                <span className="text-sm font-medium text-slate-700">
+                  Webhook
+                </span>
+                <span
+                  className={`text-sm font-semibold ${
+                    calendlyStatus.webhookConfigured
+                      ? "text-green-700"
+                      : "text-red-700"
+                  }`}
+                >
+                  {calendlyStatus.webhookConfigured ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+
             {calendlyStatus.features?.length ? (
-              <span>Features: {calendlyStatus.features.join(", ")}</span>
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                  Available Features
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {calendlyStatus.features.map(
+                    (feature: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full border border-blue-200"
+                      >
+                        {feature
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
             ) : null}
           </div>
         )}
