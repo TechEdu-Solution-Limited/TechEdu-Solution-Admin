@@ -88,108 +88,103 @@ export default function AssignedStudentsPage() {
           return;
         }
 
-        // Fetch assigned students and stats from existing APIs
-        const [usersRes, bookingsRes] = await Promise.all([
-          getApiRequest(`/api/users?limit=100`, token),
-          getApiRequest(`/api/bookings/admin/all`, token),
-        ]);
+        // For now, show placeholder data since student assignment APIs are not available
+        // TODO: Implement proper student assignment APIs for instructors
 
-        if (usersRes?.data?.success && bookingsRes?.data?.success) {
-          const allUsers = usersRes.data.data?.users || [];
-          const allBookings = bookingsRes.data.data?.bookings || [];
+        // Create mock data for demonstration
+        const mockStudents = [
+          {
+            _id: "student-1",
+            fullName: "John Doe",
+            email: "john.doe@example.com",
+            profileImageUrl: undefined,
+            academicLevel: "Undergraduate",
+            currentInstitution: "University of Technology",
+            fieldOfStudy: "Computer Science",
+            graduationYear: 2025,
+            interestAreas: ["Web Development", "Machine Learning"],
+            progress: {
+              completedSessions: 8,
+              totalSessions: 12,
+              lastSessionDate: new Date().toISOString(),
+              nextSessionDate: new Date(
+                Date.now() + 7 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+            },
+            performance: {
+              averageRating: 4.5,
+              totalRatings: 15,
+              assignmentsCompleted: 7,
+              assignmentsPending: 2,
+            },
+            status: "active" as const,
+            assignedDate: new Date(
+              Date.now() - 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            lastActive: new Date().toISOString(),
+            notes: "Excellent progress in React development",
+          },
+          {
+            _id: "student-2",
+            fullName: "Jane Smith",
+            email: "jane.smith@example.com",
+            profileImageUrl: undefined,
+            academicLevel: "Graduate",
+            currentInstitution: "Tech Institute",
+            fieldOfStudy: "Software Engineering",
+            graduationYear: 2024,
+            interestAreas: ["Full Stack Development", "DevOps"],
+            progress: {
+              completedSessions: 15,
+              totalSessions: 20,
+              lastSessionDate: new Date().toISOString(),
+              nextSessionDate: new Date(
+                Date.now() + 3 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+            },
+            performance: {
+              averageRating: 4.8,
+              totalRatings: 22,
+              assignmentsCompleted: 12,
+              assignmentsPending: 1,
+            },
+            status: "active" as const,
+            assignedDate: new Date(
+              Date.now() - 45 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            lastActive: new Date().toISOString(),
+            notes: "Strong technical skills, ready for advanced topics",
+          },
+        ];
 
-          // Filter students assigned to this instructor
-          const assignedStudents = allUsers.filter(
-            (user: any) =>
-              user.role === "student" && user.instructorId === instructorId
-          );
+        setStudents(mockStudents);
 
-          // Transform to AssignedStudent format
-          const studentsData = assignedStudents.map((student: any) => {
-            const studentBookings = allBookings.filter(
-              (booking: any) => booking.studentId === student._id
-            );
-
-            return {
-              _id: student._id,
-              fullName: student.fullName,
-              email: student.email,
-              profileImageUrl: student.profileImageUrl,
-              academicLevel: student.profile?.academicLevel || "Not specified",
-              currentInstitution:
-                student.profile?.currentInstitution || "Not specified",
-              fieldOfStudy: student.profile?.fieldOfStudy || "Not specified",
-              graduationYear:
-                student.profile?.graduationYear || new Date().getFullYear(),
-              interestAreas: student.profile?.interestAreas || [],
-              progress: {
-                completedSessions: studentBookings.filter(
-                  (b: any) => b.status === "completed"
-                ).length,
-                totalSessions: studentBookings.length,
-                lastSessionDate:
-                  studentBookings.length > 0
-                    ? new Date(
-                        Math.max(
-                          ...studentBookings.map((b: any) =>
-                            new Date(b.createdAt).getTime()
-                          )
-                        )
-                      ).toISOString()
-                    : new Date().toISOString(),
-                nextSessionDate: studentBookings.find(
-                  (b: any) => b.status === "scheduled"
-                )?.scheduledDate,
-              },
-              performance: {
-                averageRating: 4.5, // Default value
-                totalRatings: Math.floor(Math.random() * 20) + 5,
-                assignmentsCompleted: Math.floor(Math.random() * 10) + 1,
-                assignmentsPending: Math.floor(Math.random() * 3),
-              },
-              status: student.status as
-                | "active"
-                | "inactive"
-                | "pending"
-                | "completed",
-              assignedDate: student.createdAt,
-              lastActive: student.lastLoginAt || student.updatedAt,
-              notes: `Student assigned on ${new Date(
-                student.createdAt
-              ).toLocaleDateString()}`,
-            };
-          });
-
-          setStudents(studentsData);
-
-          // Calculate stats
-          setStats({
-            totalAssigned: studentsData.length,
-            activeStudents: studentsData.filter(
-              (s: any) => s.status === "active"
-            ).length,
-            completedStudents: studentsData.filter(
-              (s: any) => s.status === "completed"
-            ).length,
-            averageProgress:
-              studentsData.length > 0
-                ? studentsData.reduce(
-                    (acc: any, s: any) =>
-                      acc +
-                      s.progress.completedSessions / s.progress.totalSessions,
-                    0
-                  ) / studentsData.length
-                : 0,
-            totalSessions: studentsData.reduce(
-              (acc: any, s: any) => acc + s.progress.totalSessions,
-              0
-            ),
-            upcomingSessions: studentsData.reduce(
-              (acc: any, s: any) => acc + (s.progress.nextSessionDate ? 1 : 0),
-              0
-            ),
-          });
-        }
+        // Calculate stats
+        setStats({
+          totalAssigned: mockStudents.length,
+          activeStudents: mockStudents.filter((s: any) => s.status === "active")
+            .length,
+          completedStudents: mockStudents.filter(
+            (s: any) => s.status === "completed"
+          ).length,
+          averageProgress:
+            mockStudents.length > 0
+              ? mockStudents.reduce(
+                  (acc: any, s: any) =>
+                    acc +
+                    s.progress.completedSessions / s.progress.totalSessions,
+                  0
+                ) / mockStudents.length
+              : 0,
+          totalSessions: mockStudents.reduce(
+            (acc: any, s: any) => acc + s.progress.totalSessions,
+            0
+          ),
+          upcomingSessions: mockStudents.reduce(
+            (acc: any, s: any) => acc + (s.progress.nextSessionDate ? 1 : 0),
+            0
+          ),
+        });
       } catch (err: any) {
         setError(err.message || "Failed to fetch assigned students");
       } finally {

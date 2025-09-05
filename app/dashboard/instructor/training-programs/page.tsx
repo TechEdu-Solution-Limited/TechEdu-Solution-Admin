@@ -108,138 +108,191 @@ export default function TrainingProgramsPage() {
           return;
         }
 
-        // Fetch training programs and stats from existing APIs
-        const [productsRes, bookingsRes, paymentsRes] = await Promise.all([
-          getApiRequest(`/api/products`, token),
-          getApiRequest(`/api/bookings/admin/all`, token),
-          getApiRequest(`/api/payments/stats`, token),
-        ]);
+        // For now, show placeholder data since training program APIs are not available for instructors
+        // TODO: Implement proper training program APIs for instructors
 
-        if (productsRes?.data?.success && bookingsRes?.data?.success) {
-          const allProducts = productsRes.data.data?.products || [];
-          const allBookings = bookingsRes.data.data?.bookings || [];
-          const paymentStats = paymentsRes?.data?.data || {};
+        // Create mock data for demonstration
+        const mockPrograms = [
+          {
+            _id: "program-1",
+            title: "React Fundamentals",
+            description: "Learn the basics of React.js development",
+            category: "Web Development",
+            subcategory: "Frontend",
+            duration: 40,
+            difficulty: "beginner" as const,
+            price: 299,
+            currency: "USD",
+            thumbnailUrl: undefined,
+            instructorId: instructorId,
+            instructorName: "Your Name",
+            status: "published" as const,
+            enrollmentCount: 25,
+            maxEnrollment: 50,
+            averageRating: 4.7,
+            totalRatings: 18,
+            completionRate: 0.85,
+            totalSessions: 20,
+            completedSessions: 17,
+            upcomingSessions: 3,
+            startDate: new Date(
+              Date.now() - 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            endDate: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            tags: ["React", "JavaScript", "Frontend"],
+            prerequisites: ["Basic HTML/CSS", "JavaScript fundamentals"],
+            learningObjectives: [
+              "Build React components",
+              "Manage state",
+              "Handle events",
+            ],
+            curriculum: [
+              {
+                module: "Introduction to React",
+                lessons: [
+                  {
+                    title: "What is React?",
+                    duration: 30,
+                    type: "video" as const,
+                  },
+                  {
+                    title: "Setting up your environment",
+                    duration: 45,
+                    type: "text" as const,
+                  },
+                ],
+              },
+            ],
+            createdAt: new Date(
+              Date.now() - 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            _id: "program-2",
+            title: "Advanced Node.js",
+            description: "Master server-side JavaScript development",
+            category: "Backend Development",
+            subcategory: "Server",
+            duration: 60,
+            difficulty: "intermediate" as const,
+            price: 499,
+            currency: "USD",
+            thumbnailUrl: undefined,
+            instructorId: instructorId,
+            instructorName: "Your Name",
+            status: "published" as const,
+            enrollmentCount: 15,
+            maxEnrollment: 30,
+            averageRating: 4.9,
+            totalRatings: 12,
+            completionRate: 0.92,
+            totalSessions: 30,
+            completedSessions: 28,
+            upcomingSessions: 2,
+            startDate: new Date(
+              Date.now() - 45 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            endDate: new Date(
+              Date.now() + 15 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            tags: ["Node.js", "JavaScript", "Backend"],
+            prerequisites: ["JavaScript ES6+", "Basic server concepts"],
+            learningObjectives: [
+              "Build REST APIs",
+              "Database integration",
+              "Authentication",
+            ],
+            curriculum: [
+              {
+                module: "Node.js Basics",
+                lessons: [
+                  {
+                    title: "Introduction to Node.js",
+                    duration: 45,
+                    type: "video" as const,
+                  },
+                  {
+                    title: "Modules and NPM",
+                    duration: 60,
+                    type: "text" as const,
+                  },
+                ],
+              },
+            ],
+            createdAt: new Date(
+              Date.now() - 45 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ];
 
-          // Filter products created by this instructor
-          const instructorProducts = allProducts.filter(
-            (product: any) => product.instructorId === instructorId
-          );
+        setPrograms(mockPrograms);
 
-          // Transform to TrainingProgram format
-          const programsData = instructorProducts.map((product: any) => {
-            const productBookings = allBookings.filter(
-              (booking: any) => booking.productId === product._id
-            );
+        // Calculate stats
+        const categoryCounts = mockPrograms.reduce((acc: any, p: any) => {
+          acc[p.category] = (acc[p.category] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
 
-            return {
-              _id: product._id,
-              title: product.title,
-              description: product.description,
-              category: product.category,
-              subcategory: product.subcategory,
-              duration: product.duration || 0,
-              difficulty: product.difficulty || "beginner",
-              price: product.price || 0,
-              currency: product.currency || "USD",
-              thumbnailUrl: product.thumbnailUrl,
-              instructorId: product.instructorId,
-              instructorName: product.instructorName || "Unknown Instructor",
-              status: product.status || "draft",
-              enrollmentCount: productBookings.length,
-              maxEnrollment: product.maxEnrollment,
-              averageRating: product.averageRating || 0,
-              totalRatings: product.totalRatings || 0,
-              completionRate:
-                productBookings.length > 0
-                  ? productBookings.filter((b: any) => b.status === "completed")
-                      .length / productBookings.length
-                  : 0,
-              totalSessions: productBookings.length,
-              completedSessions: productBookings.filter(
-                (b: any) => b.status === "completed"
-              ).length,
-              upcomingSessions: productBookings.filter(
-                (b: any) => b.status === "scheduled"
-              ).length,
-              startDate: product.createdAt,
-              endDate: product.endDate,
-              tags: product.tags || [],
-              prerequisites: product.prerequisites || [],
-              learningObjectives: product.learningObjectives || [],
-              curriculum: product.curriculum || [],
-              createdAt: product.createdAt,
-              updatedAt: product.updatedAt,
-            };
-          });
-
-          setPrograms(programsData);
-
-          // Calculate stats
-          const categoryCounts = programsData.reduce((acc: any, p: any) => {
-            acc[p.category] = (acc[p.category] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>);
-
-          setStats({
-            totalPrograms: programsData.length,
-            publishedPrograms: programsData.filter(
-              (p: any) => p.status === "published"
-            ).length,
-            draftPrograms: programsData.filter((p: any) => p.status === "draft")
-              .length,
-            totalEnrollments: programsData.reduce(
-              (acc: any, p: any) => acc + p.enrollmentCount,
-              0
-            ),
-            averageRating:
-              programsData.length > 0
-                ? programsData.reduce(
-                    (acc: any, p: any) => acc + p.averageRating,
-                    0
-                  ) / programsData.length
-                : 0,
-            totalRevenue: programsData.reduce(
-              (acc: any, p: any) => acc + p.price * p.enrollmentCount,
-              0
-            ),
-            monthlyRevenue: programsData
-              .filter(
-                (p: any) =>
-                  new Date(p.createdAt) >
-                  new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-              )
-              .reduce(
-                (acc: any, p: any) => acc + p.price * p.enrollmentCount,
-                0
-              ),
-            completionRate:
-              programsData.length > 0
-                ? programsData.reduce(
-                    (acc: any, p: any) => acc + p.completionRate,
-                    0
-                  ) / programsData.length
-                : 0,
-            topCategories: Object.entries(categoryCounts).map(
-              ([category, count]) => ({
-                category,
-                count: count as number,
-                revenue: programsData
-                  .filter((p: any) => p.category === category)
-                  .reduce(
-                    (acc: any, p: any) => acc + p.price * p.enrollmentCount,
-                    0
-                  ),
-              })
-            ),
-            recentEnrollments: programsData
-              .filter(
-                (p: any) =>
-                  new Date(p.createdAt) >
-                  new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-              )
-              .reduce((acc: any, p: any) => acc + p.enrollmentCount, 0),
-          });
-        }
+        setStats({
+          totalPrograms: mockPrograms.length,
+          publishedPrograms: mockPrograms.filter(
+            (p: any) => p.status === "published"
+          ).length,
+          draftPrograms: mockPrograms.filter((p: any) => p.status === "draft")
+            .length,
+          totalEnrollments: mockPrograms.reduce(
+            (acc: any, p: any) => acc + p.enrollmentCount,
+            0
+          ),
+          averageRating:
+            mockPrograms.length > 0
+              ? mockPrograms.reduce(
+                  (acc: any, p: any) => acc + p.averageRating,
+                  0
+                ) / mockPrograms.length
+              : 0,
+          totalRevenue: mockPrograms.reduce(
+            (acc: any, p: any) => acc + p.price * p.enrollmentCount,
+            0
+          ),
+          monthlyRevenue: mockPrograms
+            .filter(
+              (p: any) =>
+                new Date(p.createdAt) >
+                new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            )
+            .reduce((acc: any, p: any) => acc + p.price * p.enrollmentCount, 0),
+          completionRate:
+            mockPrograms.length > 0
+              ? mockPrograms.reduce(
+                  (acc: any, p: any) => acc + p.completionRate,
+                  0
+                ) / mockPrograms.length
+              : 0,
+          topCategories: Object.entries(categoryCounts).map(
+            ([category, count]) => ({
+              category,
+              count: count as number,
+              revenue: mockPrograms
+                .filter((p: any) => p.category === category)
+                .reduce(
+                  (acc: any, p: any) => acc + p.price * p.enrollmentCount,
+                  0
+                ),
+            })
+          ),
+          recentEnrollments: mockPrograms
+            .filter(
+              (p: any) =>
+                new Date(p.createdAt) >
+                new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            )
+            .reduce((acc: any, p: any) => acc + p.enrollmentCount, 0),
+        });
       } catch (err: any) {
         setError(err.message || "Failed to fetch training programs");
       } finally {

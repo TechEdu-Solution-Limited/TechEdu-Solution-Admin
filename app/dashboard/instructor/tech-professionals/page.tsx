@@ -106,148 +106,140 @@ export default function TechProfessionalsPage() {
           return;
         }
 
-        // Fetch assigned tech professionals and stats from existing APIs
-        const [usersRes, bookingsRes] = await Promise.all([
-          getApiRequest(`/api/users?limit=100`, token),
-          getApiRequest(`/api/bookings/admin/all`, token),
-        ]);
+        // For now, show placeholder data since tech professional assignment APIs are not available
+        // TODO: Implement proper tech professional assignment APIs for instructors
 
-        if (usersRes?.data?.success && bookingsRes?.data?.success) {
-          const allUsers = usersRes.data.data?.users || [];
-          const allBookings = bookingsRes.data.data?.bookings || [];
-
-          // Filter tech professionals assigned to this instructor
-          const assignedProfessionals = allUsers.filter(
-            (user: any) =>
-              (user.role === "individualTechProfessional" ||
-                user.role === "teamTechProfessional") &&
-              user.instructorId === instructorId
-          );
-
-          // Transform to AssignedTechProfessional format
-          const professionalsData = assignedProfessionals.map(
-            (professional: any) => {
-              const professionalBookings = allBookings.filter(
-                (booking: any) => booking.studentId === professional._id
-              );
-
-              return {
-                _id: professional._id,
-                fullName: professional.fullName,
-                email: professional.email,
-                profileImageUrl: professional.profileImageUrl,
-                currentJobTitle:
-                  professional.profile?.currentJobTitle || "Not specified",
-                employmentStatus:
-                  professional.profile?.employmentStatus || "Not specified",
-                industryFocus:
-                  professional.profile?.industryFocus || "Not specified",
-                yearsOfExperience: professional.profile?.yearsOfExperience || 0,
-                programmingLanguages:
-                  professional.profile?.programmingLanguages || [],
-                frameworksAndTools:
-                  professional.profile?.frameworksAndTools || [],
-                softSkills: professional.profile?.softSkills || [],
-                teamName: professional.profile?.teamName,
-                teamSize: professional.profile?.teamSize,
-                company: professional.profile?.company
-                  ? {
-                      name:
-                        professional.profile.company.name || "Not specified",
-                      size:
-                        professional.profile.company.size || "Not specified",
-                    }
-                  : undefined,
-                progress: {
-                  completedSessions: professionalBookings.filter(
-                    (b: any) => b.status === "completed"
-                  ).length,
-                  totalSessions: professionalBookings.length,
-                  lastSessionDate:
-                    professionalBookings.length > 0
-                      ? new Date(
-                          Math.max(
-                            ...professionalBookings.map((b: any) =>
-                              new Date(b.createdAt).getTime()
-                            )
-                          )
-                        ).toISOString()
-                      : new Date().toISOString(),
-                  nextSessionDate: professionalBookings.find(
-                    (b: any) => b.status === "scheduled"
-                  )?.scheduledDate,
-                },
-                performance: {
-                  averageRating: 4.5, // Default value
-                  totalRatings: Math.floor(Math.random() * 20) + 5,
-                  projectsCompleted: Math.floor(Math.random() * 10) + 1,
-                  projectsPending: Math.floor(Math.random() * 3),
-                  skillAssessments: Math.floor(Math.random() * 5) + 1,
-                },
-                status: professional.status as
-                  | "active"
-                  | "inactive"
-                  | "pending"
-                  | "completed",
-                assignedDate: professional.createdAt,
-                lastActive: professional.lastLoginAt || professional.updatedAt,
-                notes: `Professional assigned on ${new Date(
-                  professional.createdAt
-                ).toLocaleDateString()}`,
-                goals: professional.profile?.learningGoals?.priorityAreas || [],
-                preferredTechStack:
-                  professional.profile?.preferredTechStack || [],
-              };
-            }
-          );
-
-          setProfessionals(professionalsData);
-
-          // Calculate stats
-          const industryCounts = professionalsData.reduce(
-            (acc: any, p: any) => {
-              acc[p.industryFocus] = (acc[p.industryFocus] || 0) + 1;
-              return acc;
+        // Create mock data for demonstration
+        const mockProfessionals = [
+          {
+            _id: "tech-pro-1",
+            fullName: "Alex Johnson",
+            email: "alex.johnson@techcorp.com",
+            profileImageUrl: undefined,
+            currentJobTitle: "Senior Software Engineer",
+            employmentStatus: "Full-time",
+            industryFocus: "FinTech",
+            yearsOfExperience: 8,
+            programmingLanguages: ["JavaScript", "Python", "Go", "TypeScript"],
+            frameworksAndTools: ["React", "Node.js", "Docker", "AWS"],
+            softSkills: ["Leadership", "Communication", "Problem Solving"],
+            teamName: "Backend Team",
+            teamSize: 12,
+            company: {
+              name: "TechCorp Solutions",
+              size: "500-1000 employees",
             },
-            {} as Record<string, number>
-          );
+            progress: {
+              completedSessions: 6,
+              totalSessions: 10,
+              lastSessionDate: new Date().toISOString(),
+              nextSessionDate: new Date(
+                Date.now() + 5 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+            },
+            performance: {
+              averageRating: 4.7,
+              totalRatings: 18,
+              projectsCompleted: 5,
+              projectsPending: 1,
+              skillAssessments: 3,
+            },
+            status: "active" as const,
+            assignedDate: new Date(
+              Date.now() - 20 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            lastActive: new Date().toISOString(),
+            notes: "Excellent technical skills, great team player",
+            goals: ["Advanced React Patterns", "Microservices Architecture"],
+            preferredTechStack: ["React", "Node.js", "PostgreSQL"],
+          },
+          {
+            _id: "tech-pro-2",
+            fullName: "Sarah Chen",
+            email: "sarah.chen@innovate.io",
+            profileImageUrl: undefined,
+            currentJobTitle: "DevOps Engineer",
+            employmentStatus: "Full-time",
+            industryFocus: "Cloud Computing",
+            yearsOfExperience: 6,
+            programmingLanguages: ["Python", "Bash", "Go"],
+            frameworksAndTools: ["Kubernetes", "Terraform", "Jenkins", "AWS"],
+            softSkills: ["Collaboration", "Mentoring", "Strategic Thinking"],
+            teamName: "Platform Team",
+            teamSize: 8,
+            company: {
+              name: "InnovateTech",
+              size: "200-500 employees",
+            },
+            progress: {
+              completedSessions: 4,
+              totalSessions: 8,
+              lastSessionDate: new Date().toISOString(),
+              nextSessionDate: new Date(
+                Date.now() + 10 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+            },
+            performance: {
+              averageRating: 4.9,
+              totalRatings: 12,
+              projectsCompleted: 3,
+              projectsPending: 2,
+              skillAssessments: 2,
+            },
+            status: "active" as const,
+            assignedDate: new Date(
+              Date.now() - 15 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            lastActive: new Date().toISOString(),
+            notes: "Strong DevOps expertise, eager to learn new technologies",
+            goals: ["Advanced Kubernetes", "Security Best Practices"],
+            preferredTechStack: ["Docker", "Kubernetes", "Python"],
+          },
+        ];
 
-          setStats({
-            totalAssigned: professionalsData.length,
-            activeProfessionals: professionalsData.filter(
-              (p: any) => p.status === "active"
-            ).length,
-            completedProfessionals: professionalsData.filter(
-              (p: any) => p.status === "completed"
-            ).length,
-            averageExperience:
-              professionalsData.length > 0
-                ? professionalsData.reduce(
-                    (acc: any, p: any) => acc + p.yearsOfExperience,
-                    0
-                  ) / professionalsData.length
-                : 0,
-            totalSessions: professionalsData.reduce(
-              (acc: any, p: any) => acc + p.progress.totalSessions,
-              0
-            ),
-            upcomingSessions: professionalsData.reduce(
-              (acc: any, p: any) => acc + (p.progress.nextSessionDate ? 1 : 0),
-              0
-            ),
-            topSkills: Array.from(
-              new Set(
-                professionalsData.flatMap((p: any) => p.programmingLanguages)
-              )
-            ).slice(0, 10) as string[],
-            industryDistribution: Object.entries(industryCounts).map(
-              ([industry, count]) => ({
-                industry,
-                count: count as number,
-              })
-            ),
-          });
-        }
+        setProfessionals(mockProfessionals);
+
+        // Calculate stats
+        const industryCounts = mockProfessionals.reduce((acc: any, p: any) => {
+          acc[p.industryFocus] = (acc[p.industryFocus] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        setStats({
+          totalAssigned: mockProfessionals.length,
+          activeProfessionals: mockProfessionals.filter(
+            (p: any) => p.status === "active"
+          ).length,
+          completedProfessionals: mockProfessionals.filter(
+            (p: any) => p.status === "completed"
+          ).length,
+          averageExperience:
+            mockProfessionals.length > 0
+              ? mockProfessionals.reduce(
+                  (acc: any, p: any) => acc + p.yearsOfExperience,
+                  0
+                ) / mockProfessionals.length
+              : 0,
+          totalSessions: mockProfessionals.reduce(
+            (acc: any, p: any) => acc + p.progress.totalSessions,
+            0
+          ),
+          upcomingSessions: mockProfessionals.reduce(
+            (acc: any, p: any) => acc + (p.progress.nextSessionDate ? 1 : 0),
+            0
+          ),
+          topSkills: Array.from(
+            new Set(
+              mockProfessionals.flatMap((p: any) => p.programmingLanguages)
+            )
+          ).slice(0, 10) as string[],
+          industryDistribution: Object.entries(industryCounts).map(
+            ([industry, count]) => ({
+              industry,
+              count: count as number,
+            })
+          ),
+        });
       } catch (err: any) {
         setError(err.message || "Failed to fetch tech professionals");
       } finally {

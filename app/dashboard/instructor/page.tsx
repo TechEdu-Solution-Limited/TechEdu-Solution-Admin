@@ -89,138 +89,93 @@ export default function InstructorDashboard() {
           return;
         }
 
-        // Fetch instructor profile and stats from existing APIs
-        const [instructorsRes, usersRes, productsRes, bookingsRes] =
-          await Promise.all([
-            getApiRequest(`/api/users/admin/instructors`, token),
-            getApiRequest(`/api/users?limit=100`, token),
-            getApiRequest(`/api/products`, token),
-            getApiRequest(`/api/bookings/admin/all`, token),
-          ]);
+        // Fetch instructor profile and stats from available APIs
+        const [profileRes, sessionsRes, classroomsRes] = await Promise.all([
+          getApiRequest(`/api/users/me`, token),
+          getApiRequest(`/api/sessions/instructor/my-sessions`, token),
+          getApiRequest(`/api/classrooms/instructor/my-classrooms`, token),
+        ]);
 
-        // Find current instructor profile
-        if (instructorsRes?.data?.success) {
-          const instructorData = instructorsRes.data.data?.instructors || [];
-          const currentInstructor = instructorData.find(
-            (inst: any) =>
-              inst._id === instructorId || inst.userId === instructorId
-          );
-          if (currentInstructor) {
-            setProfile({
-              _id: currentInstructor._id,
-              fullName: currentInstructor.fullName,
-              email: currentInstructor.email,
-              title: currentInstructor.title,
-              bio: currentInstructor.bio,
-              specializationAreas: currentInstructor.specializationAreas || [],
-              yearsOfExperience: currentInstructor.yearsOfExperience || 0,
-              certifications: currentInstructor.certifications || [],
-              rating: currentInstructor.rating || 0,
-              reviews: currentInstructor.reviews || 0,
-              profilePicture: currentInstructor.profilePicture,
-              linkedInProfileUrl: currentInstructor.linkedInProfileUrl,
-              languagesSpoken: currentInstructor.languagesSpoken || [],
-              isActive: currentInstructor.isActive,
-              createdAt: currentInstructor.createdAt,
-              updatedAt: currentInstructor.updatedAt,
-            });
-          }
-        }
-
-        // Calculate stats from existing data
-        if (
-          usersRes?.data?.success &&
-          productsRes?.data?.success &&
-          bookingsRes?.data?.success
-        ) {
-          const allUsers = usersRes.data.data?.users || [];
-          const allProducts = productsRes.data.data?.products || [];
-          const allBookings = bookingsRes.data.data?.bookings || [];
-
-          // Filter data for current instructor
-          const instructorProducts = allProducts.filter(
-            (product: any) => product.instructorId === instructorId
-          );
-          const instructorBookings = allBookings.filter(
-            (booking: any) => booking.instructorId === instructorId
-          );
-          const assignedStudents = allUsers.filter(
-            (user: any) =>
-              user.role === "student" && user.instructorId === instructorId
-          );
-          const assignedTechProfessionals = allUsers.filter(
-            (user: any) =>
-              (user.role === "individualTechProfessional" ||
-                user.role === "teamTechProfessional") &&
-              user.instructorId === instructorId
-          );
-
-          setStats({
-            totalStudents: assignedStudents.length,
-            assignStudents: assignedStudents.filter(
-              (s: any) => s.status === "active"
-            ).length,
-            assignTechProfessionals: assignedTechProfessionals.length,
-            trainingProgramsHandled: instructorProducts.map(
-              (p: any) => p.title
-            ),
-            totalSessions: instructorBookings.length,
-            completedSessions: instructorBookings.filter(
-              (b: any) => b.status === "completed"
-            ).length,
-            upcomingSessions: instructorBookings.filter(
-              (b: any) => b.status === "scheduled"
-            ).length,
-            averageRating:
-              instructorProducts.reduce(
-                (acc: any, p: any) => acc + (p.averageRating || 0),
-                0
-              ) / instructorProducts.length || 0,
-            totalReviews: instructorProducts.reduce(
-              (acc: any, p: any) => acc + (p.totalRatings || 0),
-              0
-            ),
-            totalEarnings: instructorBookings.reduce(
-              (acc: any, b: any) => acc + (b.amount || 0),
-              0
-            ),
-            monthlyEarnings: instructorBookings
-              .filter(
-                (b: any) =>
-                  new Date(b.createdAt) >
-                  new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-              )
-              .reduce((acc: any, b: any) => acc + (b.amount || 0), 0),
-            availabilityHours: 40, // Default value
-            lastActive: new Date().toISOString(),
+        // Set instructor profile from user data
+        if (profileRes?.data?.success) {
+          const profileData = profileRes.data.data;
+          setProfile({
+            _id: profileData._id || userData._id,
+            fullName: profileData.fullName || userData.fullName,
+            email: profileData.email || userData.email,
+            title: profileData.title || "Instructor",
+            bio: profileData.bio || "Experienced instructor",
+            specializationAreas: profileData.specializationAreas || [],
+            yearsOfExperience: profileData.yearsOfExperience || 0,
+            certifications: profileData.certifications || [],
+            rating: profileData.rating || 4.5,
+            reviews: profileData.reviews || 0,
+            profilePicture: profileData.profilePicture,
+            linkedInProfileUrl: profileData.linkedInProfileUrl,
+            languagesSpoken: profileData.languagesSpoken || [],
+            isActive: profileData.isActive || true,
+            createdAt: profileData.createdAt,
+            updatedAt: profileData.updatedAt,
           });
-
-          // Generate recent activity from bookings
-          const recentBookings = instructorBookings
-            .sort(
-              (a: any, b: any) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
-            )
-            .slice(0, 5)
-            .map((booking: any) => ({
-              id: booking._id,
-              type: "session" as const,
-              title: `Session with ${booking.studentName || "Student"}`,
-              description: `Scheduled for ${new Date(
-                booking.scheduledDate
-              ).toLocaleDateString()}`,
-              timestamp: new Date(booking.createdAt).toLocaleDateString(),
-              status:
-                booking.status === "completed"
-                  ? ("completed" as const)
-                  : booking.status === "scheduled"
-                  ? ("upcoming" as const)
-                  : ("pending" as const),
-            }));
-
-          setRecentActivity(recentBookings);
         }
+
+        // Calculate stats from available data
+        const sessions = sessionsRes?.data?.data || [];
+        const classrooms = classroomsRes?.data?.data || [];
+
+        // Calculate basic stats from available data
+        const completedSessions = sessions.filter(
+          (s: any) => s.status === "completed"
+        ).length;
+        const upcomingSessions = sessions.filter(
+          (s: any) => s.status === "scheduled"
+        ).length;
+
+        setStats({
+          totalStudents: 0, // Will be updated when student assignment API is available
+          assignStudents: 0,
+          assignTechProfessionals: 0,
+          trainingProgramsHandled: classrooms.map((c: any) => c.name),
+          totalSessions: sessions.length,
+          completedSessions,
+          upcomingSessions,
+          averageRating: 4.5, // Default value
+          totalReviews: 0,
+          totalEarnings: 0, // Will be calculated when payment data is available
+          monthlyEarnings: 0,
+          availabilityHours: 40, // Default value
+          lastActive: new Date().toISOString(),
+        });
+
+        // Generate recent activity from sessions
+        const recentSessions = sessions
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.createdAt || b.scheduleAt).getTime() -
+              new Date(a.createdAt || a.scheduleAt).getTime()
+          )
+          .slice(0, 5)
+          .map((session: any) => ({
+            id: session._id,
+            type: "session" as const,
+            title: `Session: ${
+              session.title || session.name || "Class Session"
+            }`,
+            description: `Scheduled for ${new Date(
+              session.scheduleAt || session.createdAt
+            ).toLocaleDateString()}`,
+            timestamp: new Date(
+              session.createdAt || session.scheduleAt
+            ).toLocaleDateString(),
+            status:
+              session.status === "completed"
+                ? ("completed" as const)
+                : session.status === "scheduled"
+                ? ("upcoming" as const)
+                : ("pending" as const),
+          }));
+
+        setRecentActivity(recentSessions);
       } catch (err: any) {
         setError(err.message || "Failed to fetch instructor data");
       } finally {
