@@ -209,11 +209,12 @@ export const loginUser = async (
 export const logoutUser = async (): Promise<ApiResponse<any>> => {
   const accessToken = getCookie("accessToken");
   const refreshToken = getCookie("refreshToken");
+  const token = getTokenFromCookies();
 
   const requestBody = {
     reason: "user_initiated",
     deviceInfo: getDeviceInfo(),
-    location: "New York, NY, USA", // Replace with real location if you implement IP-based lookup
+    location: "", // Replace with real location if you implement IP-based lookup
     accessToken,
     refreshToken,
   };
@@ -222,7 +223,7 @@ export const logoutUser = async (): Promise<ApiResponse<any>> => {
     // Try to call the logout API endpoint
     const response = await postApiRequest(
       "/api/auth/logout",
-      accessToken || "",
+      token,
       requestBody
     );
     return response;

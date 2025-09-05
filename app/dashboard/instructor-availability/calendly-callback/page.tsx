@@ -62,7 +62,7 @@ export default function CalendlyCallbackPage() {
             state,
             // Add ownerUri if backend requires it
             ownerUri: `https://api.calendly.com/users/${userData.id}`,
-            scope: "user", // or remove if not needed
+            scope: "organization", // or remove if not needed
           }
         );
 

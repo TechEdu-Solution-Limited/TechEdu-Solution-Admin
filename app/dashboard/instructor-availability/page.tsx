@@ -44,12 +44,25 @@ interface InstructorAvailability {
   workingHours: WorkingHours[];
   bufferTimeMinutes: number;
   timezone: string;
-  calendlyUserId?: string;
-  calendlyUserUri?: string;
+  calendly?: {
+    userId: string;
+    userUri: string;
+    connectedAt: string;
+    lastSyncAt: string;
+  };
   lastAvailabilityUpdate: Date;
   emergencyBlockReason?: string;
   emergencyBlockedAt?: Date;
   isCurrentlyAvailable?: boolean;
+  availableSlots?: string[];
+  slotsInfo?: {
+    dateRange: {
+      start: string;
+      end: string;
+    };
+    durationMinutes: number;
+    totalSlots: number;
+  };
 }
 
 const DAYS_OF_WEEK = [
@@ -125,24 +138,28 @@ export default function InstructorAvailabilityPage() {
           const availability = response.data.data;
           const transformedData = [
             {
-              _id: availability._id,
+              _id: instructorId || "unknown", // Use instructorId as _id since it's not in the response
               instructorId: {
-                _id: availability.instructorId,
-                fullName: userData.fullName,
-                email: userData.email,
+                _id: instructorId || "unknown",
+                fullName: userData.fullName || "Unknown",
+                email: userData.email || "unknown@example.com",
                 profilePicture: userData.avatar,
               },
               isActive: availability.isActive || false,
               workingHours: availability.workingHours || [],
               bufferTimeMinutes: availability.bufferTimeMinutes || 30,
               timezone: availability.timezone || "UTC",
-              calendlyUserId: availability.calendlyUserId,
-              calendlyUserUri: availability.calendlyUserUri,
-              lastAvailabilityUpdate:
-                availability.lastAvailabilityUpdate || new Date(),
+              calendly: availability.calendly,
+              lastAvailabilityUpdate: new Date(
+                availability.lastAvailabilityUpdate
+              ),
               emergencyBlockReason: availability.emergencyBlockReason,
-              emergencyBlockedAt: availability.emergencyBlockedAt,
+              emergencyBlockedAt: availability.emergencyBlockedAt
+                ? new Date(availability.emergencyBlockedAt)
+                : undefined,
               isCurrentlyAvailable: availability.isCurrentlyAvailable || false,
+              availableSlots: availability.availableSlots || [],
+              slotsInfo: availability.slotsInfo,
             },
           ];
           setAvailabilities(transformedData);
@@ -163,34 +180,34 @@ export default function InstructorAvailabilityPage() {
   }, [userData._id, userData.id, isAuthenticated, authLoading]);
 
   // Fetch profile settings
-  useEffect(() => {
-    const fetchProfileSettings = async () => {
-      if (!userData._id && !userData.id) {
-        return;
-      }
+  // useEffect(() => {
+  //   const fetchProfileSettings = async () => {
+  //     if (!userData._id && !userData.id) {
+  //       return;
+  //     }
 
-      const token = getTokenFromCookies();
-      if (!token) {
-        return;
-      }
+  //     const token = getTokenFromCookies();
+  //     if (!token) {
+  //       return;
+  //     }
 
-      try {
-        const instructorId = userData._id || userData.id;
-        const response = await getApiRequest(
-          `/api/instructors/${instructorId}/profile/settings`,
-          token
-        );
+  //     try {
+  //       const instructorId = userData._id || userData.id;
+  //       const response = await getApiRequest(
+  //         `/api/instructors/${instructorId}/profile/settings`,
+  //         token
+  //       );
 
-        if (response?.data?.success) {
-          setProfileSettings(response.data.data);
-        }
-      } catch (err: any) {
-        console.error("Failed to fetch profile settings:", err);
-      }
-    };
+  //       if (response?.data?.success) {
+  //         setProfileSettings(response.data.data);
+  //       }
+  //     } catch (err: any) {
+  //       console.error("Failed to fetch profile settings:", err);
+  //     }
+  //   };
 
-    fetchProfileSettings();
-  }, [userData._id, userData.id]);
+  //   fetchProfileSettings();
+  // }, [userData._id, userData.id]);
 
   // Fetch Calendly integration status
   useEffect(() => {
@@ -420,8 +437,8 @@ export default function InstructorAvailabilityPage() {
                 workingHours: availability.workingHours || [],
                 bufferTimeMinutes: availability.bufferTimeMinutes || 30,
                 timezone: availability.timezone || "UTC",
-                calendlyUserId: availability.calendlyUserId,
-                calendlyUserUri: availability.calendlyUserUri,
+                userId: availability.userId,
+                userUri: availability.userUri,
                 lastAvailabilityUpdate:
                   availability.lastAvailabilityUpdate || new Date(),
                 emergencyBlockReason: availability.emergencyBlockReason,
@@ -485,8 +502,8 @@ export default function InstructorAvailabilityPage() {
                 workingHours: availability.workingHours || [],
                 bufferTimeMinutes: availability.bufferTimeMinutes || 30,
                 timezone: availability.timezone || "UTC",
-                calendlyUserId: availability.calendlyUserId,
-                calendlyUserUri: availability.calendlyUserUri,
+                userId: availability.userId,
+                userUri: availability.userUri,
                 lastAvailabilityUpdate:
                   availability.lastAvailabilityUpdate || new Date(),
                 emergencyBlockReason: availability.emergencyBlockReason,
@@ -569,8 +586,8 @@ export default function InstructorAvailabilityPage() {
               workingHours: availability.workingHours || [],
               bufferTimeMinutes: availability.bufferTimeMinutes || 30,
               timezone: availability.timezone || "UTC",
-              calendlyUserId: availability.calendlyUserId,
-              calendlyUserUri: availability.calendlyUserUri,
+              userId: availability.userId,
+              userUri: availability.userUri,
               lastAvailabilityUpdate:
                 availability.lastAvailabilityUpdate || new Date(),
               emergencyBlockReason: availability.emergencyBlockReason,
@@ -652,7 +669,8 @@ export default function InstructorAvailabilityPage() {
                 </button>
               </Link> */}
               {calendlyStatus?.connected ||
-              profileSettings?.calendly?.isConnected ? (
+              profileSettings?.calendly?.isConnected ||
+              availabilities[0]?.calendly?.userId ? (
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowCalendlyStatus(!showCalendlyStatus)}
@@ -706,7 +724,8 @@ export default function InstructorAvailabilityPage() {
                     <div
                       className={`w-3 h-3 rounded-full ${
                         calendlyStatus?.connected ??
-                        profileSettings?.calendly?.isConnected
+                        profileSettings?.calendly?.isConnected ??
+                        availabilities[0]?.calendly?.userId
                           ? "bg-green-500"
                           : "bg-red-500"
                       }`}
@@ -714,19 +733,22 @@ export default function InstructorAvailabilityPage() {
                     <span className="font-medium text-slate-700">
                       Status:{" "}
                       {calendlyStatus?.connected ??
-                      profileSettings?.calendly?.isConnected
+                      profileSettings?.calendly?.isConnected ??
+                      availabilities[0]?.calendly?.userId
                         ? "Connected"
                         : "Disconnected"}
                     </span>
                   </div>
 
-                  {profileSettings?.calendly?.calendlyUserId && (
+                  {(profileSettings?.calendly?.userId ||
+                    availabilities[0]?.calendly?.userId) && (
                     <div>
                       <span className="text-sm font-medium text-slate-600">
                         Calendly User ID:
                       </span>
                       <p className="text-slate-900 font-mono text-sm">
-                        {profileSettings?.calendly?.calendlyUserId}
+                        {profileSettings?.calendly?.userId ||
+                          availabilities[0]?.calendly?.userId}
                       </p>
                     </div>
                   )}
@@ -775,6 +797,26 @@ export default function InstructorAvailabilityPage() {
                       minutes
                     </p>
                   </div>
+
+                  {availabilities[0]?.availableSlots &&
+                    availabilities[0].availableSlots.length > 0 && (
+                      <div>
+                        <span className="text-sm font-medium text-slate-600">
+                          Available Slots (Next 7 Days):
+                        </span>
+                        <p className="text-slate-900">
+                          {availabilities[0].availableSlots.length} slots
+                          available
+                        </p>
+                        {availabilities[0].slotsInfo && (
+                          <p className="text-slate-600 text-xs">
+                            Duration:{" "}
+                            {availabilities[0].slotsInfo.durationMinutes} min
+                            each
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                   {profileSettings?.availability?.emergencyBlock?.isBlocked && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
