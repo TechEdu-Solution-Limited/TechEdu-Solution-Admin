@@ -41,9 +41,7 @@ export const config = {
 };
 
 // Helper functions
-export const shouldLog = (
-  level: "log" | "warn" | "error" | "info" | "debug"
-) => {
+export const shouldLog = (level: "log" | "warn" | "info" | "debug") => {
   const consoleConfig = config.console as any;
   return config.console.enabled && consoleConfig[level];
 };
