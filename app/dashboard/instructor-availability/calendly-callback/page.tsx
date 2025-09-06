@@ -36,7 +36,7 @@ export default function CalendlyCallbackPage() {
       const error = searchParams.get("error");
 
       // Debug OAuth parameters
-      console.log("OAuth parameters:", { code, state, error });
+      // console.log("OAuth parameters:", { code, state, error });
 
       if (error) {
         setStatus("error");
@@ -56,12 +56,12 @@ export default function CalendlyCallbackPage() {
           code,
           state,
         };
-        console.log("Sending OAuth completion request:", {
-          endpoint: `/api/instructors/${
-            userData._id || userData.id
-          }/calendly-oauth/complete`,
-          data: requestData,
-        });
+        // console.log("Sending OAuth completion request:", {
+        //   endpoint: `/api/instructors/${
+        //     userData._id || userData.id
+        //   }/calendly-oauth/complete`,
+        //   data: requestData,
+        // });
 
         const response: any = await postApiRequest(
           `/api/instructors/${
@@ -71,7 +71,7 @@ export default function CalendlyCallbackPage() {
           requestData
         );
 
-        console.log("OAuth completion response:", response);
+        // console.log("OAuth completion response:", response);
 
         if (response?.data?.success) {
           try {
@@ -112,13 +112,13 @@ export default function CalendlyCallbackPage() {
             response?.data?.message || "Failed to complete Calendly connection"
           );
           // Debug: Log the full response for troubleshooting
-          console.error("OAuth completion failed:", response);
+          // console.error("OAuth completion failed:", response);
         }
       } catch (err: any) {
         setStatus("error");
         setMessage(err.message || "Failed to complete Calendly connection");
         // Debug: Log the full error for troubleshooting
-        console.error("OAuth completion error:", err);
+        // console.error("OAuth completion error:", err);
       }
     };
 
