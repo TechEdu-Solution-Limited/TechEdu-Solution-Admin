@@ -166,6 +166,26 @@ export default function ProductEditPage() {
     }
 
     try {
+      // Validate duration in minutes (1-120 minutes)
+      if (
+        (form.durationInMinutes ?? 0) < 1 ||
+        (form.durationInMinutes ?? 0) > 120
+      ) {
+        setError("Duration must be between 1 and 120 minutes.");
+        setSaving(false);
+        return;
+      }
+
+      // Validate minutes per session (1-120 minutes)
+      if (
+        (form.minutesPerSession ?? 0) < 1 ||
+        (form.minutesPerSession ?? 0) > 120
+      ) {
+        setError("Minutes per session must be between 1 and 120 minutes.");
+        setSaving(false);
+        return;
+      }
+
       const payload = {
         ...form,
         price: Number(form.price) || 0,
@@ -486,11 +506,19 @@ export default function ProductEditPage() {
                     value={form.durationInMinutes || ""}
                     onChange={handleChange}
                     type="number"
-                    min={0}
-                    placeholder="Total duration"
+                    min={1}
+                    max={120}
+                    placeholder="Total duration (1-120 minutes)"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     required
                   />
+                  {form.durationInMinutes &&
+                    (form.durationInMinutes < 1 ||
+                      form.durationInMinutes > 120) && (
+                      <p className="text-red-500 text-sm mt-1">
+                        Duration must be between 1 and 120 minutes.
+                      </p>
+                    )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -501,11 +529,19 @@ export default function ProductEditPage() {
                     value={form.minutesPerSession || ""}
                     onChange={handleChange}
                     type="number"
-                    min={0}
-                    placeholder="Per session duration"
+                    min={1}
+                    max={120}
+                    placeholder="Per session duration (1-120 minutes)"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     required
                   />
+                  {form.minutesPerSession &&
+                    (form.minutesPerSession < 1 ||
+                      form.minutesPerSession > 120) && (
+                      <p className="text-red-500 text-sm mt-1">
+                        Minutes per session must be between 1 and 120 minutes.
+                      </p>
+                    )}
                 </div>
               </div>
             </div>

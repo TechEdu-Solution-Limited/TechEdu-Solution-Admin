@@ -427,6 +427,18 @@ export default function CreateProductPage() {
       requiredFields.push({ field: "instructorId", label: "Instructor" });
     }
 
+    // Validate duration in minutes (1-120 minutes)
+    if (form.durationInMinutes < 1 || form.durationInMinutes > 120) {
+      setError("Duration must be between 1 and 120 minutes.");
+      return;
+    }
+
+    // Validate minutes per session (1-120 minutes)
+    if (form.minutesPerSession < 1 || form.minutesPerSession > 120) {
+      setError("Minutes per session must be between 1 and 120 minutes.");
+      return;
+    }
+
     const missingFields = requiredFields.filter(({ field, label }) => {
       const value = form[field];
       let isMissing;
@@ -1118,11 +1130,19 @@ export default function CreateProductPage() {
                   name="durationInMinutes"
                   value={form.durationInMinutes}
                   onChange={handleChange}
-                  placeholder="Enter total duration in minutes (e.g., 360)"
+                  placeholder="Enter total duration in minutes (1-120)"
                   type="number"
-                  min={0}
+                  min={1}
+                  max={120}
                   className="rounded-[10px]"
                 />
+                {form.durationInMinutes &&
+                  (form.durationInMinutes < 1 ||
+                    form.durationInMinutes > 120) && (
+                    <p className="text-red-500 text-sm mt-1">
+                      Duration must be between 1 and 120 minutes.
+                    </p>
+                  )}
                 <label className="block text-sm font-medium mb-1">
                   Minutes Per Session
                 </label>
@@ -1130,11 +1150,19 @@ export default function CreateProductPage() {
                   name="minutesPerSession"
                   value={form.minutesPerSession}
                   onChange={handleChange}
-                  placeholder="Enter minutes per individual session (e.g., 60)"
+                  placeholder="Enter minutes per individual session (1-120)"
                   type="number"
-                  min={0}
+                  min={1}
+                  max={120}
                   className="rounded-[10px]"
                 />
+                {form.minutesPerSession &&
+                  (form.minutesPerSession < 1 ||
+                    form.minutesPerSession > 120) && (
+                    <p className="text-red-500 text-sm mt-1">
+                      Minutes per session must be between 1 and 120 minutes.
+                    </p>
+                  )}
                 <label className="block text-sm font-medium mb-1">
                   Program Length
                 </label>
