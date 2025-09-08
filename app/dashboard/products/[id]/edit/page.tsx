@@ -6,7 +6,11 @@ import { getTokenFromCookies } from "@/lib/cookies";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { uploadAssetImage, uploadMaterial } from "@/lib/firebase";
+import {
+  uploadAssetImage,
+  uploadMaterial,
+  deleteFileFromFirebase,
+} from "@/lib/firebase";
 import { Product } from "@/types/products";
 
 const PRODUCT_TYPE_OPTIONS = [
@@ -121,6 +125,28 @@ export default function ProductEditPage() {
             : Number(value)
           : value,
     }));
+  };
+
+  const handleDeleteMaterial = async () => {
+    if (!form.materialUrl) return;
+
+    setSaving(true);
+    try {
+      // Delete the file from Firebase Storage
+      await deleteFileFromFirebase(form.materialUrl);
+
+      // Clear the material URL from the form
+      setForm((prev) => ({
+        ...prev,
+        materialUrl: "",
+      }));
+
+      setSuccess("Material deleted successfully!");
+    } catch (err) {
+      setError("Failed to delete material. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -331,11 +357,49 @@ export default function ProductEditPage() {
                 </div>
 
                 {/* Material Upload field for Training Programs */}
-                {form.productType === "Training & Certification" && (
+                {(form.productType === "Training & Certification" ||
+                  form.productType === "Academic Support Services" ||
+                  form.productType === "Career Development & Mentorship") && (
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
                       Training Materials *
                     </label>
+
+                    {/* Current Material Display */}
+                    {form.materialUrl && (
+                      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-green-700 text-sm font-medium">
+                              Current Material
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleDeleteMaterial}
+                            disabled={saving}
+                            className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          >
+                            {saving ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+                        <a
+                          href={form.materialUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm underline"
+                        >
+                          Preview current material
+                        </a>
+                        <p className="text-green-600 text-xs mt-1">
+                          Tech professionals will be able to download this
+                          material after purchase
+                        </p>
+                      </div>
+                    )}
+
+                    {/* File Upload Input */}
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
@@ -345,6 +409,20 @@ export default function ProductEditPage() {
                         if (file) {
                           setSaving(true);
                           try {
+                            // If there's an existing material, delete it first
+                            if (form.materialUrl) {
+                              try {
+                                await deleteFileFromFirebase(form.materialUrl);
+                              } catch (deleteErr) {
+                                console.warn(
+                                  "Failed to delete old material:",
+                                  deleteErr
+                                );
+                                // Continue with upload even if deletion fails
+                              }
+                            }
+
+                            // Upload new material
                             const url = await uploadMaterial(
                               file,
                               "course-materials"
@@ -353,6 +431,7 @@ export default function ProductEditPage() {
                               ...prev,
                               materialUrl: url,
                             }));
+                            setSuccess("Material uploaded successfully!");
                           } catch (err) {
                             setError("Material upload failed");
                           } finally {
@@ -361,6 +440,8 @@ export default function ProductEditPage() {
                         }
                       }}
                     />
+
+                    {/* Info Box */}
                     <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                       <div className="flex items-start gap-3">
                         <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -391,31 +472,15 @@ export default function ProductEditPage() {
                             Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT,
                             ZIP, RAR, XLSX, CSV
                           </p>
+                          {form.materialUrl && (
+                            <p className="text-blue-600 text-xs mt-2 font-medium">
+                              💡 Uploading a new file will replace the current
+                              material
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
-                    {form.materialUrl && (
-                      <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-green-700 text-sm font-medium">
-                            Material uploaded successfully
-                          </span>
-                        </div>
-                        <a
-                          href={form.materialUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm underline"
-                        >
-                          Preview current material
-                        </a>
-                        <p className="text-green-600 text-xs mt-1">
-                          Tech professionals will be able to download this
-                          material after purchase
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
 
