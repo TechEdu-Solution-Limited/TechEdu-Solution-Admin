@@ -139,18 +139,18 @@ export const dashboardSidebarConfig = {
     displayName: "Instructor Dashboard",
     sections: [
       {
-        title: "Course Management",
+        title: "Services Management",
         items: [
           {
             label: "Dashboard",
             icon: LayoutDashboard,
             href: "/dashboard/instructor",
           },
-          {
-            label: "Instructor Availability",
-            icon: BookOpen,
-            href: "/dashboard/instructor-availability",
-          },
+          // {
+          //   label: "Instructor Availability",
+          //   icon: BookOpen,
+          //   href: "/dashboard/instructor-availability",
+          // },
           {
             label: "Student",
             icon: BookOpen,
@@ -161,11 +161,6 @@ export const dashboardSidebarConfig = {
           //   icon: BookOpen,
           //   href: "/dashboard/products",
           // },
-        ],
-      },
-      {
-        title: "Student Engagement",
-        items: [
           {
             label: "Enrolled Students",
             icon: Users,
