@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { getApiRequest, postApiRequest } from "@/lib/apiFetch";
 import { Switch } from "@/components/ui/switch";
-import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
 import { Plus, X } from "lucide-react";
+import { uploadAssetImage, uploadMaterial } from "@/lib/firebase";
 
 const initialForm = {
   productType: "",
@@ -776,7 +776,10 @@ export default function CreateProductPage() {
                             if (file) {
                               setLoading(true);
                               try {
-                                const url = await uploadImageToCloudinary(file);
+                                const url = await uploadMaterial(
+                                  file,
+                                  "course-materials"
+                                );
                                 setForm((prev: any) => ({
                                   ...prev,
                                   materialUrl: url,
@@ -1439,7 +1442,10 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
-                        const url = await uploadImageToCloudinary(file);
+                        const url = await uploadAssetImage(
+                          file,
+                          "product-icons"
+                        );
                         setForm((prev: any) => ({ ...prev, iconUrl: url }));
                       } catch (err) {
                         setError("Icon upload failed");
@@ -1468,7 +1474,10 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
-                        const url = await uploadImageToCloudinary(file);
+                        const url = await uploadAssetImage(
+                          file,
+                          "product-thumbnails"
+                        );
                         setForm((prev: any) => ({
                           ...prev,
                           thumbnailUrl: url,

@@ -6,7 +6,7 @@ import { getTokenFromCookies } from "@/lib/cookies";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { uploadAssetImage, uploadMaterial } from "@/lib/firebase";
 import { Product } from "@/types/products";
 
 const PRODUCT_TYPE_OPTIONS = [
@@ -345,7 +345,10 @@ export default function ProductEditPage() {
                         if (file) {
                           setSaving(true);
                           try {
-                            const url = await uploadImageToCloudinary(file);
+                            const url = await uploadMaterial(
+                              file,
+                              "course-materials"
+                            );
                             setForm((prev: any) => ({
                               ...prev,
                               materialUrl: url,
