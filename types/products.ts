@@ -1,0 +1,38 @@
+export interface Product {
+  _id: string;
+  productType: string;
+  productCategoryId: string;
+  productCategoryTitle: string;
+  productSubCategoryId: string;
+  productSubcategoryName: string;
+  publicSchedulingUrl?: string;
+  schedulingUrl?: string;
+  service: string;
+  deliveryMode: string;
+  sessionType: string;
+  isRecurring: boolean;
+  programLength: number;
+  mode: string;
+  durationInMinutes: number;
+  minutesPerSession: number;
+  hasClassroom: boolean;
+  hasSession: boolean;
+  hasAssessment: boolean;
+  hasCertificate: boolean;
+  requiresBooking: boolean;
+  requiresEnrollment: boolean;
+  isBookableService: boolean;
+  isAttachmentRequired: boolean;
+  price: number;
+  discountPercentage: number;
+  description: string;
+  tags: string[];
+  slug: string;
+  iconUrl: string;
+  thumbnailUrl: string;
+  materialUrl?: string;
+  enabled: boolean;
+  instructorId?: string; // Add instructor field
+  createdAt: string;
+  updatedAt: string;
+}

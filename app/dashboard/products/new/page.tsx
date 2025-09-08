@@ -45,6 +45,9 @@ const initialForm = {
   slug: "",
   iconUrl: "",
   thumbnailUrl: "",
+  materialUrl: "", // Add material URL field
+  isAttachmentRequired: false, // Add attachment requirement field
+  schedulingUrl: "", // Add scheduling URL field
   enabled: true,
   instructorId: "", // Add instructor field
   // API required fields
@@ -412,6 +415,7 @@ export default function CreateProductPage() {
       { field: "category", label: "Product Category" },
       { field: "subcategory", label: "Product Subcategory" },
       { field: "service", label: "Service" },
+      { field: "schedulingUrl", label: "Booking Scheduling Link" },
       { field: "deliveryMode", label: "Delivery Mode" },
       { field: "sessionType", label: "Session Type" },
       { field: "programLength", label: "Program Length" },
@@ -422,6 +426,12 @@ export default function CreateProductPage() {
       { field: "slug", label: "Slug" },
     ];
 
+    if (form.productType === "Training & Certification") {
+      requiredFields.push({
+        field: "materialUrl",
+        label: "Training Materials",
+      });
+    }
     // Add instructor validation for bookable services
     if (isBookableServiceType(form.productType) && !form.instructorId) {
       requiredFields.push({ field: "instructorId", label: "Instructor" });
@@ -460,7 +470,7 @@ export default function CreateProductPage() {
     });
 
     if (missingFields.length > 0) {
-      const missingLabels = missingFields.map((f) => f.label).join(", ");
+      const missingLabels = missingFields.map((f: any) => f.label).join(", ");
       setError(`Please fill all required fields: ${missingLabels}`);
       return;
     }
@@ -501,6 +511,7 @@ export default function CreateProductPage() {
         productCategoryTitle: form.category || "",
         productSubCategoryId: selectedSubcategory?._id || "",
         productSubcategoryName: form.subcategory || "",
+        schedulingUrl: form.schedulingUrl || "",
         durationInMinutes: Number(form.durationInMinutes) || 0,
         minutesPerSession: Number(form.minutesPerSession) || 0,
         // Ensure mode is a valid value - use one of the valid enum values
@@ -734,6 +745,131 @@ export default function CreateProductPage() {
                       className="px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       required
                     />
+
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Booking Scheduling Link *
+                    </label>
+                    <Input
+                      name="schedulingUrl"
+                      value={form.schedulingUrl}
+                      onChange={handleChange}
+                      placeholder="Generate the scheduling link for the service"
+                      className="px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      required
+                    />
+
+                    {/* Material Upload field for Training Programs */}
+                    {(form.productType === "Training & Certification" ||
+                      form.productType === "Academic Support Services" ||
+                      form.productType ===
+                        "Career Development & Mentorship") && (
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Training Materials *
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                          className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setLoading(true);
+                              try {
+                                const url = await uploadImageToCloudinary(file);
+                                setForm((prev: any) => ({
+                                  ...prev,
+                                  materialUrl: url,
+                                }));
+                              } catch (err) {
+                                setError("Material upload failed");
+                              } finally {
+                                setLoading(false);
+                              }
+                            }
+                          }}
+                          required
+                        />
+                        <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <div className="flex items-start gap-3">
+                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <svg
+                                className="w-3 h-3 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-blue-800 text-sm font-medium mb-1">
+                                For Tech Professionals
+                              </p>
+                              <p className="text-blue-700 text-sm">
+                                Upload training materials, course content,
+                                resources, or documents that tech professionals
+                                can view and download after purchasing this
+                                program.
+                              </p>
+                              <p className="text-blue-600 text-xs mt-1">
+                                Supported formats: PDF, DOC, DOCX, PPT, PPTX,
+                                TXT, ZIP, RAR, XLSX, CSV
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        {form.materialUrl && (
+                          <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-green-700 text-sm font-medium">
+                                Material uploaded successfully
+                              </span>
+                            </div>
+                            <a
+                              href={form.materialUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm underline"
+                            >
+                              Preview uploaded material
+                            </a>
+                            <p className="text-green-600 text-xs mt-1">
+                              Tech professionals will be able to download this
+                              material after purchase
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Attachment Required Checkbox for Academic Support Services */}
+                    {form.productType && (
+                      <div className="mt-4">
+                        <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="isAttachmentRequired"
+                            checked={!!form.isAttachmentRequired}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-slate-700">
+                            Attachment Required
+                          </span>
+                        </label>
+                        <p className="text-slate-500 text-sm mt-1 ml-2">
+                          Check if users need to submit attachments for this
+                          service.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-4">
@@ -1410,6 +1546,36 @@ export default function CreateProductPage() {
                       <span className="font-medium">Service:</span>{" "}
                       {form.service}
                     </div>
+                    {(form.productType === "Training & Certification" ||
+                      form.productType === "Academic Support Services" ||
+                      form.productType ===
+                        "Career Development & Mentorship") && (
+                      <div>
+                        <span className="font-medium">Training Materials:</span>{" "}
+                        {form.materialUrl ? (
+                          <a
+                            href={form.materialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline"
+                          >
+                            View uploaded materials
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 italic">
+                            No materials uploaded
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {form.productType && (
+                      <div>
+                        <span className="font-medium">
+                          Attachment Required:
+                        </span>{" "}
+                        {form.isAttachmentRequired ? "Yes" : "No"}
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium">Category:</span>{" "}
                       {form.category}

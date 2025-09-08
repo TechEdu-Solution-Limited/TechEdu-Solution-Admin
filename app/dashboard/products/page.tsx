@@ -468,6 +468,9 @@ export default function ProductsPage() {
                       Slug
                     </th>
                     <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                      Scheduling URL
+                    </th>
+                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -497,7 +500,7 @@ export default function ProductsPage() {
                                   <span className="text-sm font-medium text-blue-600">
                                     {instructors
                                       .find(
-                                        (i) => i._id === product.instructorId
+                                        (i) => i.userId === product.instructorId
                                       )
                                       ?.fullName?.charAt(0) || "I"}
                                   </span>
@@ -505,12 +508,12 @@ export default function ProductsPage() {
                                 <div>
                                   <div className="text-sm font-medium text-slate-900">
                                     {instructors.find(
-                                      (i) => i._id === product.instructorId
+                                      (i) => i.userId === product.instructorId
                                     )?.fullName || "Unknown Instructor"}
                                   </div>
                                   <div className="text-xs text-slate-500">
                                     {instructors.find(
-                                      (i) => i._id === product.instructorId
+                                      (i) => i.userId === product.instructorId
                                     )?.title || "Instructor"}
                                   </div>
                                 </div>
@@ -562,6 +565,30 @@ export default function ProductsPage() {
                         <td className="px-8 py-6 whitespace-nowrap">
                           <div className="text-sm text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded-lg">
                             {product.slug}
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="text-sm text-slate-700">
+                            {product.publicSchedulingUrl ? (
+                              <a
+                                href={product.publicSchedulingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline truncate block max-w-xs"
+                                title={product.publicSchedulingUrl}
+                              >
+                                {product.publicSchedulingUrl.length > 30
+                                  ? `${product.publicSchedulingUrl.substring(
+                                      0,
+                                      30
+                                    )}...`
+                                  : product.publicSchedulingUrl}
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 italic">
+                                Not set
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
@@ -814,7 +841,7 @@ export default function ProductsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={10} className="px-8 py-16 text-center">
+                      <td colSpan={11} className="px-8 py-16 text-center">
                         <div className="flex flex-col items-center gap-4">
                           <div className="w-20 h-20 bg-gradient-to-r from-slate-100 to-blue-100 rounded-full flex items-center justify-center">
                             <svg

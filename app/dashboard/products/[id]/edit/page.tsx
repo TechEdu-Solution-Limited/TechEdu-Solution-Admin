@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { Product } from "@/types/products";
 
 const PRODUCT_TYPE_OPTIONS = [
   "Training & Certification",
@@ -21,39 +22,6 @@ const PRODUCT_TYPE_OPTIONS = [
 const DELIVERY_MODE_OPTIONS = ["online", "offline", "hybrid"];
 const SESSION_TYPE_OPTIONS = ["1-on-1", "group", "classroom"];
 const MODE_OPTIONS = ["weeks", "days", "hours"];
-
-interface Product {
-  _id: string;
-  productType: string;
-  productCategoryId: string;
-  productCategoryTitle: string;
-  productSubCategoryId: string;
-  productSubcategoryName: string;
-  service: string;
-  deliveryMode: string;
-  sessionType: string;
-  isRecurring: boolean;
-  programLength: number;
-  mode: string;
-  durationInMinutes: number;
-  minutesPerSession: number;
-  hasClassroom: boolean;
-  hasSession: boolean;
-  hasAssessment: boolean;
-  hasCertificate: boolean;
-  requiresBooking: boolean;
-  requiresEnrollment: boolean;
-  isBookableService: boolean;
-  price: number;
-  discountPercentage: number;
-  description: string;
-  tags: string[];
-  slug: string;
-  iconUrl: string;
-  thumbnailUrl: string;
-  enabled: boolean;
-  instructorId?: string; // Add instructor field
-}
 
 export default function ProductEditPage() {
   const params = useParams();
@@ -112,6 +80,9 @@ export default function ProductEditPage() {
             slug: product.slug,
             iconUrl: product.iconUrl,
             thumbnailUrl: product.thumbnailUrl,
+            materialUrl: product.materialUrl, // Add materialUrl to form
+            isAttachmentRequired: product.isAttachmentRequired, // Add isAttachmentRequired to form
+            publicSchedulingUrl: product.publicSchedulingUrl, // Add publicSchedulingUrl to form
             enabled: product.enabled,
             instructorId: product.instructorId, // Add instructorId to form
           });
@@ -328,6 +299,20 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Booking Scheduling Link *
+                  </label>
+                  <Input
+                    name="publicSchedulingUrl"
+                    value={form.publicSchedulingUrl || ""}
+                    onChange={handleChange}
+                    placeholder="Generate the scheduling link for the service"
+                    className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Assign Instructor
                   </label>
                   <select
@@ -344,6 +329,113 @@ export default function ProductEditPage() {
                     ))}
                   </select>
                 </div>
+
+                {/* Material Upload field for Training Programs */}
+                {form.productType === "Training & Certification" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Training Materials *
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSaving(true);
+                          try {
+                            const url = await uploadImageToCloudinary(file);
+                            setForm((prev: any) => ({
+                              ...prev,
+                              materialUrl: url,
+                            }));
+                          } catch (err) {
+                            setError("Material upload failed");
+                          } finally {
+                            setSaving(false);
+                          }
+                        }
+                      }}
+                    />
+                    <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg
+                            className="w-3 h-3 text-blue-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-blue-800 text-sm font-medium mb-1">
+                            For Tech Professionals
+                          </p>
+                          <p className="text-blue-700 text-sm">
+                            Upload training materials, course content,
+                            resources, or documents that tech professionals can
+                            view and download after purchasing this program.
+                          </p>
+                          <p className="text-blue-600 text-xs mt-1">
+                            Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT,
+                            ZIP, RAR, XLSX, CSV
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {form.materialUrl && (
+                      <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-green-700 text-sm font-medium">
+                            Material uploaded successfully
+                          </span>
+                        </div>
+                        <a
+                          href={form.materialUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm underline"
+                        >
+                          Preview current material
+                        </a>
+                        <p className="text-green-600 text-xs mt-1">
+                          Tech professionals will be able to download this
+                          material after purchase
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Attachment Required Checkbox for all services */}
+                {form.productType && (
+                  <div className="mt-4">
+                    <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="isAttachmentRequired"
+                        checked={!!form.isAttachmentRequired}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        Attachment Required
+                      </span>
+                    </label>
+                    <p className="text-slate-500 text-sm mt-1 ml-2">
+                      Check if users need to submit attachments for this service
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">

@@ -21,41 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface Product {
-  _id: string;
-  productType: string;
-  productCategoryId: string;
-  productCategoryTitle: string;
-  productSubCategoryId: string;
-  productSubcategoryName: string;
-  service: string;
-  deliveryMode: string;
-  sessionType: string;
-  isRecurring: boolean;
-  programLength: number;
-  mode: string;
-  durationInMinutes: number;
-  minutesPerSession: number;
-  hasClassroom: boolean;
-  hasSession: boolean;
-  hasAssessment: boolean;
-  hasCertificate: boolean;
-  requiresBooking: boolean;
-  requiresEnrollment: boolean;
-  isBookableService: boolean;
-  price: number;
-  discountPercentage: number;
-  description: string;
-  tags: string[];
-  slug: string;
-  iconUrl: string;
-  thumbnailUrl: string;
-  enabled: boolean;
-  instructorId?: string; // Add instructor field
-  createdAt: string;
-  updatedAt: string;
-}
+import { Product } from "@/types/products";
 
 export default function ProductViewPage() {
   const params = useParams();
@@ -100,7 +66,7 @@ export default function ProductViewPage() {
               if (instructorsResponse?.data?.success) {
                 const instructorData =
                   instructorsResponse.data.data.instructors.find(
-                    (i: any) => i._id === productData.instructorId
+                    (i: any) => i.userId === productData.instructorId
                   );
                 setInstructor(instructorData);
               }
@@ -486,6 +452,66 @@ export default function ProductViewPage() {
               </p>
             </div>
 
+            {/* Training Materials */}
+            {product.materialUrl && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+                <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <BookOpen className="w-6 h-6 text-blue-600" />
+                  Training Materials
+                </h2>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-6 h-6 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                        Downloadable Resources
+                      </h3>
+                      <p className="text-slate-600 mb-4">
+                        Tech professionals who purchase this program will have
+                        access to download these training materials, course
+                        content, and resources.
+                      </p>
+                      <a
+                        href={product.materialUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        Preview Materials
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Tags */}
             {product.tags && product.tags.length > 0 && (
               <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
@@ -585,6 +611,25 @@ export default function ProductViewPage() {
                     {product.sessionType}
                   </p>
                 </div>
+                {(product.publicSchedulingUrl || product.schedulingUrl) && (
+                  <div>
+                    <span className="text-sm text-slate-500">
+                      Scheduling URL
+                    </span>
+                    <p className="font-medium text-slate-900">
+                      <a
+                        href={
+                          product.publicSchedulingUrl || product.schedulingUrl
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline break-all"
+                      >
+                        {product.publicSchedulingUrl || product.schedulingUrl}
+                      </a>
+                    </p>
+                  </div>
+                )}
                 <div>
                   <span className="text-sm text-slate-500">Instructor</span>
                   {instructor ? (

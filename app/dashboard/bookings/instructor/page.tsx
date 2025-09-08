@@ -56,7 +56,10 @@ export default function AdminBookingsPage() {
         return;
       }
 
-      const response = await getApiRequest("/api/bookings/admin/all", token);
+      const response = await getApiRequest(
+        "/api/bookings/instructor/my-bookings",
+        token
+      );
       if (response?.data?.success) {
         const bookingsData = response.data.data || [];
         setBookings(bookingsData);
@@ -108,6 +111,9 @@ export default function AdminBookingsPage() {
       ) ||
       (booking.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
       (booking.bookingPurpose?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (booking.productId?.service?.toLowerCase() || "").includes(
         searchTerm.toLowerCase()
       );
 
@@ -371,6 +377,9 @@ export default function AdminBookingsPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white">
                   <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="AcademicService">
+                    Academic Service
+                  </SelectItem>
                   <SelectItem value="Training & Certification">
                     Training & Certification
                   </SelectItem>
@@ -472,12 +481,14 @@ export default function AdminBookingsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge
                           variant={
+                            booking.productType === "AcademicService" ||
                             booking.productType === "Academic Support Services"
                               ? "default"
                               : "secondary"
                           }
                         >
-                          {booking.productType === "Academic Support Services"
+                          {booking.productType === "AcademicService" ||
+                          booking.productType === "Academic Support Services"
                             ? "Academic"
                             : booking.productType === "Training & Certification"
                             ? "Training"
@@ -524,12 +535,28 @@ export default function AdminBookingsPage() {
                     </span>
                   </div>
 
+                  {booking.productId && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <BookOpen className="w-4 h-4" />
+                      <span className="truncate">
+                        Service: {booking.productId.service || "N/A"}
+                      </span>
+                      {booking.productId.price && (
+                        <span className="text-green-600 font-semibold">
+                          ${booking.productId.price}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {booking.instructorId && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <User className="w-4 h-4" />
                       <span className="truncate">
                         Instructor:{" "}
-                        {booking.instructorId.fullName || "Assigned"}
+                        {typeof booking.instructorId === "object"
+                          ? booking.instructorId.fullName || "Assigned"
+                          : "Assigned"}
                       </span>
                     </div>
                   )}
