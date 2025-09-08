@@ -172,6 +172,11 @@ export const dashboardSidebarConfig = {
             href: "/dashboard/enrolled-students",
           },
           {
+            label: "Bookings",
+            icon: BookOpen,
+            href: "/dashboard/bookings/instructor",
+          },
+          {
             label: "Classrooms",
             icon: BookOpen,
             href: "/dashboard/classrooms/instructor",
