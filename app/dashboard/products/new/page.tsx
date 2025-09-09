@@ -435,6 +435,11 @@ export default function CreateProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Only proceed if we're on the last step (Create Product button was clicked)
+    if (step !== steps.length - 1) {
+      return;
+    }
+
     // Enhanced validation for all required fields
     const requiredFields = [
       { field: "productType", label: "Product Type" },
@@ -640,7 +645,7 @@ export default function CreateProductPage() {
                   )}
                 </div>
                 <span
-                  className={`mt-3 hidden md:block text-sm font-semibold transition-all duration-300 ${
+                  className={`mt-3 hidden lg:block text-sm font-semibold transition-all duration-300 ${
                     idx === step
                       ? "text-blue-600"
                       : idx < step
