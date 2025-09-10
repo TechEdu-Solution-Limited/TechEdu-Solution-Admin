@@ -43,7 +43,9 @@ const initialForm = {
   durationInMinutes: 0,
   minutesPerSession: 0,
   price: 0,
+  currency: "gbp",
   discountPercentage: 0,
+  maxParticipants: 1,
   description: "",
   tags: [] as string[],
   slug: "",
@@ -51,7 +53,7 @@ const initialForm = {
   thumbnailUrl: "",
   materialUrl: "", // Add material URL field
   isAttachmentRequired: false, // Add attachment requirement field
-  schedulingUrl: "", // Add scheduling URL field
+  publicSchedulingUrl: "", // Add scheduling URL field
   enabled: true,
   instructorId: "", // Add instructor field
   // API required fields
@@ -80,9 +82,19 @@ const PRODUCT_TYPE_OPTIONS = [
 ];
 
 // Remove static SERVICE_OPTIONS since we'll fetch dynamically
-const DELIVERY_MODE_OPTIONS = ["online", "offline", "hybrid"];
-const SESSION_TYPE_OPTIONS = ["1-on-1", "group", "classroom"];
+const DELIVERY_MODE_OPTIONS = ["online", "physical", "hybrid"];
+const SESSION_TYPE_OPTIONS = ["1-on-1", "group"];
 const MODE_OPTIONS = ["weeks", "days", "hours"];
+const CURRENCY_OPTIONS = [
+  { value: "usd", label: "USD - US Dollar" },
+  { value: "eur", label: "EUR - Euro" },
+  { value: "gbp", label: "GBP - British Pound" },
+  { value: "cad", label: "CAD - Canadian Dollar" },
+  { value: "aud", label: "AUD - Australian Dollar" },
+  { value: "jpy", label: "JPY - Japanese Yen" },
+  { value: "inr", label: "INR - Indian Rupee" },
+  { value: "ngn", label: "NGN - Nigerian Naira" },
+];
 
 export default function CreateProductPage() {
   const [step, setStep] = useState(0);
@@ -446,7 +458,7 @@ export default function CreateProductPage() {
       { field: "category", label: "Product Category" },
       { field: "subcategory", label: "Product Subcategory" },
       { field: "service", label: "Service" },
-      { field: "schedulingUrl", label: "Booking Scheduling Link" },
+      { field: "publicSchedulingUrl", label: "Booking Scheduling Link" },
       { field: "deliveryMode", label: "Delivery Mode" },
       { field: "sessionType", label: "Session Type" },
       { field: "programLength", label: "Program Length" },
@@ -542,14 +554,16 @@ export default function CreateProductPage() {
         productCategoryTitle: form.category || "",
         productSubCategoryId: selectedSubcategory?._id || "",
         productSubcategoryName: form.subcategory || "",
-        schedulingUrl: form.schedulingUrl || "",
+        publicSchedulingUrl: form.publicSchedulingUrl || "",
         durationInMinutes: Number(form.durationInMinutes) || 0,
         minutesPerSession: Number(form.minutesPerSession) || 0,
         // Ensure mode is a valid value - use one of the valid enum values
         mode: form.mode || "weeks",
         // Sanitize number fields
         price: Number(form.price) || 0,
+        currency: form.currency || "gbp",
         discountPercentage: Number(form.discountPercentage) || 0,
+        maxParticipants: Number(form.maxParticipants) || 1,
         programLength: Number(form.programLength) || 0,
         // Convert arrays to strings if needed
         tags: Array.isArray(form.tags) ? form.tags : [],
@@ -781,8 +795,8 @@ export default function CreateProductPage() {
                       Booking Scheduling Link *
                     </label>
                     <Input
-                      name="schedulingUrl"
-                      value={form.schedulingUrl}
+                      name="publicSchedulingUrl"
+                      value={form.publicSchedulingUrl}
                       onChange={handleChange}
                       placeholder="Generate the scheduling link for the service"
                       className="px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
@@ -1296,33 +1310,67 @@ export default function CreateProductPage() {
                 <h2 className="text-lg font-semibold mb-2">
                   Pricing & Duration
                 </h2>
-                <label className="block text-sm font-medium mb-1">
-                  Price{" "}
-                  {!isBookableServiceType(form.productType) && (
-                    <span className="text-slate-500 text-xs">
-                      (Can be 0 for free services)
-                    </span>
-                  )}
-                </label>
-                <Input
-                  name="price"
-                  value={form.price}
-                  onChange={handleChange}
-                  placeholder={
-                    isBookableServiceType(form.productType)
-                      ? "Enter price in dollars (e.g., 99.99)"
-                      : "Enter price in dollars (0 for free services)"
-                  }
-                  type="number"
-                  min={0}
-                  className="rounded-[10px]"
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Price{" "}
+                      {!isBookableServiceType(form.productType) && (
+                        <span className="text-slate-500 text-xs">
+                          (Can be 0 for free services)
+                        </span>
+                      )}
+                    </label>
+                    <Input
+                      name="price"
+                      value={form.price}
+                      onChange={handleChange}
+                      placeholder={
+                        isBookableServiceType(form.productType)
+                          ? "Enter price (e.g., 99.99)"
+                          : "Enter price (0 for free services)"
+                      }
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="rounded-[10px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Currency
+                    </label>
+                    <select
+                      name="currency"
+                      value={form.currency}
+                      onChange={handleChange}
+                      className="w-full border rounded-[10px] p-2"
+                    >
+                      {CURRENCY_OPTIONS.map((currency) => (
+                        <option key={currency.value} value={currency.value}>
+                          {currency.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 {!isBookableServiceType(form.productType) &&
                   form.price === 0 && (
                     <div className="text-green-600 text-sm bg-green-50 p-3 rounded-xl border border-green-200">
                       ✓ This will be marked as a free service
                     </div>
                   )}
+                <label className="block text-sm font-medium mb-1">
+                  Max Participants
+                </label>
+                <Input
+                  name="maxParticipants"
+                  value={form.maxParticipants}
+                  onChange={handleChange}
+                  placeholder="Enter maximum number of participants (e.g., 10)"
+                  type="number"
+                  min={1}
+                  className="rounded-[10px]"
+                />
                 <label className="block text-sm font-medium mb-1">
                   Discount Percentage
                 </label>
@@ -1729,7 +1777,16 @@ export default function CreateProductPage() {
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <span className="font-medium">Price:</span> ${form.price}
+                      <span className="font-medium">Price:</span> {form.price}{" "}
+                      {form.currency.toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Currency:</span>{" "}
+                      {form.currency.toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Max Participants:</span>{" "}
+                      {form.maxParticipants}
                     </div>
                     <div>
                       <span className="font-medium">Discount %:</span>{" "}

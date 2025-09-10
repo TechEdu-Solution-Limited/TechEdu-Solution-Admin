@@ -24,7 +24,9 @@ export interface Product {
   isBookableService: boolean;
   isAttachmentRequired: boolean;
   price: number;
+  currency: string;
   discountPercentage: number;
+  maxParticipants: number;
   description: string;
   tags: string[];
   slug: string;

@@ -23,9 +23,19 @@ const PRODUCT_TYPE_OPTIONS = [
   "Marketing, Consultation & Free Services",
 ];
 
-const DELIVERY_MODE_OPTIONS = ["online", "offline", "hybrid"];
-const SESSION_TYPE_OPTIONS = ["1-on-1", "group", "classroom"];
+const DELIVERY_MODE_OPTIONS = ["online", "physical", "hybrid"];
+const SESSION_TYPE_OPTIONS = ["1-on-1", "group"];
 const MODE_OPTIONS = ["weeks", "days", "hours"];
+const CURRENCY_OPTIONS = [
+  { value: "usd", label: "USD - US Dollar" },
+  { value: "eur", label: "EUR - Euro" },
+  { value: "gbp", label: "GBP - British Pound" },
+  { value: "cad", label: "CAD - Canadian Dollar" },
+  { value: "aud", label: "AUD - Australian Dollar" },
+  { value: "jpy", label: "JPY - Japanese Yen" },
+  { value: "inr", label: "INR - Indian Rupee" },
+  { value: "ngn", label: "NGN - Nigerian Naira" },
+];
 
 export default function ProductEditPage() {
   const params = useParams();
@@ -78,7 +88,9 @@ export default function ProductEditPage() {
             requiresEnrollment: product.requiresEnrollment,
             isBookableService: product.isBookableService,
             price: product.price,
+            currency: product.currency || "gbp",
             discountPercentage: product.discountPercentage,
+            maxParticipants: product.maxParticipants || 1,
             description: product.description,
             tags: product.tags || [],
             slug: product.slug,
@@ -186,7 +198,9 @@ export default function ProductEditPage() {
       const payload = {
         ...form,
         price: Number(form.price) || 0,
+        currency: form.currency || "gbp",
         discountPercentage: Number(form.discountPercentage) || 0,
+        maxParticipants: Number(form.maxParticipants) || 1,
         programLength: Number(form.programLength) || 0,
         durationInMinutes: Number(form.durationInMinutes) || 0,
         minutesPerSession: Number(form.minutesPerSession) || 0,
@@ -625,7 +639,7 @@ export default function ProductEditPage() {
               <h2 className="text-2xl font-bold text-slate-900 mb-6">
                 Pricing & Duration
               </h2>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Price *
@@ -640,6 +654,37 @@ export default function ProductEditPage() {
                     placeholder="0.00 (free) or amount"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Currency
+                  </label>
+                  <select
+                    name="currency"
+                    value={form.currency || "gbp"}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  >
+                    {CURRENCY_OPTIONS.map((currency) => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Max Participants
+                  </label>
+                  <Input
+                    name="maxParticipants"
+                    value={form.maxParticipants || ""}
+                    onChange={handleChange}
+                    type="number"
+                    min={1}
+                    placeholder="Maximum number of participants"
+                    className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   />
                 </div>
                 <div>
