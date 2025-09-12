@@ -52,7 +52,7 @@ interface AdminFormData {
   password: string;
   role: string;
   departments: string[];
-  assignedRegions: string[];
+  // assignedRegions: string[];
   status: string;
   bio: string;
   avatarUrl: string;
@@ -149,7 +149,7 @@ export default function NewUserPage() {
     password: "",
     role: "admin",
     departments: ["Executive"],
-    assignedRegions: [],
+    // assignedRegions: [],
     status: "active",
     bio: "",
     avatarUrl: "",
@@ -279,22 +279,22 @@ export default function NewUserPage() {
     }
   };
 
-  const addRegion = () => {
-    if (newRegion && !adminData.assignedRegions.includes(newRegion)) {
-      handleAdminChange("assignedRegions", [
-        ...adminData.assignedRegions,
-        newRegion,
-      ]);
-      setNewRegion("");
-    }
-  };
+  // const addRegion = () => {
+  //   if (newRegion && !adminData.assignedRegions.includes(newRegion)) {
+  //     handleAdminChange("assignedRegions", [
+  //       ...adminData.assignedRegions,
+  //       newRegion,
+  //     ]);
+  //     setNewRegion("");
+  //   }
+  // };
 
-  const removeRegion = (index: number) => {
-    handleAdminChange(
-      "assignedRegions",
-      adminData.assignedRegions.filter((_, i) => i !== index)
-    );
-  };
+  // const removeRegion = (index: number) => {
+  //   handleAdminChange(
+  //     "assignedRegions",
+  //     adminData.assignedRegions.filter((_, i) => i !== index)
+  //   );
+  // };
 
   // Image upload functions
   const handleImageUpload = async (
@@ -546,10 +546,10 @@ export default function NewUserPage() {
       return;
     }
 
-    if (adminData.assignedRegions.length === 0) {
-      toast.error("Please assign at least one region");
-      return;
-    }
+    // if (adminData.assignedRegions.length === 0) { */
+    //   toast.error("Please assign at least one region");
+    //   return;
+    // }
 
     try {
       setLoading(true);
@@ -569,7 +569,7 @@ export default function NewUserPage() {
           password: "",
           role: "admin",
           departments: ["Executive"],
-          assignedRegions: [],
+          // assignedRegions: [],
           status: "active",
           bio: "",
           avatarUrl: "",
@@ -1727,7 +1727,7 @@ export default function NewUserPage() {
                   </div>
 
                   {/* Assigned Regions */}
-                  <div>
+                  {/* <div>
                     <Label className="flex items-center gap-2">
                       <Globe className="w-4 h-4" />
                       Assigned Regions *
@@ -1772,7 +1772,7 @@ export default function NewUserPage() {
                         </Badge>
                       ))}
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Submit Button */}
                   <div className="flex flex-col sm:flex-row justify-end gap-3">
