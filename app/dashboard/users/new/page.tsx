@@ -148,7 +148,7 @@ export default function NewUserPage() {
     email: "",
     password: "",
     role: "admin",
-    departments: ["Executive"],
+    departments: ["executive"],
     // assignedRegions: [],
     status: "active",
     bio: "",
@@ -1547,7 +1547,7 @@ export default function NewUserPage() {
                         </SelectTrigger>
                         <SelectContent className="bg-white rounded-[10px]">
                           <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="super-admin">
+                          <SelectItem value="superadmin">
                             Super Admin
                           </SelectItem>
                         </SelectContent>
