@@ -581,71 +581,160 @@ export default function ProductCategoriesManagement() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {(showDeleted ? deletedCategories : categories).map(
                         (cat) => (
-                          <tr
-                            key={cat._id}
-                            className="hover:bg-gray-50 transition-colors duration-200"
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">
-                                {cat.title}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {cat.productType}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {showDeleted ? (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  Deleted
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  Active
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex gap-2">
-                                {showDeleted ? (
-                                  <button
-                                    onClick={() => handleRestore(cat._id)}
-                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
-                                    title="Restore"
+                          <React.Fragment key={cat._id}>
+                            {/* Regular Row */}
+                            {editingId !== cat._id && (
+                              <tr className="hover:bg-gray-50 transition-colors duration-200">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {cat.title}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {cat.productType}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {showDeleted ? (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                      Deleted
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      Active
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex gap-2">
+                                    {showDeleted ? (
+                                      <button
+                                        onClick={() => handleRestore(cat._id)}
+                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                                        title="Restore"
+                                      >
+                                        <RotateCcw className="w-4 h-4" />
+                                      </button>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => handleView(cat._id)}
+                                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                          title="View"
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleEdit(cat)}
+                                          className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
+                                          title="Edit"
+                                        >
+                                          <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleDelete(cat._id, cat.title)
+                                          }
+                                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                          title="Delete"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+
+                            {/* Edit Row */}
+                            {editingId === cat._id && !showDeleted && (
+                              <tr className="bg-yellow-50 border-2 border-yellow-200">
+                                <td colSpan={4} className="px-6 py-4">
+                                  <form
+                                    onSubmit={handleEditSave}
+                                    className="space-y-4"
                                   >
-                                    <RotateCcw className="w-4 h-4" />
-                                  </button>
-                                ) : (
-                                  <>
-                                    <button
-                                      onClick={() => handleView(cat._id)}
-                                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                                      title="View"
-                                    >
-                                      <Eye className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleEdit(cat)}
-                                      className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
-                                      title="Edit"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleDelete(cat._id, cat.title)
-                                      }
-                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                                      title="Delete"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Title *
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={editForm.title}
+                                          onChange={(e) =>
+                                            setEditForm((f) => ({
+                                              ...f,
+                                              title: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          required
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Product Type *
+                                        </label>
+                                        <select
+                                          value={editForm.productType}
+                                          onChange={(e) =>
+                                            setEditForm((f) => ({
+                                              ...f,
+                                              productType: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          required
+                                        >
+                                          <option value="">
+                                            Select Product Type
+                                          </option>
+                                          {PRODUCT_TYPE_OPTIONS.map((type) => (
+                                            <option key={type} value={type}>
+                                              {type}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                      <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
+                                      >
+                                        {loading ? (
+                                          <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Saving...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="w-4 h-4" />
+                                            Save Changes
+                                          </>
+                                        )}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingId(null);
+                                          setEditForm(initialForm);
+                                        }}
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center gap-2"
+                                      >
+                                        <X className="w-4 h-4" />
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </form>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         )
                       )}
                       {(showDeleted ? deletedCategories : categories).length ===
@@ -768,85 +857,160 @@ export default function ProductCategoriesManagement() {
                         ? deletedSubcategories
                         : subcategories
                       ).map((subcat) => (
-                        <tr
-                          key={subcat._id}
-                          className="hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {subcat.name}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {subcat.categoryTitle}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {subcat.productType}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {showDeletedSubcategories ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Deleted
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Active
-                              </span>
+                        <React.Fragment key={subcat._id}>
+                          {/* Regular Row */}
+                          {editingSubcategoryId !== subcat._id && (
+                            <tr className="hover:bg-gray-50 transition-colors duration-200">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {subcat.name}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {subcat.categoryTitle}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {subcat.productType}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {showDeletedSubcategories ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    Deleted
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Active
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex gap-2">
+                                  {showDeletedSubcategories ? (
+                                    <button
+                                      onClick={() =>
+                                        handleRestoreSubcategory(subcat._id)
+                                      }
+                                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                                      title="Restore"
+                                    >
+                                      <RotateCcw className="w-4 h-4" />
+                                    </button>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          handleViewSubcategory(subcat._id)
+                                        }
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                        title="View"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleEditSubcategory(subcat)
+                                        }
+                                        className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
+                                        title="Edit"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteSubcategory(
+                                            subcat._id,
+                                            subcat.name
+                                          )
+                                        }
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+
+                          {/* Edit Row */}
+                          {editingSubcategoryId === subcat._id &&
+                            !showDeletedSubcategories && (
+                              <tr className="bg-yellow-50 border-2 border-yellow-200">
+                                <td colSpan={5} className="px-6 py-4">
+                                  <form
+                                    onSubmit={handleEditSubcategorySave}
+                                    className="space-y-4"
+                                  >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Name *
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={editSubcategoryForm.name}
+                                          onChange={(e) =>
+                                            setEditSubcategoryForm((f) => ({
+                                              ...f,
+                                              name: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          required
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Category
+                                        </label>
+                                        <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
+                                          {editSubcategoryForm.categoryTitle}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                      <button
+                                        type="submit"
+                                        disabled={subcategoryLoading}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
+                                      >
+                                        {subcategoryLoading ? (
+                                          <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Saving...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="w-4 h-4" />
+                                            Save Changes
+                                          </>
+                                        )}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingSubcategoryId(null);
+                                          setEditSubcategoryForm(
+                                            initialSubcategoryForm
+                                          );
+                                        }}
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center gap-2"
+                                      >
+                                        <X className="w-4 h-4" />
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </form>
+                                </td>
+                              </tr>
                             )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex gap-2">
-                              {showDeletedSubcategories ? (
-                                <button
-                                  onClick={() =>
-                                    handleRestoreSubcategory(subcat._id)
-                                  }
-                                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
-                                  title="Restore"
-                                >
-                                  <RotateCcw className="w-4 h-4" />
-                                </button>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleViewSubcategory(subcat._id)
-                                    }
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                                    title="View"
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleEditSubcategory(subcat)
-                                    }
-                                    className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
-                                    title="Edit"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteSubcategory(
-                                        subcat._id,
-                                        subcat.name
-                                      )
-                                    }
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                        </React.Fragment>
                       ))}
                       {(showDeletedSubcategories
                         ? deletedSubcategories

@@ -161,6 +161,65 @@ export default function ProductEditPage() {
     }
   };
 
+  const handleImageUpload = async (file: File, type: "icon" | "thumbnail") => {
+    setSaving(true);
+    try {
+      // If there's an existing image, delete it first
+      const currentUrl = type === "icon" ? form.iconUrl : form.thumbnailUrl;
+      if (currentUrl) {
+        try {
+          await deleteFileFromFirebase(currentUrl);
+        } catch (deleteErr) {
+          console.warn(`Failed to delete old ${type}:`, deleteErr);
+          // Continue with upload even if deletion fails
+        }
+      }
+
+      // Upload new image
+      const url = await uploadAssetImage(file, `product-${type}s`);
+      setForm((prev: any) => ({
+        ...prev,
+        [type === "icon" ? "iconUrl" : "thumbnailUrl"]: url,
+      }));
+      setSuccess(
+        `${type === "icon" ? "Icon" : "Thumbnail"} uploaded successfully!`
+      );
+    } catch (err) {
+      setError(`${type === "icon" ? "Icon" : "Thumbnail"} upload failed`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteImage = async (type: "icon" | "thumbnail") => {
+    const currentUrl = type === "icon" ? form.iconUrl : form.thumbnailUrl;
+    if (!currentUrl) return;
+
+    setSaving(true);
+    try {
+      // Delete the file from Firebase Storage
+      await deleteFileFromFirebase(currentUrl);
+
+      // Clear the image URL from the form
+      setForm((prev) => ({
+        ...prev,
+        [type === "icon" ? "iconUrl" : "thumbnailUrl"]: "",
+      }));
+
+      setSuccess(
+        `${type === "icon" ? "Icon" : "Thumbnail"} deleted successfully!`
+      );
+    } catch (err) {
+      setError(
+        `Failed to delete ${
+          type === "icon" ? "icon" : "thumbnail"
+        }. Please try again.`
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -532,6 +591,128 @@ export default function ProductEditPage() {
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
                     required
                   />
+                </div>
+
+                {/* Icon Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Product Icon
+                  </label>
+
+                  {/* Current Icon Display */}
+                  {form.iconUrl && (
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="text-blue-700 text-sm font-medium">
+                            Current Icon
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteImage("icon")}
+                          disabled={saving}
+                          className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                        >
+                          {saving ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={form.iconUrl}
+                          alt="Product icon"
+                          className="w-12 h-12 rounded-lg object-cover border border-blue-200"
+                        />
+                        <a
+                          href={form.iconUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm underline"
+                        >
+                          View full size
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Icon Upload Input */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        await handleImageUpload(file, "icon");
+                      }
+                    }}
+                  />
+                  <p className="text-slate-500 text-sm mt-1">
+                    Upload a square icon image (recommended: 64x64px or
+                    128x128px)
+                  </p>
+                </div>
+
+                {/* Thumbnail Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Product Thumbnail
+                  </label>
+
+                  {/* Current Thumbnail Display */}
+                  {form.thumbnailUrl && (
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-green-700 text-sm font-medium">
+                            Current Thumbnail
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteImage("thumbnail")}
+                          disabled={saving}
+                          className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                        >
+                          {saving ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={form.thumbnailUrl}
+                          alt="Product thumbnail"
+                          className="w-16 h-16 rounded-lg object-cover border border-green-200"
+                        />
+                        <a
+                          href={form.thumbnailUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-800 text-sm underline"
+                        >
+                          View full size
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Thumbnail Upload Input */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        await handleImageUpload(file, "thumbnail");
+                      }
+                    }}
+                  />
+                  <p className="text-slate-500 text-sm mt-1">
+                    Upload a thumbnail image (recommended: 400x300px or 16:9
+                    aspect ratio)
+                  </p>
                 </div>
 
                 <div>

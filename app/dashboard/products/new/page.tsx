@@ -1739,18 +1739,18 @@ export default function CreateProductPage() {
                       <span className="font-medium">Session Type:</span>{" "}
                       {form.sessionType}
                     </div>
-                    <div>
+                    {/* <div>
                       <span className="font-medium">Recurring:</span>{" "}
                       {form.isRecurring ? "Yes" : "No"}
-                    </div>
+                    </div> */}
                     <div>
                       <span className="font-medium">Requires Booking:</span>{" "}
                       {form.requiresBooking ? "Yes" : "No"}
                     </div>
-                    <div>
+                    {/* <div>
                       <span className="font-medium">Requires Enrollment:</span>{" "}
                       {form.requiresEnrollment ? "Yes" : "No"}
-                    </div>
+                    </div> */}
 
                     <div>
                       <span className="font-medium">Has Certificate:</span>{" "}
