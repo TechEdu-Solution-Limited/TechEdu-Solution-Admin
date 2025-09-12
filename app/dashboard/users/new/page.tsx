@@ -568,7 +568,7 @@ export default function NewUserPage() {
           email: "",
           password: "",
           role: "admin",
-          departments: ["Executive"],
+          departments: ["executive"],
           // assignedRegions: [],
           status: "active",
           bio: "",
