@@ -410,7 +410,7 @@ export default function UserManagementPage() {
             >
               <Link href="/dashboard/users/new">
                 <Plus className="w-4 h-4 mr-2" />
-                Add Instructor/Customer Care
+                Add New Staff Member
               </Link>
             </Button>
             <Button
