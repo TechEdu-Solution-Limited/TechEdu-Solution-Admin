@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { deleteApiRequest } from "@/lib/apiFetch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getCurrencySymbol } from "@/lib/constants/currencies";
 
 // Product types from the product creation form
 const PRODUCT_TYPE_OPTIONS = [
@@ -538,7 +539,8 @@ export default function ProductsPage() {
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
                           <div className="text-sm font-bold text-green-600">
-                            ${product.price?.toFixed(2)}
+                            {getCurrencySymbol(product.currency)}
+                            {product.price}
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">

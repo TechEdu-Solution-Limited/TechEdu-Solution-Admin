@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import StarRating from "@/components/ui/star-rating";
 
 interface Session {
   _id: string;
@@ -571,12 +572,14 @@ export default function InstructorSessionsPage() {
                       )}
                     </div>
                     {session.avgRating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-semibold text-slate-900">
-                          {session.avgRating.toFixed(1)}
-                        </span>
-                      </div>
+                      <StarRating
+                        value={session.avgRating}
+                        onChange={() => {}}
+                        size="sm"
+                        showValue={true}
+                        readonly={true}
+                        className="justify-start"
+                      />
                     )}
                   </div>
 
@@ -716,19 +719,23 @@ export default function InstructorSessionsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
                     Average Rating (Optional)
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    step="0.1"
-                    value={avgRating}
-                    onChange={(e) => setAvgRating(e.target.value)}
-                    placeholder="4.5"
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  />
+                  <div className="bg-white/50 border border-slate-200 rounded-2xl p-4">
+                    <StarRating
+                      value={parseFloat(avgRating) || 0}
+                      onChange={(rating) => setAvgRating(rating.toString())}
+                      max={5}
+                      size="lg"
+                      showValue={true}
+                      allowHalf={true}
+                      className="justify-center"
+                    />
+                    <p className="text-xs text-slate-500 text-center mt-2">
+                      Click on a star to rate the session
+                    </p>
+                  </div>
                 </div>
 
                 <div>

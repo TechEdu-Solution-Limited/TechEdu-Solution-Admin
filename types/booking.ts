@@ -5,6 +5,7 @@ export interface Booking {
     service?: string;
     productType?: string;
     price?: number;
+    currency?: string;
   };
   productType:
     | "AcademicService"

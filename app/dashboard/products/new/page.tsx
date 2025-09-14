@@ -22,6 +22,13 @@ import {
   uploadMaterial,
   deleteFileFromFirebase,
 } from "@/lib/firebase";
+import { CURRENCY_OPTIONS } from "@/lib/constants/currencies";
+import {
+  PRODUCT_TYPE_OPTIONS,
+  DELIVERY_MODE_OPTIONS,
+  SESSION_TYPE_OPTIONS,
+  MODE_OPTIONS,
+} from "@/lib/constants/products";
 
 const initialForm = {
   productType: "",
@@ -71,30 +78,7 @@ const steps = [
   "Review & Submit",
 ];
 
-const PRODUCT_TYPE_OPTIONS = [
-  "Training & Certification",
-  "Academic Support Services",
-  "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
-  "Career Connect",
-  "Marketing, Consultation & Free Services",
-];
-
 // Remove static SERVICE_OPTIONS since we'll fetch dynamically
-const DELIVERY_MODE_OPTIONS = ["online", "physical", "hybrid"];
-const SESSION_TYPE_OPTIONS = ["1-on-1", "group"];
-const MODE_OPTIONS = ["weeks", "days", "hours"];
-const CURRENCY_OPTIONS = [
-  { value: "usd", label: "USD - US Dollar" },
-  { value: "eur", label: "EUR - Euro" },
-  { value: "gbp", label: "GBP - British Pound" },
-  { value: "cad", label: "CAD - Canadian Dollar" },
-  { value: "aud", label: "AUD - Australian Dollar" },
-  { value: "jpy", label: "JPY - Japanese Yen" },
-  { value: "inr", label: "INR - Indian Rupee" },
-  { value: "ngn", label: "NGN - Nigerian Naira" },
-];
 
 export default function CreateProductPage() {
   const [step, setStep] = useState(0);

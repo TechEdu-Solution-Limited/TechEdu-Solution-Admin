@@ -21,30 +21,7 @@ import {
   Video,
 } from "lucide-react";
 import Link from "next/link";
-
-interface Classroom {
-  _id: string;
-  bookingId: string;
-  productId: string;
-  productType: string;
-  instructorId?: string;
-  scheduleAt: string;
-  endAt?: string;
-  minutesPerSession?: number;
-  numberOfExpectedParticipants: number;
-  meetingLink?: string;
-  status: string;
-  instructorNotes?: string;
-  internalNotes?: string;
-  completionNotes?: string;
-  attendance?: {
-    present: number;
-    absent: number;
-    total: number;
-  };
-  createdAt: string;
-  updatedAt?: string;
-}
+import { Classroom } from "@/lib/classroom";
 
 export default function InstructorClassroomsPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);

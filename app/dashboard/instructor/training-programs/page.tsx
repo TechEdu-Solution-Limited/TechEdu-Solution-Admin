@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
+import { getCurrencySymbol } from "@/lib/constants/currencies";
 import { useRole } from "@/contexts/RoleContext";
 import { useRouter } from "next/navigation";
 import {
@@ -691,10 +692,11 @@ export default function TrainingProgramsPage() {
                   {/* Price */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-2xl font-bold text-slate-900">
-                      ${program.price}
+                      {getCurrencySymbol(program.currency)}
+                      {program.price}
                     </div>
                     <div className="text-slate-600 text-sm">
-                      {program.currency}
+                      {program.currency.toUpperCase()}
                     </div>
                   </div>
 

@@ -12,30 +12,13 @@ import {
   deleteFileFromFirebase,
 } from "@/lib/firebase";
 import { Product } from "@/types/products";
-
-const PRODUCT_TYPE_OPTIONS = [
-  "Training & Certification",
-  "Academic Support Services",
-  "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
-  "Career Connect",
-  "Marketing, Consultation & Free Services",
-];
-
-const DELIVERY_MODE_OPTIONS = ["online", "physical", "hybrid"];
-const SESSION_TYPE_OPTIONS = ["1-on-1", "group"];
-const MODE_OPTIONS = ["weeks", "days", "hours"];
-const CURRENCY_OPTIONS = [
-  { value: "usd", label: "USD - US Dollar" },
-  { value: "eur", label: "EUR - Euro" },
-  { value: "gbp", label: "GBP - British Pound" },
-  { value: "cad", label: "CAD - Canadian Dollar" },
-  { value: "aud", label: "AUD - Australian Dollar" },
-  { value: "jpy", label: "JPY - Japanese Yen" },
-  { value: "inr", label: "INR - Indian Rupee" },
-  { value: "ngn", label: "NGN - Nigerian Naira" },
-];
+import { CURRENCY_OPTIONS } from "@/lib/constants/currencies";
+import {
+  PRODUCT_TYPE_OPTIONS,
+  DELIVERY_MODE_OPTIONS,
+  SESSION_TYPE_OPTIONS,
+  MODE_OPTIONS,
+} from "@/lib/constants/products";
 
 export default function ProductEditPage() {
   const params = useParams();

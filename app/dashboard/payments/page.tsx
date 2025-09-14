@@ -5,38 +5,8 @@ import { getApiRequest } from "@/lib/apiFetch";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
-
-// Types
-interface Payment {
-  _id: string;
-  userId: string;
-  provider: string;
-  transactionId: string;
-  amount: number;
-  status: string;
-  currency: string;
-  productId: string;
-  jobApplicationId?: string;
-  bookingId?: string;
-  stripeProductId?: string;
-  stripePriceId?: string;
-  couponCode?: string;
-  clientSecret?: string;
-  metadata?: Record<string, any>;
-  webhookReceived: boolean;
-  receiptUrl?: string;
-  productType: string;
-  bookingService?: string;
-  platformRole: string;
-  profileId?: string;
-  isSession: boolean;
-  isClassroom: boolean;
-  isDeleted: boolean;
-  deletedAt?: string;
-  deletedBy?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Payment } from "@/types/payments";
+import { getCurrencySymbol } from "@/lib/constants/currencies";
 
 interface PaymentDetails extends Payment {
   // Additional fields for detailed view if needed
@@ -399,7 +369,7 @@ export default function AdminPaymentsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap font-semibold">
-                      {payment.currency} {(payment.amount / 100).toFixed(2)}
+                      {getCurrencySymbol(payment.currency)} {payment.amount}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span
@@ -524,7 +494,7 @@ export default function AdminPaymentsPage() {
                   </div>
                   <div className="mb-2">
                     <span className="font-medium">Amount:</span>{" "}
-                    {selectedPayment.currency}{" "}
+                    {getCurrencySymbol(selectedPayment.currency)}
                     {selectedPayment.amount.toFixed(2)}
                   </div>
                   <div className="mb-2">
