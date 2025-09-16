@@ -131,14 +131,15 @@ export default function CreateProductPage() {
 
   // Helper function to determine if service is bookable based on product type
   const isBookableServiceType = (productType: string) => {
+    return PRODUCT_TYPE_OPTIONS.includes(productType);
+  };
+
+  // Helper function to check if product type requires training materials
+  const requiresTrainingMaterials = (productType: string) => {
     return [
       "Training & Certification",
       "Academic Support Services",
       "Career Development & Mentorship",
-      "Institutional & Team Services",
-      "AI-Powered or Automation Services",
-      "Career Connect",
-      "Marketing, Consultation & Free Services",
     ].includes(productType);
   };
 
@@ -788,10 +789,7 @@ export default function CreateProductPage() {
                     />
 
                     {/* Material Upload field for Training Programs */}
-                    {(form.productType === "Training & Certification" ||
-                      form.productType === "Academic Support Services" ||
-                      form.productType ===
-                        "Career Development & Mentorship") && (
+                    {requiresTrainingMaterials(form.productType) && (
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">
                           Training Materials *
@@ -1659,10 +1657,7 @@ export default function CreateProductPage() {
                       <span className="font-medium">Service:</span>{" "}
                       {form.service}
                     </div>
-                    {(form.productType === "Training & Certification" ||
-                      form.productType === "Academic Support Services" ||
-                      form.productType ===
-                        "Career Development & Mentorship") && (
+                    {requiresTrainingMaterials(form.productType) && (
                       <div>
                         <span className="font-medium">Training Materials:</span>{" "}
                         {form.materialUrl ? (

@@ -203,8 +203,13 @@ export const dashboardSidebarConfig = {
         items: [
           {
             label: "Notifications",
-            icon: User,
+            icon: Bell,
             href: "/dashboard/notifications",
+          },
+          {
+            label: "Profile",
+            icon: User,
+            href: "/dashboard/profile",
           },
         ],
       },

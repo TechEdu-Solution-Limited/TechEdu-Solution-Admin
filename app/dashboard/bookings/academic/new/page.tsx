@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { postApiRequest, getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/products";
 import { toast } from "react-toastify";
 
 interface Instructor {
@@ -82,16 +83,7 @@ export default function CreateAcademicBookingPage() {
     fullName: "",
   });
 
-  // Product types from the product creation form
-  const PRODUCT_TYPE_OPTIONS = [
-    "Training & Certification",
-    "Academic Support Services",
-    "Career Development & Mentorship",
-    "Institutional & Team Services",
-    "AI-Powered or Automation Services",
-    "Career Connect",
-    "Marketing, Consultation & Free Services",
-  ];
+  // Using centralized constants from lib/constants/products.ts
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);

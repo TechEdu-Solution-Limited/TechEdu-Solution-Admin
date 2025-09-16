@@ -1,6 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { getTokenFromCookies } from "@/lib/cookies";
+import {
+  PLATFORM_ROLE_OPTIONS,
+  PRODUCT_TYPE_OPTIONS,
+  PROVIDER_OPTIONS,
+  STATUS_OPTIONS,
+} from "@/lib/constants/products";
 import { getApiRequest } from "@/lib/apiFetch";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,26 +18,7 @@ interface PaymentDetails extends Payment {
   // Additional fields for detailed view if needed
 }
 
-const STATUS_OPTIONS = ["pending", "success", "failed"];
-const PROVIDER_OPTIONS = ["stripe", "flutterwave", "paystack"];
-const PRODUCT_TYPE_OPTIONS = [
-  "Training & Certification",
-  "Academic Support Services",
-  "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
-  "Career Connect",
-  "Marketing, Consultation & Free Services",
-];
-const PLATFORM_ROLE_OPTIONS = [
-  "student",
-  "individualTechProfessional",
-  "teamTechProfessional",
-  "recruiter",
-  "institution",
-  "admin",
-  "visitor",
-];
+// Using centralized constants from lib/constants/products.ts
 
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);

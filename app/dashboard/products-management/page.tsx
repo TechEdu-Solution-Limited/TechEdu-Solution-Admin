@@ -8,6 +8,11 @@ import {
 } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import {
+  PRODUCT_TYPE_OPTIONS,
+  DELIVERY_MODE_OPTIONS,
+  SESSION_TYPE_OPTIONS,
+} from "@/lib/constants/products";
+import {
   Plus,
   Edit,
   Trash2,
@@ -32,15 +37,7 @@ const initialSubcategoryForm = {
   productType: "",
 };
 
-const PRODUCT_TYPE_OPTIONS = [
-  "Training & Certification",
-  "Academic Support Services",
-  "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
-  "Career Connect",
-  "Marketing, Consultation & Free Services",
-];
+// Using centralized constants from lib/constants/products.ts
 
 export default function ProductCategoriesManagement() {
   // Categories state

@@ -2,10 +2,11 @@ export const PRODUCT_TYPE_OPTIONS = [
   "Training & Certification",
   "Academic Support Services",
   "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
+  "Corporate & Business Consultancy",
   "Career Connect",
-  "Marketing, Consultation & Free Services",
+  // "Institutional & Team Services",
+  // "AI-Powered or Automation Services",
+  // "Marketing, Consultation & Free Services",
 ];
 
 export const DELIVERY_MODE_OPTIONS = ["online", "physical", "hybrid"];

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { postApiRequest, getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/products";
 import {
   Calendar,
   Clock,
@@ -45,15 +46,7 @@ interface ClassroomAttendanceForm {
   numberOfExpectedParticipants: number;
 }
 
-const PRODUCT_TYPE_OPTIONS = [
-  "Training & Certification",
-  "Academic Support Services",
-  "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
-  "Career Connect",
-  "Marketing, Consultation & Free Services",
-];
+// Using centralized constants from lib/constants/products.ts
 
 const BOOKER_TYPE_OPTIONS = ["individual", "team", "organization"];
 const PLATFORM_ROLE_OPTIONS = [

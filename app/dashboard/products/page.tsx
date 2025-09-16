@@ -22,17 +22,9 @@ import Link from "next/link";
 import { deleteApiRequest } from "@/lib/apiFetch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrencySymbol } from "@/lib/constants/currencies";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/products";
 
-// Product types from the product creation form
-const PRODUCT_TYPE_OPTIONS = [
-  "Training & Certification",
-  "Academic Support Services",
-  "Career Development & Mentorship",
-  "Institutional & Team Services",
-  "AI-Powered or Automation Services",
-  "Career Connect",
-  "Marketing, Consultation & Free Services",
-];
+// Using centralized constants from lib/constants/products.ts
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);

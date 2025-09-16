@@ -20,9 +20,19 @@ import {
   MODE_OPTIONS,
 } from "@/lib/constants/products";
 
+// Helper function to check if product type requires training materials
+const requiresTrainingMaterials = (productType: string) => {
+  return [
+    "Training & Certification",
+    "Academic Support Services",
+    "Career Development & Mentorship",
+  ].includes(productType);
+};
+
 export default function ProductEditPage() {
   const params = useParams();
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -413,132 +423,134 @@ export default function ProductEditPage() {
                 </div>
 
                 {/* Material Upload field for Training Programs */}
-                {(form.productType === "Training & Certification" ||
-                  form.productType === "Academic Support Services" ||
-                  form.productType === "Career Development & Mentorship") && (
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Training Materials *
-                    </label>
+                {form.productType &&
+                  requiresTrainingMaterials(form.productType) && (
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Training Materials *
+                      </label>
 
-                    {/* Current Material Display */}
-                    {form.materialUrl && (
-                      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-green-700 text-sm font-medium">
-                              Current Material
-                            </span>
+                      {/* Current Material Display */}
+                      {form.materialUrl && (
+                        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-green-700 text-sm font-medium">
+                                Current Material
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleDeleteMaterial}
+                              disabled={saving}
+                              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                            >
+                              {saving ? "Deleting..." : "Delete"}
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={handleDeleteMaterial}
-                            disabled={saving}
-                            className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          <a
+                            href={form.materialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm underline"
                           >
-                            {saving ? "Deleting..." : "Delete"}
-                          </button>
+                            Preview current material
+                          </a>
+                          <p className="text-green-600 text-xs mt-1">
+                            Tech professionals will be able to download this
+                            material after purchase
+                          </p>
                         </div>
-                        <a
-                          href={form.materialUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm underline"
-                        >
-                          Preview current material
-                        </a>
-                        <p className="text-green-600 text-xs mt-1">
-                          Tech professionals will be able to download this
-                          material after purchase
-                        </p>
-                      </div>
-                    )}
+                      )}
 
-                    {/* File Upload Input */}
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
-                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setSaving(true);
-                          try {
-                            // If there's an existing material, delete it first
-                            if (form.materialUrl) {
-                              try {
-                                await deleteFileFromFirebase(form.materialUrl);
-                              } catch (deleteErr) {
-                                console.warn(
-                                  "Failed to delete old material:",
-                                  deleteErr
-                                );
-                                // Continue with upload even if deletion fails
+                      {/* File Upload Input */}
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                        className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSaving(true);
+                            try {
+                              // If there's an existing material, delete it first
+                              if (form.materialUrl) {
+                                try {
+                                  await deleteFileFromFirebase(
+                                    form.materialUrl
+                                  );
+                                } catch (deleteErr) {
+                                  console.warn(
+                                    "Failed to delete old material:",
+                                    deleteErr
+                                  );
+                                  // Continue with upload even if deletion fails
+                                }
                               }
+
+                              // Upload new material
+                              const url = await uploadMaterial(
+                                file,
+                                "course-materials"
+                              );
+                              setForm((prev: any) => ({
+                                ...prev,
+                                materialUrl: url,
+                              }));
+                              setSuccess("Material uploaded successfully!");
+                            } catch (err) {
+                              setError("Material upload failed");
+                            } finally {
+                              setSaving(false);
                             }
-
-                            // Upload new material
-                            const url = await uploadMaterial(
-                              file,
-                              "course-materials"
-                            );
-                            setForm((prev: any) => ({
-                              ...prev,
-                              materialUrl: url,
-                            }));
-                            setSuccess("Material uploaded successfully!");
-                          } catch (err) {
-                            setError("Material upload failed");
-                          } finally {
-                            setSaving(false);
                           }
-                        }
-                      }}
-                    />
+                        }}
+                      />
 
-                    {/* Info Box */}
-                    <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                      <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg
-                            className="w-3 h-3 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-blue-800 text-sm font-medium mb-1">
-                            For Tech Professionals
-                          </p>
-                          <p className="text-blue-700 text-sm">
-                            Upload training materials, course content,
-                            resources, or documents that tech professionals can
-                            view and download after purchasing this program.
-                          </p>
-                          <p className="text-blue-600 text-xs mt-1">
-                            Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT,
-                            ZIP, RAR, XLSX, CSV
-                          </p>
-                          {form.materialUrl && (
-                            <p className="text-blue-600 text-xs mt-2 font-medium">
-                              💡 Uploading a new file will replace the current
-                              material
+                      {/* Info Box */}
+                      <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                        <div className="flex items-start gap-3">
+                          <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg
+                              className="w-3 h-3 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-blue-800 text-sm font-medium mb-1">
+                              For Tech Professionals
                             </p>
-                          )}
+                            <p className="text-blue-700 text-sm">
+                              Upload training materials, course content,
+                              resources, or documents that tech professionals
+                              can view and download after purchasing this
+                              program.
+                            </p>
+                            <p className="text-blue-600 text-xs mt-1">
+                              Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT,
+                              ZIP, RAR, XLSX, CSV
+                            </p>
+                            {form.materialUrl && (
+                              <p className="text-blue-600 text-xs mt-2 font-medium">
+                                💡 Uploading a new file will replace the current
+                                material
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Attachment Required Checkbox for all services */}
                 {form.productType && (
