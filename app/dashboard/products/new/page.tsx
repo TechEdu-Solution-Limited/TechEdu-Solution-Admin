@@ -42,7 +42,7 @@ const initialForm = {
   requiresEnrollment: false,
   hasCertificate: false,
   hasClassroom: false,
-  hasSession: true,
+  hasSession: false,
   hasAssessment: false,
   isBookableService: false,
   programLength: 0,
@@ -559,7 +559,7 @@ export default function CreateProductPage() {
         slug: form.slug || "",
         // Boolean fields with defaults
         hasClassroom: form.hasClassroom || false,
-        hasSession: form.hasSession || true,
+        hasSession: form.hasSession || false,
         hasAssessment: form.hasAssessment || false,
         isBookableService: isBookableServiceType(form.productType),
         requiresBooking: form.requiresBooking || false,
@@ -1261,9 +1261,9 @@ export default function CreateProductPage() {
                 </select>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   {[
-                    { key: "isRecurring", label: "Recurring" },
+                    // { key: "isRecurring", label: "Recurring" },
                     { key: "requiresBooking", label: "Requires Booking" },
-                    { key: "requiresEnrollment", label: "Requires Enrollment" },
+                    // { key: "requiresEnrollment", label: "Requires Enrollment" },
                     { key: "hasCertificate", label: "Has Certificate" },
                     { key: "hasClassroom", label: "Has Classroom" },
                     { key: "hasSession", label: "Has Session" },

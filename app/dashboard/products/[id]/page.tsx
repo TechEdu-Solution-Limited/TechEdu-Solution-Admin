@@ -703,14 +703,14 @@ export default function ProductViewPage() {
                   )}
                   <span className="text-slate-700">Booking Required</span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   {product.requiresEnrollment ? (
                     <CheckCircle className="w-5 h-5 text-green-600" />
                   ) : (
                     <XCircle className="w-5 h-5 text-red-500" />
                   )}
                   <span className="text-slate-700">Enrollment Required</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-3">
                   {product.isBookableService ? (
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -719,14 +719,14 @@ export default function ProductViewPage() {
                   )}
                   <span className="text-slate-700">Bookable Service</span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   {product.isRecurring ? (
                     <CheckCircle className="w-5 h-5 text-green-600" />
                   ) : (
                     <XCircle className="w-5 h-5 text-red-500" />
                   )}
                   <span className="text-slate-700">Recurring</span>
-                </div>
+                </div> */}
               </div>
             </div>
 

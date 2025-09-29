@@ -1,8 +1,9 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getStorage,
   ref,
   uploadBytes,
+  uploadBytesResumable,
   getDownloadURL,
   deleteObject,
   listAll,
@@ -22,8 +23,8 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (prevent duplicate apps)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firebase Storage
 export const storage = getStorage(app);
@@ -208,6 +209,97 @@ export const getFileMetadata = async (
     safeConsole.error("Error getting file metadata:", error);
     throw new Error(`Failed to get file metadata: ${error}`);
   }
+};
+
+// Enhanced upload with progress tracking
+export const uploadFileWithProgress = async (
+  file: File,
+  folder: StorageFolder,
+  subfolder?: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  try {
+    const fileName = generateFileName(file.name);
+    const fullPath = subfolder
+      ? `${folder}/${subfolder}/${fileName}`
+      : `${folder}/${fileName}`;
+    const storageRef = ref(storage, fullPath);
+
+    // Upload with progress tracking
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    return new Promise((resolve, reject) => {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress?.(progress);
+        },
+        (error) => {
+          safeConsole.error("Upload failed:", error);
+          reject(new Error(`Upload failed: ${error.message}`));
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            safeConsole.log(`File uploaded successfully: ${fullPath}`);
+            resolve(downloadURL);
+          } catch (error) {
+            safeConsole.error("Failed to get download URL:", error);
+            reject(new Error(`Failed to get download URL: ${error}`));
+          }
+        }
+      );
+    });
+  } catch (error) {
+    safeConsole.error("Error uploading to Firebase:", error);
+    throw new Error(`Failed to upload file to Firebase: ${error}`);
+  }
+};
+
+// File type validation
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const DOCUMENT_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "application/zip",
+];
+
+const validateFileType = (file: File, folder: StorageFolder): boolean => {
+  switch (folder) {
+    case STORAGE_FOLDERS.ASSETS:
+      return IMAGE_TYPES.includes(file.type);
+    case STORAGE_FOLDERS.ATTACHMENTS:
+    case STORAGE_FOLDERS.MATERIALS:
+      return [...IMAGE_TYPES, ...DOCUMENT_TYPES].includes(file.type);
+    default:
+      return false;
+  }
+};
+
+// Enhanced upload with validation
+export const uploadFileWithValidation = async (
+  file: File,
+  folder: StorageFolder,
+  subfolder?: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  // Validate file type
+  if (!validateFileType(file, folder)) {
+    throw new Error(`Invalid file type for ${folder} folder`);
+  }
+
+  // Check file size (5MB for images, 20MB for documents)
+  const maxSize =
+    folder === STORAGE_FOLDERS.ASSETS ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+  if (file.size > maxSize) {
+    throw new Error(`File size exceeds ${maxSize / (1024 * 1024)}MB limit`);
+  }
+
+  return uploadFileWithProgress(file, folder, subfolder, onProgress);
 };
 
 // Legacy functions for backward compatibility

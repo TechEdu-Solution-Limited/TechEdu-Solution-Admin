@@ -13,6 +13,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ThemeProvider } from "next-themes";
 import InternetCheck from "@/utils/internetCheck";
+import NoSSR from "@/components/NoSSR";
+import ClientOnly from "@/components/ClientOnly";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -107,7 +109,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${rubik.className} antialiased`}>
+      <body
+        className={`${rubik.className} antialiased`}
+        suppressHydrationWarning={true}
+      >
         {/* <ThemeProvider attribute="class" defaultTheme="system" enableSystem> */}
         <RoleProvider>
           <CartProvider>
@@ -117,23 +122,29 @@ export default function RootLayout({
                   {/* <Header /> */}
                   {children}
                   {/* <Footer /> */}
-                  <CookieConsent />
-                  <ToastContainer
-                    position="top-right"
-                    autoClose={3000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                  />
+                  <ClientOnly>
+                    <CookieConsent />
+                  </ClientOnly>
+                  <ClientOnly>
+                    <ToastContainer
+                      position="top-right"
+                      autoClose={3000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="light"
+                    />
+                  </ClientOnly>
                 </ProductProvider>
               </ProfileProvider>
             </CookieConsentProvider>
-            <InternetCheck />
+            <ClientOnly>
+              <InternetCheck />
+            </ClientOnly>
           </CartProvider>
         </RoleProvider>
         {/* </ThemeProvider> */}
