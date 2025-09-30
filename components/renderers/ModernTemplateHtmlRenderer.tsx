@@ -14,19 +14,14 @@ import {
   SECTION_ORDER,
   SKILL_LEVELS,
   LANGUAGE_LEVELS,
+  FONTS,
 } from "@/utils/templateConstants";
 import Link from "next/link";
 
 export function ModernTemplateHtmlRenderer({
   data,
   template,
-  leftColumnSections = [
-    "professional-summary",
-    "skills",
-    "languages",
-    "awards",
-    "certifications",
-  ],
+  leftColumnSections = ["skills", "languages", "awards", "certifications"],
 }: {
   data: ResumeSection[];
   template: TemplateLayout;
@@ -63,6 +58,7 @@ export function ModernTemplateHtmlRenderer({
           pageBreakInside: "avoid",
           breakInside: "avoid",
           marginBottom: "20px",
+          fontFamily: FONTS.html.default,
         } as React.CSSProperties
       }
     >
@@ -326,11 +322,13 @@ export function ModernTemplateHtmlRenderer({
                           items.map((item: any, i: number) => (
                             <span
                               key={i}
-                              className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                              className="text-white px-2 py-1 rounded text-xs"
                               style={{
                                 fontFamily: mapFontFamily(
                                   template.styles.typography.fontFamily
                                 ),
+                                backgroundColor:
+                                  template.styles.colors.primary || "#1e40af",
                               }}
                             >
                               {item.name}
@@ -349,11 +347,13 @@ export function ModernTemplateHtmlRenderer({
                           items.map((item: any, i: number) => (
                             <span
                               key={i}
-                              className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                              className="text-white px-2 py-1 rounded text-xs"
                               style={{
                                 fontFamily: mapFontFamily(
                                   template.styles.typography.fontFamily
                                 ),
+                                backgroundColor:
+                                  template.styles.colors.primary || "#1e40af",
                               }}
                             >
                               {item.name}
@@ -548,6 +548,25 @@ export function ModernTemplateHtmlRenderer({
                             } as React.CSSProperties
                           }
                         >
+                          {/* Professional Summary */}
+                          {item.summary &&
+                            section.type === "professional-summary" && (
+                              <div
+                                style={{
+                                  color: template.styles.colors.text,
+                                  fontFamily: mapFontFamily(
+                                    template.styles.typography.fontFamily
+                                  ),
+                                  fontSize: `${template.styles.typography.bodySize}px`,
+                                  lineHeight:
+                                    template.styles.typography.lineHeight,
+                                }}
+                                dangerouslySetInnerHTML={{
+                                  __html: item.summary,
+                                }}
+                              />
+                            )}
+
                           {/* Work Experience */}
                           {item.title && item.company && (
                             <div

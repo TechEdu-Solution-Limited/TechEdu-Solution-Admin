@@ -20,7 +20,7 @@ export default function CustomSectionsSection({
 }: CustomSectionsSectionProps) {
   return (
     <GenericSection
-      title="Custom Sections"
+      title="/* Custom Sections */"
       items={customSections}
       emptyStateIcon={Settings2}
       emptyStateTitle="No custom sections added yet"
@@ -39,7 +39,7 @@ export default function CustomSectionsSection({
               type="text"
               value={section.title}
               onChange={(e) => onUpdate(section.id, "title", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Section title"
             />
           </div>

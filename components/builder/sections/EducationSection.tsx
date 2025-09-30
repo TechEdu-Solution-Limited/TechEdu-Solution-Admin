@@ -30,7 +30,7 @@ export default function EducationSection({
 
   return (
     <AccordionSection
-      title="Education"
+      title="/* Education */"
       items={educations}
       emptyStateIcon={GraduationCap}
       emptyStateTitle="No education added yet"
@@ -50,7 +50,7 @@ export default function EducationSection({
               type="text"
               value={edu.institution}
               onChange={(e) => onUpdate(edu.id, "institution", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="University/School name"
             />
           </div>
@@ -62,7 +62,7 @@ export default function EducationSection({
               type="text"
               value={edu.degree}
               onChange={(e) => onUpdate(edu.id, "degree", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Bachelor's, Master's, etc."
             />
           </div>
@@ -74,7 +74,7 @@ export default function EducationSection({
               type="text"
               value={edu.field || ""}
               onChange={(e) => onUpdate(edu.id, "field", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Computer Science, Business, etc."
             />
           </div>
@@ -86,7 +86,7 @@ export default function EducationSection({
               type="text"
               value={edu.location || ""}
               onChange={(e) => onUpdate(edu.id, "location", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="City, State"
             />
           </div>
@@ -98,7 +98,7 @@ export default function EducationSection({
               type="month"
               value={edu.startDate}
               onChange={(e) => onUpdate(edu.id, "startDate", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
           <div className="flex items-center">
@@ -121,7 +121,7 @@ export default function EducationSection({
               value={edu.endDate || ""}
               onChange={(e) => onUpdate(edu.id, "endDate", e.target.value)}
               disabled={edu.current}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
             />
           </div>
           <div>
@@ -132,7 +132,7 @@ export default function EducationSection({
               type="text"
               value={edu.gpa || ""}
               onChange={(e) => onUpdate(edu.id, "gpa", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="3.8/4.0"
             />
           </div>

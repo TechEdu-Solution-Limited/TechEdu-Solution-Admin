@@ -14,20 +14,21 @@ export function ClassicTemplatePlaceholder({
       className="mx-auto bg-white shadow-lg"
       style={
         {
-          width: LAYOUT.a4Width,
-          minHeight: LAYOUT.a4Height,
-          maxWidth: LAYOUT.maxWidth,
+          width: "210mm", // A4 width
+          minHeight: "297mm", // A4 height
+          maxWidth: "210mm", // Ensure it doesn't exceed A4 width
           pageBreakInside: "avoid",
           breakInside: "avoid",
-          transform: `scale(${LAYOUT.scale})`,
+          // Responsive scaling for smaller screens
+          transform: "scale(0.8)",
           transformOrigin: "top center",
-          marginBottom: `${SPACING.xl}px`,
+          marginBottom: "20px",
         } as React.CSSProperties
       }
     >
       {/* Header Placeholder */}
       <div
-        className="flex justify-between items-start p-8"
+        className="flex justify-between items-start p-8 bg-gray-50 border-b-2 border-red-600"
         style={{
           backgroundColor: template.styles.colors.headerBackground || "#f8fafc",
           borderBottom: `2px solid ${
@@ -37,32 +38,18 @@ export function ClassicTemplatePlaceholder({
       >
         {/* Left Side - Image, Name, Title, Contact */}
         <div className="flex items-start space-x-4">
-          {/* Profile Image Placeholder */}
-          <div
-            className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center"
-            style={{
-              backgroundColor: "#e5e7eb",
-            }}
-          >
-            <svg
-              className="w-8 h-8 text-gray-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-
-          {/* Name and Title */}
+          {/* {personalInfo.data.image && (
+            <img
+              src={personalInfo.data.image}
+              alt="Profile"
+              className="w-24 h-24 rounded-full object-cover border-2 border-gray-300 shadow-sm"
+            />
+          )} */}
           <div className="flex flex-col">
             <h1
-              className="text-4xl font-bold mb-2"
+              className="text-4xl font-bold text-gray-800 mb-2"
               style={{
-                color: template.styles.colors.text || "#000000",
+                color: template.styles.colors.text,
                 fontFamily: mapFontFamily(
                   template.styles.typography.fontFamily
                 ),
@@ -71,9 +58,9 @@ export function ClassicTemplatePlaceholder({
               John Doe
             </h1>
             <p
-              className="text-xl text-gray-600 mb-4"
+              className="text-xl text-gray-600 mb-4 font-medium"
               style={{
-                color: template.styles.colors.secondary || "#666666",
+                color: template.styles.colors.secondary,
                 fontFamily: mapFontFamily(
                   template.styles.typography.fontFamily
                 ),
@@ -81,17 +68,18 @@ export function ClassicTemplatePlaceholder({
             >
               Software Engineer
             </p>
-            <div className="space-y-1 text-sm">
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Email:</span>
+
+            <div className="space-y-1">
+              <div className="text-sm text-gray-700">
+                <span className="font-semibold text-gray-800">Email: </span>
                 <span>john.doe@email.com</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Phone:</span>
+              <div className="text-sm text-gray-700">
+                <span className="font-semibold text-gray-800">Phone: </span>
                 <span>+1 (555) 123-4567</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">Location:</span>
+              <div className="text-sm text-gray-700">
+                <span className="font-semibold text-gray-800">Location: </span>
                 <span>New York, NY</span>
               </div>
             </div>
@@ -100,169 +88,198 @@ export function ClassicTemplatePlaceholder({
 
         {/* Right Side - Social Links */}
         <div className="flex flex-col space-y-2 text-right">
-          <div className="space-y-1">
+          <div className="space-y-2 mt-2">
             <div className="text-sm">
-              <span className="font-semibold">LinkedIn: </span>
-              <span className="text-blue-600">linkedin.com/in/johndoe</span>
+              <span className="font-semibold text-gray-800">LinkedIn: </span>
+              <span className="text-blue-600 hover:underline hover:text-blue-800">
+                linkedin.com/in/johndoe
+              </span>
             </div>
             <div className="text-sm">
-              <span className="font-semibold">GitHub: </span>
-              <span className="text-gray-600">github.com/johndoe</span>
+              <span className="font-semibold text-gray-800">GitHub: </span>
+              <span className="text-blue-600 hover:underline hover:text-blue-800">
+                github.com/johndoe
+              </span>
             </div>
             <div className="text-sm">
-              <span className="font-semibold">Website: </span>
-              <span className="text-blue-600">johndoe.dev</span>
+              <span className="font-semibold text-gray-800">Website: </span>
+              <span className="text-blue-600 hover:underline hover:text-blue-800">
+                johndoe.dev
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Placeholder */}
-      <div className="py-8 px-8">
-        <div className="space-y-6">
-          {/* Professional Summary Placeholder */}
-          <div>
-            <h2
-              className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 mb-4"
+      {/* Main Content */}
+      <div className="py-8 px-8 space-y-6">
+        {/* Professional Summary Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 border-red-600"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Professional Summary
+          </h2>
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-4/5"></div>
+            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+
+        {/* Work Experience Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 border-red-600"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Work Experience
+          </h2>
+          <div className="space-y-1">
+            <div className="flex justify-between items-start">
+              <p
+                className="font-semibold"
+                style={{
+                  color: template.styles.colors.text,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize}px`,
+                }}
+              >
+                Senior Software Engineer —{" "}
+                <span className="italic">Tech Company Inc.</span>
+              </p>
+              <p
+                className="text-xs text-gray-500"
+                style={{
+                  color: template.styles.colors.secondary,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                }}
+              >
+                2020 – Present
+              </p>
+            </div>
+            <p
+              className="text-xs text-gray-500"
               style={{
-                borderLeftColor: template.styles.colors.primary || "#dc2626",
-                color: template.styles.colors.text || "#000000",
+                color: template.styles.colors.secondary,
                 fontFamily: mapFontFamily(
                   template.styles.typography.fontFamily
                 ),
-                fontSize: `${template.styles.typography.headingSize}px`,
               }}
             >
-              Professional Summary
-            </h2>
-            <div className="space-y-2">
-              <div className="h-3 bg-gray-200 rounded w-full"></div>
-              <div className="h-3 bg-gray-200 rounded w-4/5"></div>
-              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+              San Francisco, CA
+            </p>
+            <div className="space-y-1 mt-2">
+              <div className="h-2 bg-gray-200 rounded w-full"></div>
+              <div className="h-2 bg-gray-200 rounded w-4/5"></div>
+              <div className="h-2 bg-gray-200 rounded w-3/4"></div>
             </div>
           </div>
+        </div>
 
-          {/* Work Experience Placeholder */}
-          <div>
-            <h2
-              className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 mb-4"
+        {/* Education Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 border-red-600"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Education
+          </h2>
+          <div className="space-y-1">
+            <div className="flex justify-between items-start">
+              <p
+                className="font-semibold"
+                style={{
+                  color: template.styles.colors.text,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize}px`,
+                }}
+              >
+                Bachelor of Computer Science —{" "}
+                <span className="italic">University of Technology</span>
+              </p>
+              <p
+                className="text-xs text-gray-500"
+                style={{
+                  color: template.styles.colors.secondary,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                }}
+              >
+                2016 – 2020
+              </p>
+            </div>
+            <p
+              className="text-xs text-gray-500"
               style={{
-                borderLeftColor: template.styles.colors.primary || "#dc2626",
-                color: template.styles.colors.text || "#000000",
+                color: template.styles.colors.secondary,
                 fontFamily: mapFontFamily(
                   template.styles.typography.fontFamily
                 ),
-                fontSize: `${template.styles.typography.headingSize}px`,
               }}
             >
-              Work Experience
-            </h2>
-            <div className="space-y-4">
-              {[1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold">
-                      Senior Software Engineer
-                    </h3>
-                    <span className="text-sm text-gray-600">
-                      2020 - Present
-                    </span>
-                  </div>
-                  <p className="text-blue-600 font-medium mb-1">
-                    Tech Company Inc.
-                  </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    San Francisco, CA
-                  </p>
-                  <div className="space-y-1">
-                    <div className="h-2 bg-gray-200 rounded w-full"></div>
-                    <div className="h-2 bg-gray-200 rounded w-4/5"></div>
-                    <div className="h-2 bg-gray-200 rounded w-3/4"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+              San Francisco, CA • GPA: 3.8/4.0
+            </p>
           </div>
+        </div>
 
-          {/* Education Placeholder */}
-          <div>
-            <h2
-              className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 mb-4"
-              style={{
-                borderLeftColor: template.styles.colors.primary || "#dc2626",
-                color: template.styles.colors.text || "#000000",
-                fontFamily: mapFontFamily(
-                  template.styles.typography.fontFamily
-                ),
-                fontSize: `${template.styles.typography.headingSize}px`,
-              }}
-            >
-              Education
-            </h2>
-            <div className="space-y-3">
-              {[1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500"
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="text-lg font-semibold">
-                      Bachelor of Computer Science
-                    </h3>
-                    <span className="text-sm text-gray-600">2016 - 2020</span>
-                  </div>
-                  <p className="text-blue-600 font-medium">
-                    University of Technology
-                  </p>
-                  <p className="text-sm text-gray-600">GPA: 3.8/4.0</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Skills Placeholder */}
-          <div>
-            <h2
-              className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 mb-4"
-              style={{
-                borderLeftColor: template.styles.colors.primary || "#dc2626",
-                color: template.styles.colors.text || "#000000",
-                fontFamily: mapFontFamily(
-                  template.styles.typography.fontFamily
-                ),
-                fontSize: `${template.styles.typography.headingSize}px`,
-              }}
-            >
-              Skills
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              {[
-                "JavaScript",
-                "React",
-                "Node.js",
-                "Python",
-                "SQL",
-                "AWS",
-                "Docker",
-                "Git",
-              ].map((skill, index) => (
-                <div
-                  key={index}
-                  className="px-3 py-2 rounded-md text-sm font-medium shadow-sm"
-                  style={{
-                    backgroundColor:
-                      template.styles.colors.primary || "#dc2626",
-                    color: "#ffffff",
-                  }}
-                >
-                  {skill}
-                </div>
-              ))}
-            </div>
+        {/* Skills Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-3 w-full border-l-4 border-red-600"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Skills
+          </h2>
+          <div className="flex flex-wrap gap-6">
+            {[
+              "JavaScript",
+              "React",
+              "Node.js",
+              "Python",
+              "SQL",
+              "AWS",
+              "Docker",
+              "Git",
+            ].map((skill, index) => (
+              <span
+                key={index}
+                className="bg-blue-600 text-white px-2 py-1 rounded"
+                style={{
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize}px`,
+                }}
+              >
+                {skill}
+              </span>
+            ))}
           </div>
         </div>
       </div>

@@ -14,255 +14,306 @@ export function MinimalTemplatePlaceholder({
       className="mx-auto bg-white shadow-lg"
       style={
         {
-          width: LAYOUT.a4Width,
-          minHeight: LAYOUT.a4Height,
-          maxWidth: LAYOUT.maxWidth,
+          width: "210mm", // A4 width
+          minHeight: "297mm", // A4 height
+          maxWidth: "210mm", // Ensure it doesn't exceed A4 width
           pageBreakInside: "avoid",
           breakInside: "avoid",
-          transform: `scale(${LAYOUT.scale})`,
+          overflow: "hidden",
+          transform: "scale(0.8)",
           transformOrigin: "top center",
-          marginBottom: `${SPACING.xl}px`,
+          marginBottom: "20px",
         } as React.CSSProperties
       }
     >
       {/* Header Placeholder */}
       <div
-        className="py-8 px-8"
+        className="flex justify-between items-start p-8"
         style={{
           backgroundColor: template.styles.colors.headerBackground || "#f8fafc",
           borderBottom: `2px solid ${
-            template.styles.colors.primary || "#059669"
+            template.styles.colors.primary || "#dc2626"
           }`,
         }}
       >
-        <div className="text-center">
-          <h1
-            className="text-5xl font-bold mb-2"
-            style={{
-              color: template.styles.colors.text || "#000000",
-              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-            }}
-          >
-            John Doe
-          </h1>
-          <p
-            className="text-2xl text-gray-600 mb-4"
-            style={{
-              color: template.styles.colors.secondary || "#666666",
-              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-            }}
-          >
-            Software Engineer
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-            <div className="flex items-center justify-center space-x-1 min-w-0 flex-shrink-0">
-              <span>📧</span>
-              <span className="text-xs truncate">john.doe@email.com</span>
+        {/* Left Side - Image, Name, Title, Contact */}
+        <div className="flex items-start space-x-4">
+          {/* {personalInfo.data.image && (
+            <img
+              src={personalInfo.data.image}
+              alt="Profile"
+              className="w-20 h-20 rounded-full object-cover"
+            />
+          )} */}
+          <div className="flex flex-col">
+            <h1
+              className="text-4xl font-bold"
+              style={{
+                color: template.styles.colors.text,
+                fontFamily: mapFontFamily(
+                  template.styles.typography.fontFamily
+                ),
+              }}
+            >
+              John Doe
+            </h1>
+            <p
+              className="text-lg text-gray-600 mt-1 italic"
+              style={{
+                color: template.styles.colors.secondary,
+                fontFamily: mapFontFamily(
+                  template.styles.typography.fontFamily
+                ),
+              }}
+            >
+              Software Engineer
+            </p>
+
+            <div className="text-sm">
+              <span className="font-semibold">Email: </span>
+              <span>john.doe@email.com</span>
             </div>
-            <div className="flex items-center justify-center space-x-1 min-w-0 flex-shrink-0">
-              <span>📞</span>
-              <span className="text-xs truncate">+1 (555) 123-4567</span>
+            <div className="text-sm">
+              <span className="font-semibold">Phone: </span>
+              <span>+1 (555) 123-4567</span>
             </div>
-            <div className="flex items-center justify-center space-x-1 min-w-0 flex-shrink-0">
-              <span>📍</span>
-              <span className="text-xs truncate">New York, NY</span>
+            <div className="text-sm">
+              <span className="font-semibold">Location: </span>
+              <span>New York, NY</span>
             </div>
-            <div className="flex items-center justify-center space-x-1 min-w-0 flex-shrink-0">
-              <span>💼</span>
-              <span className="text-xs truncate">linkedin.com/in/johndoe</span>
+          </div>
+        </div>
+
+        {/* Right Side - Location and Social Links */}
+        <div className="flex flex-col space-y-2 text-right">
+          <div className="space-y-1 mt-2">
+            <div className="text-sm">
+              <span className="font-semibold">LinkedIn: </span>
+              <span className="text-gray-600 hover:underline">
+                linkedin.com/in/johndoe
+              </span>
             </div>
-            <div className="flex items-center justify-center space-x-1 min-w-0 flex-shrink-0">
-              <span>💻</span>
-              <span className="text-xs truncate">github.com/johndoe</span>
+            <div className="text-sm">
+              <span className="font-semibold">GitHub: </span>
+              <span className="text-gray-600 hover:underline">
+                github.com/johndoe
+              </span>
             </div>
-            <div className="flex items-center justify-center space-x-1 min-w-0 flex-shrink-0">
-              <span>🌐</span>
-              <span className="text-xs truncate">johndoe.dev</span>
+            <div className="text-sm">
+              <span className="font-semibold">Website: </span>
+              <span className="text-blue-600 hover:underline">johndoe.dev</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Placeholder */}
-      <div className="py-8 px-8">
-        <div className="space-y-8">
-          {/* Professional Summary Placeholder */}
-          <div
-            className="bg-gray-50 p-6 rounded-lg border-l-4"
+      {/* Main Content */}
+      <div className="py-8 px-8 space-y-6">
+        {/* Professional Summary Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-2 w-full"
             style={{
-              borderLeftColor: template.styles.colors.primary || "#059669",
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
             }}
           >
-            <h2
-              className="text-xl font-bold mb-4 uppercase tracking-wide"
+            Professional Summary
+          </h2>
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-4/5"></div>
+            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+
+        {/* Work Experience Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-2 w-full"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Work Experience
+          </h2>
+          <div className="space-y-1">
+            <div className="flex justify-between items-start">
+              <p
+                className="font-semibold"
+                style={{
+                  color: template.styles.colors.text,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize}px`,
+                }}
+              >
+                Senior Software Engineer —{" "}
+                <span className="italic">Tech Company Inc.</span>
+              </p>
+              <p
+                className="text-xs text-gray-500"
+                style={{
+                  color: template.styles.colors.secondary,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                }}
+              >
+                2020 – Present
+              </p>
+            </div>
+            <p
+              className="text-xs text-gray-500"
               style={{
-                color: template.styles.colors.primary || "#059669",
+                color: template.styles.colors.secondary,
                 fontFamily: mapFontFamily(
                   template.styles.typography.fontFamily
                 ),
-                fontSize: `${template.styles.typography.headingSize}px`,
               }}
             >
-              Professional Summary
-            </h2>
-            <div className="space-y-2">
-              <div className="h-3 bg-gray-200 rounded w-full"></div>
-              <div className="h-3 bg-gray-200 rounded w-4/5"></div>
-              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+              San Francisco, CA
+            </p>
+            <div className="space-y-1 mt-2">
+              <div className="h-2 bg-gray-200 rounded w-full"></div>
+              <div className="h-2 bg-gray-200 rounded w-4/5"></div>
+              <div className="h-2 bg-gray-200 rounded w-3/4"></div>
             </div>
           </div>
+        </div>
 
-          {/* Work Experience Placeholder */}
-          <div>
-            <h2
-              className="text-xl font-bold mb-6 uppercase tracking-wide"
+        {/* Education Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-2 w-full"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Education
+          </h2>
+          <div className="space-y-1">
+            <div className="flex justify-between items-start">
+              <p
+                className="font-semibold"
+                style={{
+                  color: template.styles.colors.text,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize}px`,
+                }}
+              >
+                Bachelor of Computer Science —{" "}
+                <span className="italic">University of Technology</span>
+              </p>
+              <p
+                className="text-xs text-gray-500"
+                style={{
+                  color: template.styles.colors.secondary,
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                }}
+              >
+                2016 – 2020
+              </p>
+            </div>
+            <p
+              className="text-xs text-gray-500"
               style={{
-                color: template.styles.colors.primary || "#059669",
+                color: template.styles.colors.secondary,
                 fontFamily: mapFontFamily(
                   template.styles.typography.fontFamily
                 ),
-                fontSize: `${template.styles.typography.headingSize}px`,
               }}
             >
-              Work Experience
-            </h2>
-            <div className="space-y-6">
-              {[1, 2].map((item) => (
-                <div key={item} className="border-l-4 border-blue-500 pl-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold">
-                      Senior Software Engineer
-                    </h3>
-                    <span className="text-sm text-gray-600">
-                      2020 - Present
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-blue-600 font-medium">
-                      Tech Company Inc.
-                    </span>
-                    <span className="text-gray-500">📍</span>
-                    <span className="text-sm text-gray-600">
-                      San Francisco, CA
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="h-2 bg-gray-200 rounded w-full"></div>
-                    <div className="h-2 bg-gray-200 rounded w-4/5"></div>
-                    <div className="h-2 bg-gray-200 rounded w-3/4"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+              San Francisco, CA • GPA: 3.8/4.0
+            </p>
           </div>
+        </div>
 
-          {/* Education Placeholder */}
-          <div>
-            <h2
-              className="text-xl font-bold mb-6 uppercase tracking-wide"
-              style={{
-                color: template.styles.colors.primary || "#059669",
-                fontFamily: mapFontFamily(
-                  template.styles.typography.fontFamily
-                ),
-                fontSize: `${template.styles.typography.headingSize}px`,
-              }}
-            >
-              Education
-            </h2>
-            <div className="space-y-4">
-              {[1, 2].map((item) => (
-                <div key={item} className="border-l-4 border-blue-500 pl-6">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="text-lg font-semibold">
-                      Bachelor of Computer Science
-                    </h3>
-                    <span className="text-sm text-gray-600">2016 - 2020</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-blue-600 font-medium">
-                      University of Technology
-                    </span>
-                    <span className="text-gray-500">📍</span>
-                    <span className="text-sm text-gray-600">Boston, MA</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">GPA: 3.8/4.0</p>
-                </div>
-              ))}
-            </div>
+        {/* Skills Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-2 w-full"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Skills
+          </h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              "JavaScript",
+              "React",
+              "Node.js",
+              "Python",
+              "SQL",
+              "AWS",
+              "Docker",
+              "Git",
+              "TypeScript",
+              "MongoDB",
+            ].map((skill, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 rounded text-white text-sm"
+                style={{
+                  backgroundColor: template.styles.colors.primary || "#dc2626",
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize - 1}px`,
+                }}
+              >
+                {skill}
+              </span>
+            ))}
           </div>
+        </div>
 
-          {/* Skills Placeholder */}
-          <div>
-            <h2
-              className="text-xl font-bold mb-6 uppercase tracking-wide"
-              style={{
-                color: template.styles.colors.primary || "#059669",
-                fontFamily: mapFontFamily(
-                  template.styles.typography.fontFamily
-                ),
-                fontSize: `${template.styles.typography.headingSize}px`,
-              }}
-            >
-              Skills
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "JavaScript",
-                "React",
-                "Node.js",
-                "Python",
-                "SQL",
-                "AWS",
-                "Docker",
-                "Git",
-                "TypeScript",
-                "MongoDB",
-              ].map((skill, index) => (
-                <div
-                  key={index}
-                  className="px-3 py-1 bg-gray-200 rounded-full text-sm"
-                >
-                  {skill}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Languages Placeholder */}
-          <div>
-            <h2
-              className="text-xl font-bold mb-6 uppercase tracking-wide"
-              style={{
-                color: template.styles.colors.primary || "#059669",
-                fontFamily: mapFontFamily(
-                  template.styles.typography.fontFamily
-                ),
-                fontSize: `${template.styles.typography.headingSize}px`,
-              }}
-            >
-              Languages
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "English (Native)",
-                "Spanish (Fluent)",
-                "French (Intermediate)",
-              ].map((lang, index) => (
-                <div
-                  key={index}
-                  className="px-3 py-1 rounded-full text-sm font-medium"
-                  style={{
-                    backgroundColor:
-                      template.styles.colors.primary || "#059669",
-                    color: "#ffffff",
-                  }}
-                >
-                  {lang}
-                </div>
-              ))}
-            </div>
+        {/* Languages Placeholder */}
+        <div className="space-y-3">
+          <h2
+            className="font-bold uppercase text-sm tracking-wide bg-gray-100 p-2 w-full"
+            style={{
+              color: template.styles.colors.text,
+              fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+              fontSize: `${template.styles.typography.headingSize}px`,
+            }}
+          >
+            Languages
+          </h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              "English (Native)",
+              "Spanish (Fluent)",
+              "French (Intermediate)",
+            ].map((lang, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 rounded text-white text-sm"
+                style={{
+                  backgroundColor: template.styles.colors.primary || "#dc2626",
+                  fontFamily: mapFontFamily(
+                    template.styles.typography.fontFamily
+                  ),
+                  fontSize: `${template.styles.typography.bodySize - 1}px`,
+                }}
+              >
+                {lang}
+              </span>
+            ))}
           </div>
         </div>
       </div>

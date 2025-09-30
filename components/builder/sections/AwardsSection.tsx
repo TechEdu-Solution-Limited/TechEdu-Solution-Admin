@@ -20,7 +20,7 @@ export default function AwardsSection({
 }: AwardsSectionProps) {
   return (
     <GenericSection
-      title="Awards"
+      title="/* Awards */"
       items={awards}
       emptyStateIcon={Trophy}
       emptyStateTitle="No awards added yet"
@@ -40,7 +40,7 @@ export default function AwardsSection({
                 type="text"
                 value={award.title}
                 onChange={(e) => onUpdate(award.id, "title", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 placeholder="Award title"
               />
             </div>
@@ -52,7 +52,7 @@ export default function AwardsSection({
                 type="text"
                 value={award.issuer}
                 onChange={(e) => onUpdate(award.id, "issuer", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 placeholder="Issuing organization"
               />
             </div>
@@ -64,7 +64,7 @@ export default function AwardsSection({
                 type="month"
                 value={award.date}
                 onChange={(e) => onUpdate(award.id, "date", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
           </div>

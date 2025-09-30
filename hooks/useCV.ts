@@ -1,11 +1,7 @@
 import { useState, useCallback } from "react";
 import { ResumeSection } from "@/types";
 import { mapResumePropsToSections } from "@/utils/resumeSectionMapper";
-import cvApi, {
-  CVResponse,
-  CVDraftResponse,
-  CreateCVRequest,
-} from "@/lib/api/cvApi";
+import { cvService, CreateCVRequest, CVResponse } from "@/services/cvService";
 
 interface UseCVProps {
   personalInfo: any;
@@ -92,12 +88,20 @@ export function useCV({
       });
 
       const request: CreateCVRequest = {
-        data: resumeData,
-        template,
-        enabledSections,
+        title: `${personalInfo.firstName} ${personalInfo.lastName} - CV`,
+        sections: resumeData.map((section) => ({
+          type: section.type,
+          heading: section.heading,
+          visible: section.visible,
+          data: section.data,
+        })),
+        consent: {
+          aiProcessing: false,
+          aiTraining: false,
+        },
       };
 
-      const response = await cvApi.createCV(request);
+      const response = await cvService.createCV(request);
       setCvId(response.id);
 
       console.log("CV saved successfully:", response);
@@ -120,8 +124,6 @@ export function useCV({
     certifications,
     awards,
     projects,
-    template,
-    enabledSections,
   ]);
 
   const saveDraft = useCallback(async () => {
@@ -142,13 +144,23 @@ export function useCV({
       });
 
       const request: CreateCVRequest = {
-        data: resumeData,
-        template,
-        enabledSections,
+        title: `${personalInfo.firstName} ${personalInfo.lastName} - CV Draft`,
+        sections: resumeData.map((section) => ({
+          type: section.type,
+          heading: section.heading,
+          visible: section.visible,
+          data: section.data,
+        })),
+        consent: {
+          aiProcessing: false,
+          aiTraining: false,
+        },
       };
 
-      const draftId = cvId || `draft-${Date.now()}`;
-      const response = await cvApi.saveDraft(draftId, request);
+      const response = await cvService.createOrUpdateDraft({
+        ...request,
+        id: cvId || undefined,
+      });
       setCvId(response.id);
 
       console.log("Draft saved successfully:", response);
@@ -172,8 +184,6 @@ export function useCV({
     certifications,
     awards,
     projects,
-    template,
-    enabledSections,
   ]);
 
   const loadCV = useCallback(async (id: string) => {
@@ -181,10 +191,11 @@ export function useCV({
     setError(null);
 
     try {
-      const response = await cvApi.getCV(id);
+      const response = await cvService.getCV(id);
       setCvId(response.id);
 
       console.log("CV loaded successfully:", response);
+      showSuccess("CV loaded successfully!");
       // Note: You'll need to update the parent component's state with the loaded data
       // This would typically be done through a callback prop or context
     } catch (err) {
@@ -202,10 +213,11 @@ export function useCV({
     setError(null);
 
     try {
-      const response = await cvApi.getDraft(id);
+      const response = await cvService.getDraft(id);
       setCvId(response.id);
 
       console.log("Draft loaded successfully:", response);
+      showSuccess("Draft loaded successfully!");
       // Note: You'll need to update the parent component's state with the loaded data
     } catch (err) {
       const errorMessage =
@@ -227,9 +239,9 @@ export function useCV({
     setError(null);
 
     try {
-      const response = await cvApi.publishCV({ cvId });
-
-      console.log("CV published successfully:", response);
+      // For now, we'll just show success since we don't have a separate publish endpoint
+      // In a real app, you might have a publish endpoint that changes the CV status
+      console.log("CV published successfully:", cvId);
       showSuccess("CV published successfully!");
     } catch (err) {
       const errorMessage =

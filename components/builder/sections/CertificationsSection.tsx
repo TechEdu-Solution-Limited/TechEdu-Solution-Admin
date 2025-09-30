@@ -19,7 +19,7 @@ export default function CertificationsSection({
 }: CertificationsSectionProps) {
   return (
     <GenericSection
-      title="Certifications"
+      title="/* Certifications */"
       items={certifications}
       emptyStateIcon={FileCheck}
       emptyStateTitle="No certifications added yet"
@@ -38,7 +38,7 @@ export default function CertificationsSection({
               type="text"
               value={cert.name}
               onChange={(e) => onUpdate(cert.id, "name", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Certification name"
             />
           </div>
@@ -50,7 +50,7 @@ export default function CertificationsSection({
               type="text"
               value={cert.issuer}
               onChange={(e) => onUpdate(cert.id, "issuer", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Issuing organization"
             />
           </div>
@@ -62,7 +62,7 @@ export default function CertificationsSection({
               type="month"
               value={cert.date}
               onChange={(e) => onUpdate(cert.id, "date", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
           <div>
@@ -75,7 +75,7 @@ export default function CertificationsSection({
               onChange={(e) =>
                 onUpdate(cert.id, "credentialId", e.target.value)
               }
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Credential ID"
             />
           </div>
@@ -89,7 +89,7 @@ export default function CertificationsSection({
               onChange={(e) =>
                 onUpdate(cert.id, "credentialUrl", e.target.value)
               }
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="https://..."
             />
           </div>

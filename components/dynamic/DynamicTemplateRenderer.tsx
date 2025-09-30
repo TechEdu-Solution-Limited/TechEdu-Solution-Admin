@@ -3,9 +3,8 @@
 /**
  * DynamicTemplateRenderer
  *
- * A clean, simplified component that routes to dedicated template renderers.
- * This provides a consistent interface while delegating actual rendering
- * to specialized components for better maintainability and performance.
+ * Renders HTML preview using Tailwind CSS for fast preview,
+ * while PDF renderers are used only for actual PDF export.
  */
 
 import React from "react";
@@ -24,7 +23,6 @@ import { TwoColumnTemplatePlaceholder } from "@/components/renderers/TwoColumnTe
 interface DynamicTemplateRendererProps {
   data: ResumeSection[];
   templateId: string;
-  className?: string;
   templateConfig?: TemplateLayout; // Live template configuration
   leftColumnSections?: string[];
 }
@@ -32,7 +30,6 @@ interface DynamicTemplateRendererProps {
 export default function DynamicTemplateRenderer({
   data,
   templateId,
-  className = "",
   templateConfig,
   leftColumnSections,
 }: DynamicTemplateRendererProps) {
@@ -47,8 +44,8 @@ export default function DynamicTemplateRenderer({
     );
   }
 
+  // If no data, show placeholder
   if (!data || data.length === 0) {
-    // Show placeholder when no data is available
     switch (templateId) {
       case "modern":
         return <ModernTemplatePlaceholder template={template} />;
@@ -71,7 +68,7 @@ export default function DynamicTemplateRenderer({
     }
   }
 
-  // Use dedicated template renderers for consistent styling and functionality
+  // Render HTML preview using Tailwind CSS
   switch (templateId) {
     case "modern":
       return (
@@ -80,7 +77,6 @@ export default function DynamicTemplateRenderer({
           template={template}
           leftColumnSections={
             leftColumnSections || [
-              "professional-summary",
               "skills",
               "languages",
               "certifications",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -24,10 +24,11 @@ import {
 import ErrorBoundary from "@/components/ErrorBoundary";
 import BuilderLayout from "./BuilderLayout";
 import ModeSelector from "./ModeSelector";
-import StatusBar from "./StatusBar";
+import { StatusBar } from "./StatusBar";
 import MemoizedTemplateRenderer from "./MemoizedTemplateRenderer";
 import MemoizedDynamicSectionContent from "./MemoizedDynamicSectionContent";
 import TemplateSelectorModal from "@/components/TemplateSelectorModal";
+import AIConsentModal from "./modals/AIConsentModal";
 import LoadCVModal from "@/components/builder/modals/LoadCVModal";
 import CVUploadModal from "@/components/builder/modals/CVUploadModal";
 import SectionModal from "@/components/builder/modals/SectionModal";
@@ -60,6 +61,19 @@ export default function CVBuilderMain({
   onExport,
 }: CVBuilderProps) {
   const router = useRouter();
+
+  // AI Consent Modal state
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+
+  const handleConsentAccept = (consent: {
+    aiProcessing: boolean;
+    aiTraining: boolean;
+  }) => {
+    localStorage.setItem("cv-builder-ai-consent", JSON.stringify(consent));
+    setShowAIConsentModal(false);
+    console.log("Consent accepted:", consent);
+  };
+
   const {
     state,
     updateState,
@@ -72,7 +86,7 @@ export default function CVBuilderMain({
     sections,
     handleModeSelect,
     handleTemplateSelect,
-    handleExportPDF,
+    handleExportPDF: originalHandleExportPDF,
     handleImageUpload,
     removeImage,
     toggleSection,
@@ -82,6 +96,16 @@ export default function CVBuilderMain({
     autoSaveConfig,
     onStateChange,
   });
+
+  // Create a wrapper function that calls the onExport prop
+  const handleExportPDF = useCallback(async () => {
+    if (onExport) {
+      await onExport(state);
+    } else {
+      // Fallback to the original function if no onExport prop is provided
+      await originalHandleExportPDF();
+    }
+  }, [onExport, state, originalHandleExportPDF]);
 
   // Section arrangement state - initialize with available sections
   const [leftColumnSections, setLeftColumnSections] = React.useState<string[]>(
@@ -556,15 +580,22 @@ export default function CVBuilderMain({
             updateState({ showPreview: !state.showPreview })
           }
           onExportPDF={handleExportPDF}
-          onChangeTemplate={() =>
-            router.push("/dashboard/cv-builder/template-selection")
-          }
+          onChangeTemplate={() => updateState({ showTemplateSelector: true })}
           showPreview={state.showPreview}
           isExporting={state.isExporting}
           onSaveCV={cvApi.saveCV}
           onSaveDraft={cvApi.saveDraft}
           onLoadCV={() => updateState({ showLoadCVModal: true })}
           onPublishCV={cvApi.publishCV}
+          onCreateCV={async () => {
+            try {
+              // The saveCV method already handles consent from localStorage
+              await cvApi.saveCV();
+            } catch (error) {
+              console.error("Error creating CV:", error);
+              alert("Failed to create CV. Please try again.");
+            }
+          }}
           isSaving={cvApi.isLoading}
           isLoading={cvApi.isLoading}
           apiError={cvApi.error}
@@ -596,7 +627,6 @@ export default function CVBuilderMain({
             console.log("Add section clicked");
             updateState({ showAddSectionModal: true });
           }}
-          onLoadDummyData={handleLoadDummyData}
         >
           {/* Section Arrangement */}
           <SectionArrangement
@@ -627,6 +657,7 @@ export default function CVBuilderMain({
               }
             }}
             onAddSection={() => updateState({ showAddSectionModal: true })}
+            onShowAIConsent={() => setShowAIConsentModal(true)}
             personalInfo={state.personalInfo}
             professionalSummary={state.professionalSummary}
             experiences={state.experiences}
@@ -898,6 +929,13 @@ export default function CVBuilderMain({
           </div>
         )}
       </div>
+
+      {/* AI Consent Modal */}
+      <AIConsentModal
+        isOpen={showAIConsentModal}
+        onClose={() => setShowAIConsentModal(false)}
+        onAccept={handleConsentAccept}
+      />
     </ErrorBoundary>
   );
 }

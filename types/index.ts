@@ -18,6 +18,7 @@ export interface PersonalInfo {
   summary?: string;
   image?: string;
   imageSize?: "small" | "medium" | "large";
+  industry?: string; // For AI experience generation (not displayed in resume)
 }
 
 // =====================

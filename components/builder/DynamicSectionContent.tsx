@@ -26,6 +26,7 @@ interface DynamicSectionContentProps {
   onUpdateTemplateConfig?: (updates: Partial<TemplateLayout>) => void;
   onRemoveSection?: (sectionType: string) => void;
   onAddSection?: () => void;
+  onShowAIConsent?: () => void;
   // All the data props
   personalInfo: any;
   professionalSummary: any;
@@ -78,6 +79,7 @@ export default function DynamicSectionContent({
   onUpdateTemplateConfig,
   onRemoveSection,
   onAddSection,
+  onShowAIConsent,
   personalInfo,
   professionalSummary,
   experiences,
@@ -272,6 +274,7 @@ export default function DynamicSectionContent({
         onUpdate: onUpdateProfessionalSummary,
       },
       "work-experience": {
+        personalInfo: personalInfo,
         onUpdate: onUpdateExperience,
         onAdd: onAddExperience,
         onRemove: onRemoveExperience,
@@ -446,6 +449,7 @@ export default function DynamicSectionContent({
                     sectionType={sectionType}
                     sectionData={getSectionData(sectionType)}
                     sectionConfig={templateConfig}
+                    onShowAIConsent={onShowAIConsent}
                     {...getSectionHandlers(sectionType)}
                   />
                 </div>

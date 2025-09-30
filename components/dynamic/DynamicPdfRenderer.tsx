@@ -59,7 +59,14 @@ export default function DynamicPdfRenderer({
         <ModernTemplatePdfRenderer
           data={data}
           template={template}
-          leftColumnSections={leftColumnSections}
+          leftColumnSections={
+            leftColumnSections || [
+              "skills",
+              "languages",
+              "certifications",
+              "awards",
+            ]
+          }
         />
       );
 

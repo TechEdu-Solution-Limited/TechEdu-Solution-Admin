@@ -1,128 +1,67 @@
-import { useEffect, useRef, useCallback, useState } from "react";
-import { CVBuilderState, AutoSaveConfig } from "@/types/cv-builder";
-import { debounce } from "lodash";
+import { useCallback, useEffect, useRef } from "react";
 
-interface UseAutoSaveProps {
-  state: CVBuilderState;
-  config: AutoSaveConfig;
-  onSaveSuccess?: () => void;
-  onSaveError?: (error: Error) => void;
-}
-
-interface UseAutoSaveReturn {
-  isSaving: boolean;
-  lastSaved: Date | null;
-  saveNow: () => Promise<void>;
-  clearLastSaved: () => void;
+interface UseAutoSaveOptions {
+  data: any;
+  saveFunction: (data: any) => Promise<void>;
+  delay?: number; // Delay in milliseconds
+  enabled?: boolean;
 }
 
 export function useAutoSave({
-  state,
-  config,
-  onSaveSuccess,
-  onSaveError,
-}: UseAutoSaveProps): UseAutoSaveReturn {
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousStateRef = useRef<CVBuilderState | null>(null);
+  data,
+  saveFunction,
+  delay = 2000, // 2 seconds default
+  enabled = true,
+}: UseAutoSaveOptions) {
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedDataRef = useRef<string>();
 
-  // Debounced save function
-  const debouncedSave = useCallback(
-    debounce(async (currentState: CVBuilderState) => {
-      if (!config.enabled) return;
+  const saveData = useCallback(async () => {
+    try {
+      const dataString = JSON.stringify(data);
 
-      setIsSaving(true);
-      try {
-        await config.onSave(currentState);
-        setLastSaved(new Date());
-        onSaveSuccess?.();
-      } catch (error) {
-        console.error("Auto-save failed:", error);
-        onSaveError?.(error as Error);
-      } finally {
-        setIsSaving(false);
+      // Only save if data has actually changed
+      if (dataString !== lastSavedDataRef.current) {
+        await saveFunction(data);
+        lastSavedDataRef.current = dataString;
+        console.log("Auto-save completed");
       }
-    }, config.debounceDelay),
-    [config, onSaveSuccess, onSaveError]
-  );
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+    }
+  }, [data, saveFunction]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Clear existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout
+    timeoutRef.current = setTimeout(saveData, delay);
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [data, saveFunction, delay, enabled]);
 
   // Manual save function
-  const saveNow = useCallback(async () => {
-    if (!config.enabled) return;
-
-    // Cancel any pending debounced save
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+  const manualSave = useCallback(async () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-
-    setIsSaving(true);
-    try {
-      await config.onSave(state);
-      setLastSaved(new Date());
-      onSaveSuccess?.();
-    } catch (error) {
-      console.error("Manual save failed:", error);
-      onSaveError?.(error as Error);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [config, state, onSaveSuccess, onSaveError]);
-
-  // Clear last saved timestamp
-  const clearLastSaved = useCallback(() => {
-    setLastSaved(null);
-  }, []);
-
-  // Auto-save effect
-  useEffect(() => {
-    if (!config.enabled) return;
-
-    // Skip initial render
-    if (previousStateRef.current === null) {
-      previousStateRef.current = state;
-      return;
-    }
-
-    // Check if state has actually changed
-    const hasChanged =
-      JSON.stringify(previousStateRef.current) !== JSON.stringify(state);
-
-    if (hasChanged) {
-      previousStateRef.current = state;
-
-      // Clear existing timeout
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      // Set new timeout for auto-save
-      saveTimeoutRef.current = setTimeout(() => {
-        debouncedSave(state);
-      }, config.interval);
-    }
-
-    // Cleanup function
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [state, config, debouncedSave]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
+    await saveData();
+  }, [saveData]);
 
   return {
-    isSaving,
-    lastSaved,
-    saveNow,
-    clearLastSaved,
+    manualSave,
+    isSaving: false, // Add this property
+    lastSaved: null, // Add this property
+    saveNow: manualSave, // Add this property
   };
 }

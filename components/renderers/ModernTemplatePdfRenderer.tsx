@@ -23,18 +23,13 @@ import {
   FONT_SIZES,
   LAYOUT,
   SECTION_ORDER,
+  FONTS,
 } from "@/utils/templateConstants";
 
 export function ModernTemplatePdfRenderer({
   data,
   template,
-  leftColumnSections = [
-    "professional-summary",
-    "skills",
-    "languages",
-    "awards",
-    "certifications",
-  ],
+  leftColumnSections = ["skills", "languages", "awards", "certifications"],
 }: {
   data: ResumeSection[];
   template: TemplateLayout;
@@ -67,7 +62,7 @@ export function ModernTemplatePdfRenderer({
     page: {
       padding: 0,
       fontSize: 10, // Reduced from 12 for PDF
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      fontFamily: FONTS.pdf.default,
       lineHeight: 1.3,
       color: template.styles.colors.text,
     },
@@ -95,7 +90,7 @@ export function ModernTemplatePdfRenderer({
       fontWeight: "bold",
       color: "#ffffff",
       marginBottom: 6,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      fontFamily: FONTS.pdf.default,
     },
     title: {
       fontSize: 12, // Reduced from 18 for PDF
@@ -155,7 +150,7 @@ export function ModernTemplatePdfRenderer({
       paddingVertical: 6,
       paddingHorizontal: 12,
       // borderRadius: 3,
-      marginBottom: 12,
+      marginBottom: 8,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     rightSectionTitle: {
@@ -166,7 +161,7 @@ export function ModernTemplatePdfRenderer({
       paddingVertical: 6,
       paddingHorizontal: 12,
       // borderRadius: 3,
-      marginBottom: 12,
+      marginBottom: 8,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemContainer: {
@@ -236,7 +231,7 @@ export function ModernTemplatePdfRenderer({
       backgroundColor: template.styles.colors.primary || "#1e40af", // Matches HTML: bg-blue-600
       paddingHorizontal: 4,
       paddingVertical: 1,
-      // borderRadius: 2,
+      borderRadius: 2,
     },
     skillBadgeText: {
       color: "#ffffff",
@@ -585,6 +580,16 @@ export function ModernTemplatePdfRenderer({
                       {Array.isArray(items) &&
                         items.map((item: any, i: number) => (
                           <View key={i} style={styles.itemContainer}>
+                            {/* Professional Summary */}
+                            {item.summary &&
+                              section.type === "professional-summary" && (
+                                <View style={styles.summaryBox}>
+                                  <Text style={styles.itemDescription}>
+                                    {item.summary.replace(/<[^>]*>/g, "")}
+                                  </Text>
+                                </View>
+                              )}
+
                             {/* Work Experience */}
                             {item.title && item.company && (
                               <View style={styles.borderedItem}>

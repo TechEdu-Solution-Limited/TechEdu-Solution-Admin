@@ -92,6 +92,7 @@ interface SectionContentProps {
     field: keyof CustomSection,
     value: string
   ) => void;
+  onShowAIConsent?: () => void;
 }
 
 export default function SectionContent({
@@ -139,6 +140,7 @@ export default function SectionContent({
   onAddCustomSection,
   onRemoveCustomSection,
   onUpdateCustomSection,
+  onShowAIConsent,
 }: SectionContentProps) {
   const [expandedSections, setExpandedSections] = useState<string[]>([
     activeSection,
@@ -167,16 +169,20 @@ export default function SectionContent({
         return (
           <ProfessionalSummarySection
             professionalSummary={professionalSummary}
+            personalInfo={personalInfo}
             onUpdateProfessionalSummary={onUpdateProfessionalSummary}
+            onShowAIConsent={onShowAIConsent}
           />
         );
       case "experience":
         return (
           <ExperienceSection
             experiences={experiences}
+            personalInfo={personalInfo}
             onAdd={onAddExperience}
             onRemove={onRemoveExperience}
             onUpdate={onUpdateExperience}
+            onShowAIConsent={onShowAIConsent}
           />
         );
       case "education":

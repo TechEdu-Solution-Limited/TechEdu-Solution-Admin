@@ -51,8 +51,8 @@ export default function TemplateSelectorModal({
 
   const handleTemplateClick = (templateId: string) => {
     setSelectedTemplate(templateId);
-    // Navigate to template-specific builder page
-    router.push(`/dashboard/cv-builder/${templateId}`);
+    // Use the callback instead of navigating
+    onTemplateSelect(templateId);
     onClose();
   };
 

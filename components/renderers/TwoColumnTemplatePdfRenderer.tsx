@@ -24,6 +24,7 @@ import {
   SECTION_ORDER,
   SKILL_LEVELS,
   LANGUAGE_LEVELS,
+  FONTS,
 } from "@/utils/templateConstants";
 
 export function TwoColumnTemplatePdfRenderer({
@@ -70,8 +71,8 @@ export function TwoColumnTemplatePdfRenderer({
   const styles = StyleSheet.create({
     page: {
       padding: 0,
-      fontSize: template.styles.typography.bodySize || 12,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      fontSize: 10, // Smaller base font size to match HTML
+      fontFamily: FONTS.pdf.default,
       lineHeight: template.styles.typography.lineHeight,
       color: template.styles.colors.text,
     },
@@ -82,35 +83,37 @@ export function TwoColumnTemplatePdfRenderer({
       textAlign: "center",
     },
     name: {
-      fontSize: 24,
+      fontSize: 32, // Reduced from 24 to match HTML
       fontWeight: "bold",
       color: template.styles.colors.text,
-      marginBottom: 8,
+      marginBottom: 16,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     title: {
-      fontSize: 16,
+      fontSize: 14, // Reduced from 16 to match HTML
+      textTransform: "uppercase",
       color: template.styles.colors.secondary,
+      marginTop: 8,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     twoColumnLayout: {
       flexDirection: "row",
     },
     leftColumn: {
-      width: `${leftColumn?.width || 35}%`,
+      width: `${leftColumn?.width || 40}%`,
       height: "100%",
       backgroundColor: leftColumn?.styles?.backgroundColor || "#1e3a8a",
       color: leftColumn?.styles?.textColor || "#f9fafb",
       padding: 16,
     },
     rightColumn: {
-      width: `${rightColumn?.width || 65}%`,
+      width: `${rightColumn?.width || 60}%`,
       backgroundColor: rightColumn?.styles?.backgroundColor || "#ffffff",
       color: rightColumn?.styles?.textColor || "#000000",
       padding: 16,
     },
     sectionTitle: {
-      fontSize: template.styles.typography.headingSize || 12,
+      fontSize: 10, // Reduced to match HTML section headers
       fontWeight: "bold",
       marginBottom: 4,
       textTransform: "uppercase",
@@ -139,7 +142,7 @@ export function TwoColumnTemplatePdfRenderer({
       marginBottom: 16,
     },
     contactItem: {
-      fontSize: 10,
+      fontSize: 10, // Reduced to match HTML contact info
       // marginBottom: 4,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
@@ -161,31 +164,31 @@ export function TwoColumnTemplatePdfRenderer({
       marginBottom: 4,
     },
     itemTitle: {
-      fontSize: template.styles.typography.bodySize || 12,
+      fontSize: 9, // Reduced to match HTML
       fontWeight: "bold",
       marginBottom: 4,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemSubtitle: {
-      fontSize: template.styles.typography.bodySize || 12,
-      marginBottom: 4,
+      fontSize: 8, // Reduced to match HTML
+      // marginBottom: 4,
       fontStyle: "italic",
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemDate: {
-      fontSize: (template.styles.typography.bodySize || 12) - 2,
+      fontSize: 9, // Reduced to match HTML
       color: template.styles.colors.secondary || "#000000",
-      marginBottom: 4,
+      marginBottom: 1,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemDescription: {
-      fontSize: (template.styles.typography.bodySize || 12) - 1,
+      fontSize: 8, // Reduced to match HTML
       marginBottom: 4,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     bullet: {
       marginLeft: 6,
-      fontSize: (template.styles.typography.bodySize || 12) - 1,
+      fontSize: 9, // Reduced to match HTML
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     bulletList: {
@@ -403,7 +406,7 @@ export function TwoColumnTemplatePdfRenderer({
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "center",
-                                marginBottom: 6,
+                                marginBottom: 2,
                               }}
                             >
                               <Text
@@ -465,7 +468,7 @@ export function TwoColumnTemplatePdfRenderer({
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "center",
-                                marginBottom: 6,
+                                marginBottom: 2,
                               }}
                             >
                               <Text
@@ -581,9 +584,7 @@ export function TwoColumnTemplatePdfRenderer({
                                   styles.itemTitle,
                                   {
                                     color: "#000000",
-                                    fontSize:
-                                      (template.styles.typography.bodySize ||
-                                        12) + 2,
+                                    fontSize: 9, // Match HTML work experience title
                                     fontWeight: "bold",
                                   },
                                 ]}
@@ -609,7 +610,7 @@ export function TwoColumnTemplatePdfRenderer({
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "flex-start",
-                                marginBottom: 4,
+                                marginBottom: 2,
                               }}
                             >
                               <Text
@@ -667,36 +668,82 @@ export function TwoColumnTemplatePdfRenderer({
                         )}
 
                         {/* Education */}
-                        {item.degree && item.school && (
-                          <View>
+                        {(item.degree || item.school) && (
+                          <View style={{ marginBottom: 8 }}>
                             <View
                               style={{
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "flex-start",
+                                marginBottom: 2,
                               }}
                             >
                               <Text
                                 style={[
                                   styles.itemTitle,
                                   styles.rightItemTitle,
+                                  {
+                                    fontSize: 9,
+                                    fontWeight: "bold",
+                                    color: "#000000",
+                                  },
                                 ]}
                               >
-                                {item.degree} —{" "}
-                                <Text style={{ fontStyle: "italic" }}>
-                                  {item.school}
-                                </Text>
+                                {item.degree || "Degree"}
                               </Text>
                               {item.startDate && (
-                                <Text style={styles.itemDate}>
-                                  {item.startDate} – {item.endDate}
+                                <Text
+                                  style={[
+                                    styles.itemDate,
+                                    {
+                                      color: "#1e3a8a",
+                                      fontWeight: "bold",
+                                    },
+                                  ]}
+                                >
+                                  {item.startDate} – {item.endDate || "Present"}
                                 </Text>
                               )}
                             </View>
+                            <Text
+                              style={[
+                                styles.itemTitle,
+                                {
+                                  color: "#1e3a8a",
+                                  fontStyle: "italic",
+                                  fontWeight: "bold",
+                                  fontSize: 8,
+                                },
+                              ]}
+                            >
+                              {item.school || "School"}
+                            </Text>
                             {item.location && (
-                              <Text style={styles.itemDate}>
+                              <Text
+                                style={[
+                                  styles.itemDate,
+                                  {
+                                    color: "#666666",
+                                    fontSize: 7,
+                                  },
+                                ]}
+                              >
                                 {item.location}
                                 {item.gpa && ` • GPA: ${item.gpa}`}
+                              </Text>
+                            )}
+                            {item.description && (
+                              <Text
+                                style={[
+                                  styles.itemDescription,
+                                  styles.rightItemDescription,
+                                  {
+                                    fontSize: 8,
+                                    marginTop: 2,
+                                  },
+                                ]}
+                              >
+                                {item.description.replace(/<[^>]*>/g, "")}
                               </Text>
                             )}
                           </View>

@@ -14,6 +14,7 @@ import {
   SECTION_ORDER,
   SKILL_LEVELS,
   LANGUAGE_LEVELS,
+  FONTS,
 } from "@/utils/templateConstants";
 import Link from "next/link";
 
@@ -68,6 +69,7 @@ export function TwoColumnTemplateHtmlRenderer({
           transform: `scale(${LAYOUT.scale})`,
           transformOrigin: "top center",
           marginBottom: `${SPACING.xl}px`,
+          fontFamily: FONTS.html.default,
         } as React.CSSProperties
       }
     >
@@ -106,13 +108,13 @@ export function TwoColumnTemplateHtmlRenderer({
       )}
 
       {/* Two Column Layout */}
-      <div className="flex">
+      <div className="flex min-h-screen">
         {/* Left Column */}
         <div
-          className="p-8"
+          className="p-8 min-h-screen"
           style={{
-            width: `${leftColumn?.width || 35}%`,
-            height: "100%",
+            width: `${leftColumn?.width || 40}%`,
+            minHeight: "100vh",
             backgroundColor: leftColumn?.styles?.backgroundColor || "#1e3a8a",
             color: leftColumn?.styles?.textColor || "#f9fafb",
           }}
@@ -416,9 +418,9 @@ export function TwoColumnTemplateHtmlRenderer({
 
         {/* Right Column */}
         <div
-          className="p-8"
+          className="p-8 min-h-screen"
           style={{
-            width: `${rightColumn?.width || 65}%`,
+            width: `${rightColumn?.width || 60}%`,
             backgroundColor: rightColumn?.styles?.backgroundColor || "#ffffff",
             color: rightColumn?.styles?.textColor || "#000000",
           }}

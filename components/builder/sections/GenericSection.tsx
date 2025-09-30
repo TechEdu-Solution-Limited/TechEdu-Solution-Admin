@@ -28,12 +28,12 @@ export default function GenericSection<T extends { id: string }>({
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <span className="text-2xl font-bold text-gray-900 dark:text-white">
           {title}
-        </h2>
+        </span>
         <button
           onClick={onAdd}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] transition-colors"
         >
           <Plus className="h-5 w-5" />
           <span>{addButtonText}</span>
@@ -53,7 +53,7 @@ export default function GenericSection<T extends { id: string }>({
           {items.map((item, index) => (
             <div
               key={item.id}
-              className="border border-gray-200 dark:border-gray-700 rounded-lg p-6"
+              className="border border-gray-200 dark:border-gray-700 rounded-[10px] p-6"
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

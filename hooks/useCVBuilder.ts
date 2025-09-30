@@ -44,6 +44,7 @@ import {
 import { useCV } from "./useCV";
 import { useAIFeatures } from "./useAIFeatures";
 import { mapResumePropsToSectionsWithTemplate } from "@/utils/resumeSectionMapper";
+import { cvService } from "@/services/cvService";
 
 interface UseCVBuilderProps {
   initialState?: Partial<CVBuilderState>;
@@ -278,7 +279,7 @@ export function useCVBuilder({
   // History management
   const history = useHistory({ initialState: state });
 
-  // Auto-save configuration
+  // Auto-save configuration with real API integration
   const autoSaveConfigFinal: AutoSaveConfig = {
     enabled: true,
     interval: 30000, // 30 seconds
@@ -287,10 +288,28 @@ export function useCVBuilder({
       try {
         // Save to localStorage for persistence
         localStorage.setItem("cv-builder-state", JSON.stringify(state));
+
+        // Also save to API as draft - use a simpler approach for auto-save
+        const request = {
+          title: `${state.personalInfo.firstName} ${state.personalInfo.lastName} - CV Draft`,
+          sections: state.resumeData.map((section: any) => ({
+            type: section.type,
+            heading: section.heading,
+            visible: section.visible,
+            data: section.data,
+          })),
+          consent: {
+            aiProcessing: false,
+            aiTraining: false,
+          },
+        };
+
+        // Auto-save as draft
+        await cvService.createOrUpdateDraft(request);
         console.log("Auto-save successful:", state);
       } catch (error) {
         console.error("Auto-save failed:", error);
-        throw error;
+        // Don't throw error to prevent breaking the UI
       }
     },
     ...autoSaveConfig,
@@ -298,14 +317,10 @@ export function useCVBuilder({
 
   // Auto-save hook
   const autoSave = useAutoSave({
-    state,
-    config: autoSaveConfigFinal,
-    onSaveSuccess: () => {
-      console.log("Auto-save successful");
-    },
-    onSaveError: (error) => {
-      console.error("Auto-save failed:", error);
-    },
+    data: state,
+    saveFunction: autoSaveConfigFinal.onSave,
+    delay: autoSaveConfigFinal.debounceDelay,
+    enabled: autoSaveConfigFinal.enabled,
   });
 
   // CV API hook

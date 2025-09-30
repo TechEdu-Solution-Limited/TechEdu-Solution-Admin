@@ -144,7 +144,7 @@ export function MinimalTemplatePdfRenderer({
       paddingVertical: 16, // p-8 = 32px
     },
     sectionContainer: {
-      marginBottom: 12, // space-y-6 = 18px
+      marginBottom: 8, // space-y-6 = 18px
     },
     sectionTitle: {
       fontSize: 12, // Match HTML renderer

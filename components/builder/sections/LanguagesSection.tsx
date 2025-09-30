@@ -19,12 +19,12 @@ export default function LanguagesSection({
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Languages
-        </h2>
+        <span className="text-2xl font-bold text-gray-900 dark:text-white">
+          {/* Languages */}
+        </span>
         <button
           onClick={onAdd}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] transition-colors"
         >
           <svg
             className="h-5 w-5"
@@ -58,14 +58,14 @@ export default function LanguagesSection({
           {languages.map((lang) => (
             <div
               key={lang.id}
-              className="flex items-center space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+              className="flex items-center space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-[10px]"
             >
               <div className="flex-1">
                 <input
                   type="text"
                   value={lang.name}
                   onChange={(e) => onUpdate(lang.id, "name", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Language name"
                 />
               </div>
@@ -73,7 +73,7 @@ export default function LanguagesSection({
                 <select
                   value={lang.level}
                   onChange={(e) => onUpdate(lang.id, "level", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 >
                   <option value="Basic">Basic</option>
                   <option value="Conversational">Conversational</option>

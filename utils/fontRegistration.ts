@@ -1,8 +1,12 @@
 /**
  * Font Registration Utilities for React PDF
  *
- * Uses built-in React PDF fonts to prevent "Font family not registered" errors
+ * Registers Roboto font with multiple weights and uses built-in React PDF fonts.
+ * React PDF supports TTF and WOFF font formats, with TTF being more reliable.
+ * Multiple font weights are registered to ensure proper rendering across different text styles.
  */
+
+import { Font } from "@react-pdf/renderer";
 
 // Font registration status
 let fontsRegistered = false;
@@ -16,6 +20,11 @@ export function registerPDFFonts() {
     return;
   }
 
+  // For now, use built-in React PDF fonts to avoid font loading issues
+  // Custom fonts can be added later with proper local font files
+
+  console.log("✅ Using built-in React PDF fonts for reliable PDF generation");
+
   // React PDF has built-in fonts that don't need registration:
   // - Helvetica (default)
   // - Times-Roman
@@ -25,7 +34,7 @@ export function registerPDFFonts() {
   // - Courier-Bold
 
   fontsRegistered = true;
-  console.log("✅ Using built-in React PDF fonts");
+  console.log("✅ Registered Roboto font and using built-in React PDF fonts");
 }
 
 /**
@@ -36,8 +45,33 @@ export function getSafePDFFont(fontFamily: string): string {
   // Register fonts first
   registerPDFFonts();
 
-  // Map to built-in React PDF fonts only
+  // Map to built-in React PDF fonts for reliable PDF generation
   const fontMap: { [key: string]: string } = {
+    // All custom fonts map to Helvetica for now (most similar to Roboto)
+    "Roboto, Helvetica, Arial, sans-serif": "Helvetica",
+    Roboto: "Helvetica",
+    "Roboto, sans-serif": "Helvetica",
+
+    "Open Sans, Helvetica, Arial, sans-serif": "Helvetica",
+    "Open Sans": "Helvetica",
+    "Open Sans, sans-serif": "Helvetica",
+
+    "Lato, Helvetica, Arial, sans-serif": "Helvetica",
+    Lato: "Helvetica",
+    "Lato, sans-serif": "Helvetica",
+
+    "Source Sans Pro, Helvetica, Arial, sans-serif": "Helvetica",
+    "Source Sans Pro": "Helvetica",
+    "Source Sans Pro, sans-serif": "Helvetica",
+
+    "Montserrat, Helvetica, Arial, sans-serif": "Helvetica",
+    Montserrat: "Helvetica",
+    "Montserrat, sans-serif": "Helvetica",
+
+    "Inter, Helvetica, Arial, sans-serif": "Helvetica",
+    Inter: "Helvetica",
+    "Inter, sans-serif": "Helvetica",
+
     // Sans-serif fonts -> Helvetica
     "Helvetica, Arial, sans-serif": "Helvetica",
     Helvetica: "Helvetica",

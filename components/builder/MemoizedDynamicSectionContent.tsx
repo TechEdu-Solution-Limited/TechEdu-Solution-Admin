@@ -22,6 +22,7 @@ interface MemoizedDynamicSectionContentProps {
   onUpdateTemplateConfig: (updates: any) => void;
   onRemoveSection: (sectionType: string) => void;
   onAddSection: () => void;
+  onShowAIConsent?: () => void;
   personalInfo: PersonalInfo;
   professionalSummary: ProfessionalSummary;
   experiences: Experience[];

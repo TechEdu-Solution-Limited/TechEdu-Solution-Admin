@@ -51,14 +51,14 @@ export default function PersonalInfoSection({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="text-center">
+      {/* <div className="text-center">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
           Personal Information
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
           Tell us about yourself and how to reach you
         </p>
-      </div>
+      </div> */}
 
       {/* Profile Photo Section - Hidden for Two Column and Minimal templates */}
       {!shouldHideImageUpload() ? (
@@ -167,6 +167,33 @@ export default function PersonalInfoSection({
             className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
             placeholder="e.g., Senior Frontend Developer, Product Manager"
           />
+        </div>
+
+        <div className="md:col-span-2 space-y-2">
+          <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <User className="h-4 w-4" />
+            <span>Industry Sector</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              (For AI suggestions only)
+            </span>
+          </label>
+          <select
+            value={personalInfo.industry || ""}
+            onChange={(e) => onUpdatePersonalInfo({ industry: e.target.value })}
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <option value="">Select your industry</option>
+            <option value="Technology">Technology</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Finance">Finance</option>
+            <option value="Education">Education</option>
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Retail">Retail</option>
+            <option value="Consulting">Consulting</option>
+            <option value="Government">Government</option>
+            <option value="Non-profit">Non-profit</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
       </div>
 

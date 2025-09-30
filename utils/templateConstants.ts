@@ -51,6 +51,34 @@ export const FONT_SIZES = {
   },
 } as const;
 
+// Font Constants
+export const FONTS = {
+  // Available font families for HTML renderers
+  html: {
+    roboto: "Roboto, Helvetica, Arial, sans-serif",
+    openSans: "Open Sans, Helvetica, Arial, sans-serif",
+    lato: "Lato, Helvetica, Arial, sans-serif",
+    sourceSansPro: "Source Sans Pro, Helvetica, Arial, sans-serif",
+    montserrat: "Montserrat, Helvetica, Arial, sans-serif",
+    inter: "Inter, Helvetica, Arial, sans-serif",
+    default: "Roboto, Helvetica, Arial, sans-serif",
+  },
+
+  // Available font families for PDF renderers (using built-in fonts for reliability)
+  pdf: {
+    roboto: "Helvetica",
+    openSans: "Helvetica",
+    lato: "Helvetica",
+    sourceSansPro: "Helvetica",
+    montserrat: "Helvetica",
+    inter: "Helvetica",
+    default: "Helvetica",
+  },
+
+  // Fallback fonts
+  fallback: "Helvetica, Arial, sans-serif",
+} as const;
+
 // Color Constants
 export const COLORS = {
   primary: "#1e3a8a",

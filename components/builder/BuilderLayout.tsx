@@ -17,9 +17,14 @@ import {
 } from "lucide-react";
 import { IoFileTrayStacked } from "react-icons/io5";
 import MobileActionMenu from "./MobileActionMenu";
+import ResumeNav from "./ResumeNav";
 import { TemplateLayout, TemplateColumn } from "@/types/template";
 import { templateManager } from "@/lib/templates/templateManager";
 import SimpleTemplateConfig from "./SimpleTemplateConfig";
+import { SectionList } from "./SectionList";
+import { SectionModal } from "./modals/SectionModal";
+import { SectionContentRenderer } from "./SectionContentRenderer";
+import { ResumeSection } from "@/types";
 
 interface BuilderLayoutProps {
   children: ReactNode;
@@ -34,10 +39,17 @@ interface BuilderLayoutProps {
   onSaveDraft?: () => void;
   onLoadCV?: () => void;
   onPublishCV?: () => void;
+  onCreateCV?: () => void;
+  onUpdateCV?: () => void;
+  onPublishDraft?: () => void;
   isSaving?: boolean;
   isLoading?: boolean;
+  loading?: boolean;
+  error?: string | null;
   apiError?: string | null;
   onClearError?: () => void;
+  cvId?: string;
+  isCreating?: boolean;
   // Success feedback
   showSuccessMessage?: boolean;
   successMessage?: string;
@@ -57,8 +69,52 @@ interface BuilderLayoutProps {
   onTemplateConfigSave?: (template: any) => void;
   // Add section functionality
   onAddSection?: () => void;
-  // Dummy data functionality
-  onLoadDummyData?: () => void;
+  // Section data for modal editing
+  personalInfo?: any;
+  professionalSummary?: any;
+  experiences?: any[];
+  educations?: any[];
+  skills?: any[];
+  languages?: any[];
+  certifications?: any[];
+  awards?: any[];
+  projects?: any[];
+  interests?: any[];
+  customSections?: any[];
+  // Section update handlers
+  onUpdatePersonalInfo?: (updates: any) => void;
+  onUpdateProfessionalSummary?: (updates: any) => void;
+  onAddExperience?: () => void;
+  onRemoveExperience?: (id: string) => void;
+  onUpdateExperience?: (id: string, field: string, value: any) => void;
+  onAddEducation?: () => void;
+  onRemoveEducation?: (id: string) => void;
+  onUpdateEducation?: (id: string, field: string, value: any) => void;
+  onAddSkill?: () => void;
+  onRemoveSkill?: (id: string) => void;
+  onUpdateSkill?: (id: string, field: string, value: any) => void;
+  onAddLanguage?: () => void;
+  onRemoveLanguage?: (id: string) => void;
+  onUpdateLanguage?: (id: string, field: string, value: any) => void;
+  onAddCertification?: () => void;
+  onRemoveCertification?: (id: string) => void;
+  onUpdateCertification?: (id: string, field: string, value: any) => void;
+  onAddAward?: () => void;
+  onRemoveAward?: (id: string) => void;
+  onUpdateAward?: (id: string, field: string, value: any) => void;
+  onAddProject?: () => void;
+  onRemoveProject?: (id: string) => void;
+  onUpdateProject?: (id: string, field: string, value: any) => void;
+  onAddInterest?: () => void;
+  onRemoveInterest?: (id: string) => void;
+  onUpdateInterest?: (id: string, field: string, value: any) => void;
+  onImageUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveImage?: () => void;
+  onShowAIConsent?: () => void;
+  onUpdateSection?: (
+    sectionId: string,
+    updates: Partial<ResumeSection>
+  ) => void;
 }
 
 export default function BuilderLayout({
@@ -73,10 +129,17 @@ export default function BuilderLayout({
   onSaveDraft,
   onLoadCV,
   onPublishCV,
+  onCreateCV,
+  onUpdateCV,
+  onPublishDraft,
   isSaving = false,
   isLoading = false,
+  loading = false,
+  error = null,
   apiError = null,
   onClearError,
+  cvId,
+  isCreating = false,
   showSuccessMessage = false,
   successMessage = "",
   onClearSuccess,
@@ -91,7 +154,49 @@ export default function BuilderLayout({
   selectedTemplate = "modern",
   onTemplateConfigSave,
   onAddSection,
-  onLoadDummyData,
+  // Section data
+  personalInfo,
+  professionalSummary,
+  experiences = [],
+  educations = [],
+  skills = [],
+  languages = [],
+  certifications = [],
+  awards = [],
+  projects = [],
+  interests = [],
+  customSections = [],
+  // Section handlers
+  onUpdatePersonalInfo,
+  onUpdateProfessionalSummary,
+  onAddExperience,
+  onRemoveExperience,
+  onUpdateExperience,
+  onAddEducation,
+  onRemoveEducation,
+  onUpdateEducation,
+  onAddSkill,
+  onRemoveSkill,
+  onUpdateSkill,
+  onAddLanguage,
+  onRemoveLanguage,
+  onUpdateLanguage,
+  onAddCertification,
+  onRemoveCertification,
+  onUpdateCertification,
+  onAddAward,
+  onRemoveAward,
+  onUpdateAward,
+  onAddProject,
+  onRemoveProject,
+  onUpdateProject,
+  onAddInterest,
+  onRemoveInterest,
+  onUpdateInterest,
+  onImageUpload,
+  onRemoveImage,
+  onShowAIConsent,
+  onUpdateSection,
 }: BuilderLayoutProps) {
   const [template, setTemplate] = useState<TemplateLayout | null>(null);
   const [activeTab, setActiveTab] = useState<
@@ -103,6 +208,12 @@ export default function BuilderLayout({
     | "colors"
     | "spacing"
   >("layout");
+
+  // Modal state for section editing
+  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<ResumeSection | null>(
+    null
+  );
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -134,147 +245,61 @@ export default function BuilderLayout({
     }
   }, [selectedTemplate]);
 
+  // Update selected section when sections change (to reflect updated headings)
+  useEffect(() => {
+    if (selectedSection && sections.length > 0) {
+      const updatedSection = sections.find((s) => s.id === selectedSection.id);
+      if (updatedSection) {
+        setSelectedSection(updatedSection);
+      }
+    }
+  }, [sections, selectedSection]);
+
+  // Section modal handlers
+  const handleSectionClick = useCallback((section: ResumeSection) => {
+    setSelectedSection(section);
+    setIsSectionModalOpen(true);
+  }, []);
+
+  const handleCloseSectionModal = useCallback(() => {
+    setIsSectionModalOpen(false);
+    setSelectedSection(null);
+  }, []);
+
+  const handleSaveSection = useCallback(
+    (section: ResumeSection) => {
+      // Here you would typically save the section data
+      // For now, we'll just close the modal
+      console.log("Saving section:", section);
+      handleCloseSectionModal();
+    },
+    [handleCloseSectionModal]
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-900 dark:to-gray-800">
+    <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-900 dark:to-gray-800">
       {/* Navigation */}
-      <nav className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-2">
-            {/* Template Button */}
-            <button
-              onClick={onChangeTemplate}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 group"
-            >
-              <IoFileTrayStacked className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-              <span className="hidden sm:inline">Change Template</span>
-            </button>
-
-            {/* Builder Mode Toggle */}
-            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={onToggleBuilderMode}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-all duration-200 group ${
-                  builderMode === "content"
-                    ? "bg-white dark:bg-gray-600 text-blue-700 dark:text-blue-300 shadow-sm"
-                    : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                }`}
-              >
-                <List className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                <span className="hidden sm:inline text-sm">Content</span>
-              </button>
-              <button
-                onClick={onToggleBuilderMode}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-all duration-200 group ${
-                  builderMode === "customize"
-                    ? "bg-white dark:bg-gray-600 text-purple-700 dark:text-purple-300 shadow-sm"
-                    : "text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                }`}
-              >
-                <Palette className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                <span className="hidden sm:inline text-sm">Customize</span>
-              </button>
-            </div>
-
-            {/* API Functionality - Grouped with visual separator */}
-            <div className="hidden lg:flex items-center space-x-1 pl-2 border-l border-gray-200 dark:border-gray-700">
-              {onLoadDummyData && (
-                <button
-                  onClick={onLoadDummyData}
-                  className="flex items-center space-x-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 rounded-lg transition-all duration-200 group"
-                >
-                  <FileText className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm">Dummy Data</span>
-                </button>
-              )}
-
-              {onSaveDraft && (
-                <button
-                  onClick={onSaveDraft}
-                  disabled={isSaving || isLoading}
-                  className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-200 group"
-                >
-                  <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm">
-                    {isSaving ? "Saving..." : "Draft"}
-                  </span>
-                </button>
-              )}
-
-              {onSaveCV && (
-                <button
-                  onClick={onSaveCV}
-                  disabled={isSaving || isLoading}
-                  className="flex items-center space-x-2 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:bg-purple-50 dark:disabled:bg-purple-900/10 text-purple-700 dark:text-purple-300 rounded-lg transition-all duration-200 group"
-                >
-                  <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm">
-                    {isSaving ? "Saving..." : "Save"}
-                  </span>
-                </button>
-              )}
-
-              {onLoadCV && (
-                <button
-                  onClick={onLoadCV}
-                  disabled={isLoading}
-                  className="flex items-center space-x-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 disabled:bg-indigo-50 dark:disabled:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300 rounded-lg transition-all duration-200 group"
-                >
-                  <Upload className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm">
-                    {isLoading ? "Loading..." : "Load"}
-                  </span>
-                </button>
-              )}
-
-              {onPublishCV && (
-                <button
-                  onClick={onPublishCV}
-                  disabled={isSaving || isLoading}
-                  className="flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 disabled:bg-green-50 dark:disabled:bg-green-900/10 text-green-700 dark:text-green-300 rounded-lg transition-all duration-200 group"
-                >
-                  <Send className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-sm">
-                    {isSaving ? "Publishing..." : "Publish"}
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* Export Button */}
-            <button
-              onClick={onExportPDF}
-              disabled={isExporting}
-              className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-500 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg group"
-            >
-              <Download className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-              <span>{isExporting ? "Exporting..." : "Export PDF"}</span>
-            </button>
-
-            {onExportHTML2PDF && (
-              <button
-                onClick={onExportHTML2PDF}
-                disabled={isExporting}
-                className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-green-400 disabled:to-green-500 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg group"
-              >
-                <Download className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-                <span>{isExporting ? "Exporting..." : "HTML2PDF"}</span>
-              </button>
-            )}
-
-            {/* Mobile Action Menu */}
-            <MobileActionMenu
-              onSaveCV={onSaveCV}
-              onSaveDraft={onSaveDraft}
-              onLoadCV={onLoadCV}
-              onPublishCV={onPublishCV}
-              onExportPDF={onExportPDF}
-              isSaving={isSaving}
-              isLoading={isLoading}
-              isExporting={isExporting}
-            />
-          </div>
-        </div>
-      </nav>
+      <ResumeNav
+        onChangeTemplate={onChangeTemplate}
+        builderMode={builderMode}
+        onToggleBuilderMode={onToggleBuilderMode}
+        onCreateCV={onCreateCV}
+        onUpdateCV={onUpdateCV}
+        onSaveDraft={onSaveDraft}
+        onPublishDraft={onPublishDraft}
+        onSaveCV={onSaveCV}
+        onLoadCV={onLoadCV}
+        onPublishCV={onPublishCV}
+        onExportPDF={onExportPDF}
+        onExportHTML2PDF={onExportHTML2PDF}
+        isSaving={isSaving}
+        isLoading={isLoading}
+        isExporting={isExporting}
+        isCreating={isCreating}
+        loading={loading}
+        cvId={cvId}
+        error={error}
+      />
 
       {/* Success Notification */}
       {showSuccessMessage && onClearSuccess && (
@@ -319,7 +344,7 @@ export default function BuilderLayout({
       )}
 
       {/* Error Notification */}
-      {apiError && onClearError && (
+      {(apiError || error) && onClearError && (
         <div className="fixed top-20 right-4 z-50 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-6 py-4 rounded-xl shadow-lg max-w-md animate-slide-in-right">
           <div className="flex justify-between items-start">
             <div className="flex items-start space-x-3">
@@ -340,7 +365,7 @@ export default function BuilderLayout({
               </div>
               <div>
                 <strong className="font-semibold">Error:</strong>
-                <span className="block text-sm mt-1">{apiError}</span>
+                <span className="block text-sm mt-1">{apiError || error}</span>
               </div>
             </div>
             <button
@@ -360,30 +385,31 @@ export default function BuilderLayout({
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mt-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
             {/* Left Column - Content/Customize (Scrollable) */}
-            <div className="overflow-y-auto lg:col-span-1 max-h-full">
+            <div className="overflow-y-auto lg:col-span-1 h-full relative">
               {builderMode === "content" ? (
-                // Content Mode - Accordion Sections
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                // Content Mode - Clean Section List
+                <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                  <div className="mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                       Resume Sections
                     </h2>
-                    <button
-                      onClick={onAddSection}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
-                    >
-                      <PlusIcon className="h-4 w-4" /> Add Section
-                    </button>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Click on any section to edit its content
+                    </p>
                   </div>
-                  {children}
+                  <SectionList
+                    sections={sections}
+                    onSectionClick={handleSectionClick}
+                    onAddSection={onAddSection || (() => {})}
+                  />
                 </div>
               ) : (
                 // Customize Mode - Simple Template Configuration
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white rounded-[10px] shadow-sm border border-gray-200">
                   {template ? (
                     <SimpleTemplateConfig
                       key={template.id}
@@ -406,17 +432,87 @@ export default function BuilderLayout({
                   )}
                 </div>
               )}
+
+              {/* Section Modal */}
+              <SectionModal
+                isOpen={isSectionModalOpen}
+                onClose={handleCloseSectionModal}
+                section={selectedSection}
+                onSave={handleSaveSection}
+                onUpdateSection={onUpdateSection}
+              >
+                {selectedSection && (
+                  <SectionContentRenderer
+                    section={selectedSection}
+                    onUpdate={(updates) => {
+                      // Handle section updates based on section type
+                      switch (selectedSection.type) {
+                        case "personal-info":
+                          onUpdatePersonalInfo?.(updates);
+                          break;
+                        case "professional-summary":
+                          onUpdateProfessionalSummary?.(updates);
+                          break;
+                        default:
+                          console.log(
+                            "Section update:",
+                            selectedSection.type,
+                            updates
+                          );
+                      }
+                    }}
+                    onShowAIConsent={onShowAIConsent}
+                    personalInfo={personalInfo}
+                    professionalSummary={professionalSummary}
+                    experiences={experiences}
+                    educations={educations}
+                    skills={skills}
+                    languages={languages}
+                    certifications={certifications}
+                    awards={awards}
+                    projects={projects}
+                    interests={interests}
+                    customSections={customSections}
+                    onAddExperience={onAddExperience}
+                    onRemoveExperience={onRemoveExperience}
+                    onUpdateExperience={onUpdateExperience}
+                    onAddEducation={onAddEducation}
+                    onRemoveEducation={onRemoveEducation}
+                    onUpdateEducation={onUpdateEducation}
+                    onAddSkill={onAddSkill}
+                    onRemoveSkill={onRemoveSkill}
+                    onUpdateSkill={onUpdateSkill}
+                    onAddLanguage={onAddLanguage}
+                    onRemoveLanguage={onRemoveLanguage}
+                    onUpdateLanguage={onUpdateLanguage}
+                    onAddCertification={onAddCertification}
+                    onRemoveCertification={onRemoveCertification}
+                    onUpdateCertification={onUpdateCertification}
+                    onAddAward={onAddAward}
+                    onRemoveAward={onRemoveAward}
+                    onUpdateAward={onUpdateAward}
+                    onAddProject={onAddProject}
+                    onRemoveProject={onRemoveProject}
+                    onUpdateProject={onUpdateProject}
+                    onAddInterest={onAddInterest}
+                    onRemoveInterest={onRemoveInterest}
+                    onUpdateInterest={onUpdateInterest}
+                    onImageUpload={onImageUpload}
+                    onRemoveImage={onRemoveImage}
+                  />
+                )}
+              </SectionModal>
             </div>
 
             {/* Right Column - Sticky Preview (Desktop Only) */}
-            <div className="sticky top-20 hidden lg:block lg:col-span-1 h-full">
+            <div className="sticky top-20 hidden lg:block lg:col-span-1 h-[70vh]">
               <div
-                className="overflow-hidden cursor-zoom-in hover:shadow-xl transition-all duration-300 h-full"
+                className="overflow-hidden border border-gray-200 rounded-[10px] bg-white shadow-sm h-full cursor-zoom-in"
                 onClick={onPreviewClick}
               >
-                <div className="p-4 h-full overflow-hidden">
+                <div className="h-full w-full p-4">
                   {previewData ? (
-                    <div className="transform scale-[0.5] origin-top-left w-[200%] h-full overflow-hidden">
+                    <div className="transform scale-[0.75] origin-top-left w-[133%] h-full overflow-hidden max-w-full mx-auto">
                       {previewData}
                     </div>
                   ) : (

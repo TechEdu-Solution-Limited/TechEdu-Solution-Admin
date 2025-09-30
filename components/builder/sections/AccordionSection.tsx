@@ -51,21 +51,21 @@ export default function AccordionSection<T extends { id: string }>({
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        {/* <h2 className="text-lg font-bold text-gray-900 dark:text-white">
           {title}
-        </h2>
+        </h2> */}
         <div className="flex items-center space-x-2">
           {items.length > 0 && (
             <>
               <button
                 onClick={expandAll}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded transition-colors"
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded transition-colors"
               >
                 Expand All
               </button>
               <button
                 onClick={collapseAll}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded transition-colors"
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded transition-colors"
               >
                 Collapse All
               </button>
@@ -73,7 +73,7 @@ export default function AccordionSection<T extends { id: string }>({
           )}
           <button
             onClick={onAdd}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] transition-colors"
           >
             <Plus className="h-5 w-5" />
             <span>{addButtonText}</span>
@@ -98,7 +98,7 @@ export default function AccordionSection<T extends { id: string }>({
             return (
               <div
                 key={item.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg"
+                className="border border-gray-200 dark:border-gray-700 rounded-[10px]"
               >
                 <div
                   className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
