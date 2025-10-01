@@ -65,6 +65,7 @@ export function ModernTemplatePdfRenderer({
       fontFamily: FONTS.pdf.default,
       lineHeight: 1.3,
       color: template.styles.colors.text,
+      hyphenationCallback: (word: string) => [word], // Disable hyphenation
     },
     header: {
       paddingVertical: 20,
@@ -140,7 +141,7 @@ export function ModernTemplatePdfRenderer({
       width: "65%", // 8/12 = 67% (col-span-8)
     },
     sectionContainer: {
-      marginBottom: 16,
+      marginBottom: 12,
     },
     leftSectionTitle: {
       fontSize: 11, // Reduced from 16 for PDF
@@ -195,8 +196,9 @@ export function ModernTemplatePdfRenderer({
     itemDescription: {
       fontSize: 9, // Reduced from 11 for PDF
       color: template.styles.colors.text,
-      marginBottom: 3,
+      // marginBottom: 3,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      textAlign: "justify",
     },
     bullet: {
       marginLeft: 10,

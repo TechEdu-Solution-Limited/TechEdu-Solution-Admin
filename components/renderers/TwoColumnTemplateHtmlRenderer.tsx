@@ -93,7 +93,7 @@ export function TwoColumnTemplateHtmlRenderer({
           </h1>
           {personalInfo.data.targetedJobTitle && (
             <p
-              className="text-xl text-gray-600"
+              className="text-xl text-gray-600 uppercase"
               style={{
                 color: template.styles.colors.secondary,
                 fontFamily: mapFontFamily(
@@ -469,6 +469,23 @@ export function TwoColumnTemplateHtmlRenderer({
                         } as React.CSSProperties
                       }
                     >
+                      {/* Professional Summary */}
+                      {item.summary &&
+                        section.type === "professional-summary" && (
+                          <div
+                            style={{
+                              color:
+                                rightColumn?.styles?.textColor || "#000000",
+                              fontFamily: mapFontFamily(
+                                template.styles.typography.fontFamily
+                              ),
+                              fontSize: `${template.styles.typography.bodySize}px`,
+                              lineHeight: template.styles.typography.lineHeight,
+                            }}
+                            dangerouslySetInnerHTML={{ __html: item.summary }}
+                          />
+                        )}
+
                       {/* Work Experience */}
                       {item.title && item.company && (
                         <div className="mb-4">

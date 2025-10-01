@@ -75,6 +75,7 @@ export function TwoColumnTemplatePdfRenderer({
       fontFamily: FONTS.pdf.default,
       lineHeight: template.styles.typography.lineHeight,
       color: template.styles.colors.text,
+      hyphenationCallback: (word: string) => [word], // Disable hyphenation
     },
     header: {
       paddingVertical: 32,
@@ -178,13 +179,14 @@ export function TwoColumnTemplatePdfRenderer({
     itemDate: {
       fontSize: 9, // Reduced to match HTML
       color: template.styles.colors.secondary || "#000000",
-      marginBottom: 1,
+      // marginBottom: 1,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemDescription: {
       fontSize: 8, // Reduced to match HTML
       marginBottom: 4,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      textAlign: "justify",
     },
     bullet: {
       marginLeft: 6,
@@ -568,6 +570,19 @@ export function TwoColumnTemplatePdfRenderer({
                   {Array.isArray(items) &&
                     items.map((item: any, i: number) => (
                       <View key={i} style={styles.itemContainer}>
+                        {/* Professional Summary */}
+                        {item.summary &&
+                          section.type === "professional-summary" && (
+                            <Text
+                              style={[
+                                styles.itemDescription,
+                                styles.rightItemDescription,
+                              ]}
+                            >
+                              {item.summary.replace(/<[^>]*>/g, "")}
+                            </Text>
+                          )}
+
                         {/* Work Experience */}
                         {item.title && item.company && (
                           <View style={{ marginBottom: 8 }}>
@@ -675,7 +690,6 @@ export function TwoColumnTemplatePdfRenderer({
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "flex-start",
-                                marginBottom: 2,
                               }}
                             >
                               <Text
@@ -705,33 +719,41 @@ export function TwoColumnTemplatePdfRenderer({
                                 </Text>
                               )}
                             </View>
-                            <Text
-                              style={[
-                                styles.itemTitle,
-                                {
-                                  color: "#1e3a8a",
-                                  fontStyle: "italic",
-                                  fontWeight: "bold",
-                                  fontSize: 8,
-                                },
-                              ]}
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                              }}
                             >
-                              {item.school || "School"}
-                            </Text>
-                            {item.location && (
                               <Text
                                 style={[
-                                  styles.itemDate,
+                                  styles.itemTitle,
                                   {
-                                    color: "#666666",
-                                    fontSize: 7,
+                                    color: "#1e3a8a",
+                                    fontStyle: "italic",
+                                    fontWeight: "bold",
+                                    fontSize: 8,
                                   },
                                 ]}
                               >
-                                {item.location}
-                                {item.gpa && ` • GPA: ${item.gpa}`}
+                                {item.school || "School"}
                               </Text>
-                            )}
+                              {item.location && (
+                                <Text
+                                  style={[
+                                    styles.itemDate,
+                                    {
+                                      color: "#666666",
+                                      fontSize: 7,
+                                    },
+                                  ]}
+                                >
+                                  {item.location}
+                                  {item.gpa && ` • GPA: ${item.gpa}`}
+                                </Text>
+                              )}
+                            </View>
                             {item.description && (
                               <Text
                                 style={[

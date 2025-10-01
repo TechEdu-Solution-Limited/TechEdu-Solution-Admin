@@ -279,6 +279,40 @@ export function TwoColumnTemplatePlaceholder({
             color: rightColumn?.styles?.textColor || "#000000",
           }}
         >
+          {/* Professional Summary Placeholder */}
+          <div className="mb-8">
+            <h2
+              className="text-xl font-bold mb-2 border-t border-b uppercase tracking-wide"
+              style={{
+                color: "#1e3a8a",
+                fontFamily: mapFontFamily(
+                  template.styles.typography.fontFamily
+                ),
+                fontSize: `${template.styles.typography.headingSize}px`,
+                borderTopColor: "#1e3a8a",
+                borderBottomColor: "#1e3a8a",
+              }}
+            >
+              Professional Summary
+            </h2>
+            <p
+              style={{
+                color: rightColumn?.styles?.textColor || "#000000",
+                fontFamily: mapFontFamily(
+                  template.styles.typography.fontFamily
+                ),
+                fontSize: `${template.styles.typography.bodySize}px || 12px`,
+                lineHeight: template.styles.typography.lineHeight,
+              }}
+            >
+              Results-driven software engineer with 5+ years of experience in
+              full-stack development. Proven track record of delivering
+              high-quality solutions and leading cross-functional teams.
+              Passionate about creating scalable applications and mentoring
+              junior developers.
+            </p>
+          </div>
+
           {/* Work Experience Placeholder */}
           <div className="mb-8">
             <h2

@@ -23,7 +23,6 @@ interface ResumeNavProps {
   onUpdateCV?: () => void;
   onSaveDraft?: () => void;
   onPublishDraft?: () => void;
-  onSaveCV?: () => void;
   onLoadCV?: () => void;
   onPublishCV?: () => void;
 
@@ -49,7 +48,6 @@ export default function ResumeNav({
   onUpdateCV,
   onSaveDraft,
   onPublishDraft,
-  onSaveCV,
   onLoadCV,
   onPublishCV,
   onExportPDF,
@@ -112,19 +110,6 @@ export default function ResumeNav({
                 <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                 <span className="text-sm">
                   {isSaving ? "Saving..." : "Draft"}
-                </span>
-              </button>
-            )}
-
-            {onSaveCV && (
-              <button
-                onClick={onSaveCV}
-                disabled={isSaving || isLoading}
-                className="flex items-center space-x-2 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:bg-purple-50 dark:disabled:bg-purple-900/10 text-purple-700 dark:text-purple-300 rounded-lg transition-all duration-200 group"
-              >
-                <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-sm">
-                  {isSaving ? "Saving..." : "Save"}
                 </span>
               </button>
             )}
@@ -219,7 +204,6 @@ export default function ResumeNav({
 
           {/* Mobile Action Menu */}
           <MobileActionMenu
-            onSaveCV={onSaveCV}
             onSaveDraft={onSaveDraft}
             onLoadCV={onLoadCV}
             onPublishCV={onPublishCV}

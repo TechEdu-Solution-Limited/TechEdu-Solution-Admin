@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Menu, X, Save, Upload, Send, Download } from "lucide-react";
 
 interface MobileActionMenuProps {
-  onSaveCV?: () => void;
   onSaveDraft?: () => void;
   onLoadCV?: () => void;
   onPublishCV?: () => void;
@@ -15,7 +14,6 @@ interface MobileActionMenuProps {
 }
 
 export default function MobileActionMenu({
-  onSaveCV,
   onSaveDraft,
   onLoadCV,
   onPublishCV,
@@ -35,15 +33,6 @@ export default function MobileActionMenu({
       disabled: isSaving || isLoading,
       color: "text-gray-600 dark:text-gray-300",
       bgColor: "hover:bg-gray-100 dark:hover:bg-gray-700",
-    },
-    {
-      id: "save-cv",
-      label: "Save CV",
-      icon: Save,
-      onClick: onSaveCV,
-      disabled: isSaving || isLoading,
-      color: "text-purple-600 dark:text-purple-400",
-      bgColor: "hover:bg-purple-100 dark:hover:bg-purple-900/30",
     },
     {
       id: "load-cv",
@@ -72,7 +61,7 @@ export default function MobileActionMenu({
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "hover:bg-blue-100 dark:hover:bg-blue-900/30",
     },
-  ].filter(action => action.onClick);
+  ].filter((action) => action.onClick);
 
   return (
     <div className="lg:hidden relative">
@@ -96,14 +85,16 @@ export default function MobileActionMenu({
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Menu */}
           <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-2">
             {actions.map((action) => {
               const Icon = action.icon;
-              const loading = (action.id.includes("save") || action.id.includes("publish")) && isSaving;
+              const loading =
+                (action.id.includes("save") || action.id.includes("publish")) &&
+                isSaving;
               const loadingText = loading ? "Saving..." : action.label;
-              
+
               return (
                 <button
                   key={action.id}

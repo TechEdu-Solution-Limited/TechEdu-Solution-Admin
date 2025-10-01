@@ -31,7 +31,6 @@ import TemplateSelectorModal from "@/components/TemplateSelectorModal";
 import AIConsentModal from "./modals/AIConsentModal";
 import LoadCVModal from "@/components/builder/modals/LoadCVModal";
 import CVUploadModal from "@/components/builder/modals/CVUploadModal";
-import SectionModal from "@/components/builder/modals/SectionModal";
 import AddSectionModal from "@/components/builder/modals/AddSectionModal";
 import SimplePreviewModal from "@/components/builder/modals/SimplePreviewModal";
 import { useCVBuilder } from "@/hooks/useCVBuilder";
@@ -583,7 +582,6 @@ export default function CVBuilderMain({
           onChangeTemplate={() => updateState({ showTemplateSelector: true })}
           showPreview={state.showPreview}
           isExporting={state.isExporting}
-          onSaveCV={cvApi.saveCV}
           onSaveDraft={cvApi.saveDraft}
           onLoadCV={() => updateState({ showLoadCVModal: true })}
           onPublishCV={cvApi.publishCV}
@@ -715,17 +713,6 @@ export default function CVBuilderMain({
         </BuilderLayout>
 
         {/* Modals */}
-        <SectionModal
-          isOpen={state.showSectionModal}
-          onClose={() => updateState({ showSectionModal: false })}
-          sections={sections}
-          enabledSections={state.enabledSections}
-          activeSection={state.activeSection}
-          onToggleSection={toggleSection}
-          onNavigateToSection={(sectionId) => {
-            updateState({ activeSection: sectionId, showSectionModal: false });
-          }}
-        />
 
         <TemplateSelectorModal
           isOpen={state.showTemplateSelector}

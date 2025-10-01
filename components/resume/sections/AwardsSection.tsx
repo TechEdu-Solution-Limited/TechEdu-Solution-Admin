@@ -1,4 +1,3 @@
-// components/resume/sections/AwardsSection.tsx
 import { Award } from "@/types";
 
 interface Props {
@@ -59,22 +58,22 @@ export default function AwardsSection({
               style={{
                 fontSize: `${styles.typography.bodySize - 2}px`,
                 color: styles.colors.secondary,
-                marginBottom: "4px",
+                marginBottom: "2px",
               }}
             >
               {award.date}
             </p>
           )}
           {award.description && (
-            <div
+            <p
               style={{
                 fontSize: `${styles.typography.bodySize - 2}px`,
                 color: styles.colors.text,
-                lineHeight: 1.5,
+                lineHeight: 1.4,
               }}
-              className="prose prose-sm max-w-none rich-text-content [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1"
-              dangerouslySetInnerHTML={{ __html: award.description }}
-            />
+            >
+              {award.description}
+            </p>
           )}
         </div>
       ))}

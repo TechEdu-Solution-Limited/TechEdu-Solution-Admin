@@ -35,7 +35,6 @@ interface BuilderLayoutProps {
   showPreview: boolean;
   isExporting: boolean;
   // API functionality
-  onSaveCV?: () => void;
   onSaveDraft?: () => void;
   onLoadCV?: () => void;
   onPublishCV?: () => void;
@@ -125,7 +124,6 @@ export default function BuilderLayout({
   onChangeTemplate,
   showPreview,
   isExporting,
-  onSaveCV,
   onSaveDraft,
   onLoadCV,
   onPublishCV,
@@ -287,7 +285,6 @@ export default function BuilderLayout({
         onUpdateCV={onUpdateCV}
         onSaveDraft={onSaveDraft}
         onPublishDraft={onPublishDraft}
-        onSaveCV={onSaveCV}
         onLoadCV={onLoadCV}
         onPublishCV={onPublishCV}
         onExportPDF={onExportPDF}
@@ -510,7 +507,7 @@ export default function BuilderLayout({
                 className="overflow-hidden border border-gray-200 rounded-[10px] bg-white shadow-sm h-full cursor-zoom-in"
                 onClick={onPreviewClick}
               >
-                <div className="h-full w-full p-4">
+                <div className="max-w-6xl mx-auto h-full p-4">
                   {previewData ? (
                     <div className="transform scale-[0.75] origin-top-left w-[133%] h-full overflow-hidden max-w-full mx-auto">
                       {previewData}

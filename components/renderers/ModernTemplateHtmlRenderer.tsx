@@ -49,7 +49,7 @@ export function ModernTemplateHtmlRenderer({
 
   return (
     <div
-      className="mx-auto bg-white shadow-lg"
+      className="bg-white shadow-lg w-full h-full"
       style={
         {
           width: "210mm", // ✅ A4 width
