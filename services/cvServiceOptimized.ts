@@ -35,8 +35,6 @@ interface CVResponse {
 
 // Single optimized CV service
 class OptimizedCVService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-
   // Generic API request method
   private async apiRequest<T>(
     endpoint: string,
@@ -48,7 +46,8 @@ class OptimizedCVService {
       throw new Error("Authentication token not found");
     }
 
-    const url = `${this.baseUrl}${endpoint}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const url = `${baseUrl}${endpoint}`;
     console.log(`🚀 API Call: ${method} ${url}`);
 
     const response = await fetch(url, {

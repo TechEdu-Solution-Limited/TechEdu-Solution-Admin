@@ -17,7 +17,7 @@ import { isDevelopment } from "@/lib/env";
 /**
  * Base URL for API requests. For Next.js API routes, we use relative URLs
  */
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL; // Empty string for relative URLs to Next.js API routes
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL; // Default to backend URL
 
 // Debug logging for BASE_URL
 console.log("API BASE_URL:", BASE_URL);
