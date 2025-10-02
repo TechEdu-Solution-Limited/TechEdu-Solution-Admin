@@ -25,33 +25,34 @@ export default function MobileActionMenu({
   const [isOpen, setIsOpen] = useState(false);
 
   const actions = [
-    {
-      id: "save-draft",
-      label: "Save Draft",
-      icon: Save,
-      onClick: onSaveDraft,
-      disabled: isSaving || isLoading,
-      color: "text-gray-600 dark:text-gray-300",
-      bgColor: "hover:bg-gray-100 dark:hover:bg-gray-700",
-    },
-    {
-      id: "load-cv",
-      label: "Load CV",
-      icon: Upload,
-      onClick: onLoadCV,
-      disabled: isLoading,
-      color: "text-indigo-600 dark:text-indigo-400",
-      bgColor: "hover:bg-indigo-100 dark:hover:bg-indigo-900/30",
-    },
-    {
-      id: "publish-cv",
-      label: "Publish",
-      icon: Send,
-      onClick: onPublishCV,
-      disabled: isSaving || isLoading,
-      color: "text-green-600 dark:text-green-400",
-      bgColor: "hover:bg-green-100 dark:hover:bg-green-900/30",
-    },
+    // Manual CV Management actions - Commented out for auto-save flow
+    // {
+    //   id: "save-draft",
+    //   label: "Save Draft",
+    //   icon: Save,
+    //   onClick: onSaveDraft,
+    //   disabled: isSaving || isLoading,
+    //   color: "text-gray-600 dark:text-gray-300",
+    //   bgColor: "hover:bg-gray-100 dark:hover:bg-gray-700",
+    // },
+    // {
+    //   id: "load-cv",
+    //   label: "Load CV",
+    //   icon: Upload,
+    //   onClick: onLoadCV,
+    //   disabled: isLoading,
+    //   color: "text-indigo-600 dark:text-indigo-400",
+    //   bgColor: "hover:bg-indigo-100 dark:hover:bg-indigo-900/30",
+    // },
+    // {
+    //   id: "publish-cv",
+    //   label: "Publish",
+    //   icon: Send,
+    //   onClick: onPublishCV,
+    //   disabled: isSaving || isLoading,
+    //   color: "text-green-600 dark:text-green-400",
+    //   bgColor: "hover:bg-green-100 dark:hover:bg-green-900/30",
+    // },
     {
       id: "export-pdf",
       label: "Export PDF",

@@ -16,6 +16,11 @@ interface SectionContentRendererProps {
   section: ResumeSection;
   onUpdate: (updates: any) => void;
   onShowAIConsent?: () => void;
+  aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
+  cvId?: string;
+  onCheckExistingConsent?: (
+    cvId: string
+  ) => Promise<{ aiProcessing: boolean; aiTraining: boolean } | null>;
   personalInfo?: any;
   professionalSummary?: any;
   experiences?: any[];
@@ -59,6 +64,9 @@ export function SectionContentRenderer({
   section,
   onUpdate,
   onShowAIConsent,
+  aiConsent,
+  cvId,
+  onCheckExistingConsent,
   personalInfo,
   professionalSummary,
   experiences = [],
@@ -145,12 +153,19 @@ export function SectionContentRenderer({
       );
 
     case "professional-summary":
+      console.log(
+        "SectionContentRenderer - cvId being passed to SummarySection:",
+        cvId
+      );
       return (
         <SummarySection
           professionalSummary={professionalSummary || section.data}
           personalInfo={personalInfo}
           onUpdateProfessionalSummary={onUpdate}
           onShowAIConsent={onShowAIConsent}
+          aiConsent={aiConsent}
+          cvId={cvId}
+          onCheckExistingConsent={onCheckExistingConsent}
         />
       );
 
@@ -211,7 +226,7 @@ export function SectionContentRenderer({
             <span className="text-2xl">📝</span>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {section.type.replace("-", " ")}
+            {section.type?.replace("-", " ") || "Unknown Section"}
           </h3>
           <p className="text-sm text-gray-600">
             Section editor for {section.type} will be implemented here

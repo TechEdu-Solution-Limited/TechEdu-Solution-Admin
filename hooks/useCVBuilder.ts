@@ -37,14 +37,14 @@ import { useSectionManagement } from "./useSectionManagement";
 import { useAutoSave } from "./useAutoSave";
 import { useValidation, CVValidationSchemas } from "./useValidation";
 import { useHistory } from "./useHistory";
-import {
-  useKeyboardShortcuts,
-  CVBuilderShortcuts,
-} from "./useKeyboardShortcuts";
+// import {
+//   useKeyboardShortcuts,
+//   CVBuilderShortcuts,
+// } from "./useKeyboardShortcuts";
 import { useCV } from "./useCV";
-import { useAIFeatures } from "./useAIFeatures";
+// import { useAIFeatures } from "./useAIFeatures";
 import { mapResumePropsToSectionsWithTemplate } from "@/utils/resumeSectionMapper";
-import { cvService } from "@/services/cvService";
+import { cvService } from "@/services/cvServiceOptimized";
 
 interface UseCVBuilderProps {
   initialState?: Partial<CVBuilderState>;
@@ -305,7 +305,10 @@ export function useCVBuilder({
         };
 
         // Auto-save as draft
-        await cvService.createOrUpdateDraft(request);
+        await cvService.createOrUpdateDraft({
+          working: state.resumeData,
+          isDirty: true,
+        });
         console.log("Auto-save successful:", state);
       } catch (error) {
         console.error("Auto-save failed:", error);
@@ -339,40 +342,40 @@ export function useCVBuilder({
   });
 
   // AI features hook
-  const aiFeatures = useAIFeatures();
+  // const aiFeatures = useAIFeatures();
 
-  // Keyboard shortcuts
-  const shortcuts = useMemo(
-    () => [
-      CVBuilderShortcuts.save(() => cvApi.saveCV()),
-      CVBuilderShortcuts.saveDraft(() => cvApi.saveDraft()),
-      CVBuilderShortcuts.export(() => handleExportPDF()),
-      CVBuilderShortcuts.preview(() =>
-        updateState({ showPreview: !state.showPreview })
-      ),
-      CVBuilderShortcuts.undo(() => {
-        const previousState = history.undo();
-        if (previousState) {
-          setState(previousState);
-        }
-      }),
-      CVBuilderShortcuts.redo(() => {
-        const nextState = history.redo();
-        if (nextState) {
-          setState(nextState);
-        }
-      }),
-      CVBuilderShortcuts.toggleMode(() => {
-        updateState({
-          builderMode:
-            state.builderMode === "content" ? "customize" : "content",
-        });
-      }),
-    ],
-    [cvApi, state.showPreview, state.builderMode, history, updateState]
-  );
+  // Keyboard shortcuts (commented out - file deleted)
+  // const shortcuts = useMemo(
+  //   () => [
+  //     CVBuilderShortcuts.save(() => cvApi.saveCV()),
+  //     CVBuilderShortcuts.saveDraft(() => cvApi.saveDraft()),
+  //     CVBuilderShortcuts.export(() => handleExportPDF()),
+  //     CVBuilderShortcuts.preview(() =>
+  //       updateState({ showPreview: !state.showPreview })
+  //     ),
+  //     CVBuilderShortcuts.undo(() => {
+  //       const previousState = history.undo();
+  //       if (previousState) {
+  //         setState(previousState);
+  //       }
+  //     }),
+  //     CVBuilderShortcuts.redo(() => {
+  //       const nextState = history.redo();
+  //       if (nextState) {
+  //         setState(nextState);
+  //       }
+  //     }),
+  //     CVBuilderShortcuts.toggleMode(() => {
+  //       updateState({
+  //         builderMode:
+  //           state.builderMode === "content" ? "customize" : "content",
+  //       });
+  //     }),
+  //   ],
+  //   [cvApi, state.showPreview, state.builderMode, history, updateState]
+  // );
 
-  useKeyboardShortcuts({ shortcuts });
+  // useKeyboardShortcuts({ shortcuts });
 
   // Memoized resume data
   const resumeData = useMemo(async () => {
@@ -596,7 +599,7 @@ export function useCVBuilder({
     cvApi,
 
     // AI features
-    aiFeatures,
+    // aiFeatures,
 
     // Sections
     sections,

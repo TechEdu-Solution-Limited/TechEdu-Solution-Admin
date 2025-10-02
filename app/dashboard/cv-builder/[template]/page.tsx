@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -17,8 +17,8 @@ import { StatusBar } from "@/components/builder/StatusBar";
 
 // Import custom hooks
 import { useTemplateBuilder } from "@/hooks/useTemplateBuilder";
-import { useCVOperations } from "@/hooks/useCVOperations";
-import { useAIFeatures } from "@/hooks/useAIFeatures";
+import { useCVSimplified } from "@/hooks/useCVSimplified";
+// import { useAIFeatures } from "@/hooks/useAIFeatures";
 
 // Import utilities
 import { templateManager } from "@/lib/templates/templateManager";
@@ -68,7 +68,7 @@ export default function TemplateBuilderPage({
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [cvId, setCvId] = useState<string | undefined>(undefined);
-  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false); // Don't show immediately
   const [aiConsent, setAiConsent] = useState<{
     aiProcessing: boolean;
     aiTraining: boolean;
@@ -81,42 +81,37 @@ export default function TemplateBuilderPage({
   }) => {
     setAiConsent(consent);
     setShowAIConsentModal(false);
-    // Store consent in localStorage for persistence
-    localStorage.setItem("cv-builder-ai-consent", JSON.stringify(consent));
+    // TODO: Store consent securely via API
+    console.log("AI consent received:", consent);
   };
 
-  // Handle template selection with consent check
-  const handleTemplateSelectWithConsent = (templateId: string) => {
-    // Check if user has already given consent
-    const savedConsent = localStorage.getItem("cv-builder-ai-consent");
-    if (savedConsent) {
-      setAiConsent(JSON.parse(savedConsent));
-      templateBuilder.handleTemplateSelect(templateId);
-    } else {
-      // Show consent modal first
-      setShowAIConsentModal(true);
-      // Store the template ID to select after consent
-      localStorage.setItem("pending-template-selection", templateId);
-    }
-  };
-
-  // Handle consent acceptance and template selection
-  const handleConsentAccept = (consent: {
+  // Handle consent acceptance and CV creation
+  const handleConsentAccept = async (consent: {
     aiProcessing: boolean;
     aiTraining: boolean;
   }) => {
+    console.log("Consent accepted:", consent);
     handleAIConsent(consent);
-    const pendingTemplate = localStorage.getItem("pending-template-selection");
-    if (pendingTemplate) {
-      templateBuilder.handleTemplateSelect(pendingTemplate);
-      localStorage.removeItem("pending-template-selection");
+
+    // Update CV with new consent if CV already exists
+    if (cvId) {
+      try {
+        console.log("Updating CV with new consent:", consent);
+        await cvOperations.handleUpdateCV(
+          templateBuilder.personalInfo,
+          templateBuilder.resumeData
+        );
+        console.log("CV updated with new consent");
+      } catch (error) {
+        console.error("Failed to update CV with consent:", error);
+      }
     }
   };
 
   // Custom hooks
   const templateBuilder = useTemplateBuilder(templateId);
-  const cvOperations = useCVOperations(cvId, templateBuilder.resumeData);
-  const aiFeatures = useAIFeatures(cvId);
+  const cvOperations = useCVSimplified();
+  // const aiFeatures = useAIFeatures(cvId);
 
   // Generate preview data
   const previewData = useMemo(() => {
@@ -138,25 +133,44 @@ export default function TemplateBuilderPage({
 
   // CV Management handlers
   const handleCreateCV = async (): Promise<string | null> => {
+    console.log("handleCreateCV called with:");
+    console.log("- personalInfo:", templateBuilder.personalInfo);
+    console.log("- aiConsent:", aiConsent);
+
     const newCvId = await cvOperations.handleCreateCV(
-      templateBuilder.personalInfo
+      templateBuilder.personalInfo,
+      templateBuilder.resumeData,
+      aiConsent || undefined // Pass consent data or undefined
     );
+
+    console.log("cvOperations.handleCreateCV returned:", newCvId);
+
     if (newCvId) {
       setCvId(newCvId);
+      console.log("setCvId called with:", newCvId);
     }
     return newCvId;
   };
 
   const handleUpdateCV = async () => {
-    await cvOperations.handleUpdateCV();
+    await cvOperations.handleUpdateCV(
+      templateBuilder.personalInfo,
+      templateBuilder.resumeData
+    );
   };
 
   const handleSaveDraft = async () => {
-    await cvOperations.handleSaveDraft();
+    await cvOperations.handleSaveDraft(
+      templateBuilder.personalInfo,
+      templateBuilder.resumeData
+    );
   };
 
   const handlePublishDraft = async () => {
-    await cvOperations.handlePublishDraft(templateBuilder.personalInfo);
+    await cvOperations.handlePublishDraft(
+      templateBuilder.personalInfo,
+      templateBuilder.resumeData
+    );
   };
 
   // AI suggestion handler
@@ -192,6 +206,16 @@ export default function TemplateBuilderPage({
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
+      // First, create a final draft and publish it
+      console.log("Creating final draft before PDF export...");
+      await cvOperations.handleSaveDraft(
+        templateBuilder.personalInfo,
+        templateBuilder.resumeData
+      );
+
+      // Note: In a real implementation, you'd get the draft ID and publish it
+      // For now, we'll proceed with PDF generation
+
       // Register fonts before PDF generation
       const { registerPDFFonts } = await import("@/utils/fontRegistration");
       registerPDFFonts();
@@ -214,11 +238,94 @@ export default function TemplateBuilderPage({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      console.log("PDF exported successfully");
     } catch (error: any) {
       console.error("Export failed:", error);
       alert(`PDF export failed: ${error.message || error}`);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  console.log("CV Builder Page - cvId being passed to BuilderLayout:", cvId);
+
+  // Create CV only once when personal info is available
+  useEffect(() => {
+    const createCVOnce = async () => {
+      // Only create if we don't have a CV ID and have personal info
+      if (
+        !cvId &&
+        templateBuilder.personalInfo.firstName &&
+        templateBuilder.personalInfo.lastName
+      ) {
+        try {
+          console.log("Creating CV once with personal info...");
+          const newCvId = await cvOperations.handleCreateCV(
+            templateBuilder.personalInfo,
+            templateBuilder.resumeData
+          );
+
+          if (newCvId) {
+            setCvId(newCvId);
+            console.log("CV created with ID:", newCvId);
+          }
+        } catch (error) {
+          console.error("Failed to create CV:", error);
+        }
+      }
+    };
+
+    createCVOnce();
+  }, [
+    templateBuilder.personalInfo.firstName,
+    templateBuilder.personalInfo.lastName,
+  ]); // Only depend on personal info
+
+  // Monitor cvId changes
+  useEffect(() => {
+    console.log("cvId state changed to:", cvId);
+  }, [cvId]);
+
+  // Auto-save when CV exists and data changes
+  useEffect(() => {
+    if (cvId) {
+      const interval = setInterval(() => {
+        console.log("Auto-saving CV and draft:", cvId);
+        // Update main CV
+        cvOperations.handleUpdateCV(
+          templateBuilder.personalInfo,
+          templateBuilder.resumeData
+        );
+        // Create/update draft with working data
+        cvOperations.handleSaveDraft(
+          templateBuilder.personalInfo,
+          templateBuilder.resumeData
+        );
+      }, 5000); // Auto-save every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [
+    cvId,
+    templateBuilder.personalInfo,
+    templateBuilder.resumeData,
+    cvOperations,
+  ]);
+
+  // Function to check existing consent from CV
+  const checkExistingConsent = async (cvId: string) => {
+    try {
+      console.log("Checking existing consent for CV:", cvId);
+      const cvData = await cvOperations.handleLoadCV(cvId);
+      if (cvData && cvData.consent) {
+        console.log("Found existing consent:", cvData.consent);
+        return cvData.consent;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to check existing consent:", error);
+      return null;
     }
   };
 
@@ -242,6 +349,46 @@ export default function TemplateBuilderPage({
         selectedTemplate={templateId}
         onTemplateConfigSave={templateBuilder.handleTemplateConfigSave}
         onAddSection={() => setShowAddSectionModal(true)}
+        onRemoveSection={(sectionId) => {
+          console.log("Remove section clicked:", sectionId);
+
+          // Handle different section types
+          switch (sectionId) {
+            case "languages":
+              templateBuilder.setLanguages([]);
+              break;
+            case "certifications":
+              templateBuilder.setCertifications([]);
+              break;
+            case "awards":
+              templateBuilder.setAwards([]);
+              break;
+            case "projects":
+              templateBuilder.setProjects([]);
+              break;
+            case "interests":
+              templateBuilder.setInterests([]);
+              break;
+            case "courses":
+              templateBuilder.setCourses([]);
+              break;
+            case "organizations":
+              templateBuilder.setOrganizations([]);
+              break;
+            case "publications":
+              templateBuilder.setPublications([]);
+              break;
+            case "references":
+              templateBuilder.setReferences([]);
+              break;
+            case "declarations":
+              templateBuilder.setDeclarations([]);
+              break;
+            default:
+              console.log("Cannot remove core section:", sectionId);
+              break;
+          }
+        }}
         sections={templateBuilder.allSections}
         // Section data
         personalInfo={templateBuilder.personalInfo}
@@ -256,12 +403,14 @@ export default function TemplateBuilderPage({
         interests={templateBuilder.interests}
         customSections={templateBuilder.customSections}
         // Section handlers
-        onUpdatePersonalInfo={(updates) =>
-          templateBuilder.setPersonalInfo({
+        onUpdatePersonalInfo={(updates) => {
+          const newPersonalInfo = {
             ...templateBuilder.personalInfo,
             ...updates,
-          })
-        }
+          };
+          templateBuilder.setPersonalInfo(newPersonalInfo);
+          // CV creation is handled by useEffect above
+        }}
         onUpdateProfessionalSummary={(updates) =>
           templateBuilder.setProfessionalSummary({
             ...templateBuilder.professionalSummary,
@@ -486,6 +635,9 @@ export default function TemplateBuilderPage({
           });
         }}
         onShowAIConsent={() => setShowAIConsentModal(true)}
+        aiConsent={aiConsent}
+        cvId={cvId}
+        onCheckExistingConsent={checkExistingConsent}
         onUpdateSection={(sectionId, updates) => {
           // Update the custom section heading
           if (updates.heading) {
@@ -495,13 +647,12 @@ export default function TemplateBuilderPage({
             });
           }
         }}
-        // CV Management buttons
-        onCreateCV={handleCreateCV}
-        onUpdateCV={handleUpdateCV}
-        onSaveDraft={handleSaveDraft}
-        onPublishDraft={handlePublishDraft}
+        // CV Management buttons - Commented out for auto-save flow
+        // onCreateCV={handleCreateCV}
+        // onUpdateCV={handleUpdateCV}
+        // onSaveDraft={handleSaveDraft}
+        // onPublishDraft={handlePublishDraft}
         isCreating={cvOperations.isCreating}
-        cvId={cvId}
         loading={cvOperations.cvLoading}
         error={cvOperations.cvError}
       >
@@ -645,7 +796,9 @@ export default function TemplateBuilderPage({
       <TemplateSelectorModal
         isOpen={templateBuilder.showTemplateSelector}
         onClose={() => templateBuilder.setShowTemplateSelector(false)}
-        onTemplateSelect={handleTemplateSelectWithConsent}
+        onTemplateSelect={(templateId) =>
+          templateBuilder.handleTemplateSelect(templateId)
+        }
       />
 
       <AIConsentModal

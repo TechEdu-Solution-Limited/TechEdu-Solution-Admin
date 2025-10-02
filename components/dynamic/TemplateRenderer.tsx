@@ -34,7 +34,6 @@ export default function TemplateRenderer({
       <DynamicTemplateRenderer
         data={data}
         templateId={templateId}
-        className={className}
         templateConfig={templateConfig}
         leftColumnSections={leftColumnSections}
       />

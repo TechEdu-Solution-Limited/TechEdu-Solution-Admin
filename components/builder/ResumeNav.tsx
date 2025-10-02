@@ -154,7 +154,8 @@ export default function ResumeNav({
               </button>
             )}
 
-            {onUpdateCV && cvId && (
+            {/* Manual CV Management buttons - Commented out for auto-save flow */}
+            {/* {onUpdateCV && cvId && (
               <button
                 onClick={onUpdateCV}
                 disabled={isSaving || loading}
@@ -178,7 +179,7 @@ export default function ResumeNav({
                   {isSaving ? "Publishing..." : "Publish Draft"}
                 </span>
               </button>
-            )}
+            )} */}
           </div>
 
           {/* Export Button */}

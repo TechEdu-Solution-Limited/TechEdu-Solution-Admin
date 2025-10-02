@@ -19,6 +19,10 @@ import { isDevelopment } from "@/lib/env";
  */
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL; // Empty string for relative URLs to Next.js API routes
 
+// Debug logging for BASE_URL
+console.log("API BASE_URL:", BASE_URL);
+console.log("NEXT_PUBLIC_API_URL env var:", process.env.NEXT_PUBLIC_API_URL);
+
 /**
  * Generic API response type
  */
@@ -101,7 +105,15 @@ export const apiRequest = async <T = any>(
     // Debug logging for development
     debug.api.request(endpoint, method, body);
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, requestOptions);
+    const fullUrl = `${BASE_URL}${endpoint}`;
+    console.log("🚀 API Request Debug:");
+    console.log("- BASE_URL:", BASE_URL);
+    console.log("- endpoint:", endpoint);
+    console.log("- fullUrl:", fullUrl);
+    console.log("- method:", method);
+    console.log("- body:", body);
+
+    const response = await fetch(fullUrl, requestOptions);
     const contentType = response.headers.get("content-type");
     const isJson = contentType && contentType.includes("application/json");
     const responseText = await response.text();

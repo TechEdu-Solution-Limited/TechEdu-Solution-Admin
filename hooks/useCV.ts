@@ -1,7 +1,11 @@
 import { useState, useCallback } from "react";
 import { ResumeSection } from "@/types";
 import { mapResumePropsToSections } from "@/utils/resumeSectionMapper";
-import { cvService, CreateCVRequest, CVResponse } from "@/services/cvService";
+import {
+  cvService,
+  CreateCVRequest,
+  CVResponse,
+} from "@/services/cvServiceOptimized";
 
 interface UseCVProps {
   personalInfo: any;
@@ -102,7 +106,7 @@ export function useCV({
       };
 
       const response = await cvService.createCV(request);
-      setCvId(response.id);
+      setCvId(response);
 
       console.log("CV saved successfully:", response);
       showSuccess("CV saved successfully!");
@@ -158,10 +162,11 @@ export function useCV({
       };
 
       const response = await cvService.createOrUpdateDraft({
-        ...request,
-        id: cvId || undefined,
+        working: resumeData,
+        isDirty: true,
+        draftId: cvId || undefined,
       });
-      setCvId(response.id);
+      setCvId(response);
 
       console.log("Draft saved successfully:", response);
       showSuccess("Draft saved successfully!");
@@ -192,7 +197,7 @@ export function useCV({
 
     try {
       const response = await cvService.getCV(id);
-      setCvId(response.id);
+      setCvId(response._id);
 
       console.log("CV loaded successfully:", response);
       showSuccess("CV loaded successfully!");
@@ -214,7 +219,7 @@ export function useCV({
 
     try {
       const response = await cvService.getDraft(id);
-      setCvId(response.id);
+      setCvId(response._id);
 
       console.log("Draft loaded successfully:", response);
       showSuccess("Draft loaded successfully!");

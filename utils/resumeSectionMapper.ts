@@ -196,15 +196,29 @@ export const mapResumePropsToSectionsWithTemplate = async (
   }
 
   // Dynamically import templateManager to get section configurations
-  const { templateManager } = await import("@/lib/templates/templateManager");
+  let templateManager;
+  try {
+    const module = await import("@/lib/templates/templateManager");
+    templateManager = module.templateManager;
+  } catch (error) {
+    console.error("Failed to import templateManager:", error);
+    // Fall back to the original mapper if template manager fails
+    return mapResumePropsToSections(props);
+  }
 
   // Get all sections that are enabled in the template
   const enabledSections = new Set<string>();
-  template.columns.forEach((column) => {
-    column.sections.forEach((sectionType) => {
-      enabledSections.add(sectionType);
+  if (template?.columns) {
+    template.columns.forEach((column) => {
+      if (column?.sections) {
+        column.sections.forEach((sectionType) => {
+          if (sectionType) {
+            enabledSections.add(sectionType);
+          }
+        });
+      }
     });
-  });
+  }
 
   // Create sections based on template configuration - FULLY DYNAMIC!
   const sections: ResumeSection[] = [];
@@ -288,6 +302,11 @@ function getSectionData(sectionType: string, propsData: any): any {
   // Convert section type to camelCase property name dynamically
   // e.g., "personal-info" -> "personalInfo", "work-experience" -> "experiences"
 
+  // Handle null/undefined sectionType
+  if (!sectionType) {
+    return null;
+  }
+
   // Handle special cases first
   const specialMappings: Record<string, string> = {
     "personal-info": "personalInfo",
@@ -303,12 +322,12 @@ function getSectionData(sectionType: string, propsData: any): any {
 
   // For standard section types, convert kebab-case to camelCase
   // e.g., "languages" -> "languages", "certifications" -> "certifications"
-  const camelCaseKey = sectionType.replace(/-([a-z])/g, (_, letter) =>
+  const camelCaseKey = sectionType?.replace(/-([a-z])/g, (_, letter) =>
     letter.toUpperCase()
   );
 
   // Check if the property exists in propsData
-  if (propsData.hasOwnProperty(camelCaseKey)) {
+  if (camelCaseKey && propsData.hasOwnProperty(camelCaseKey)) {
     return propsData[camelCaseKey];
   }
 

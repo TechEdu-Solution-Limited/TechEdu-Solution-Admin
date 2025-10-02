@@ -30,7 +30,7 @@ export default function EducationSection({
 
   return (
     <AccordionSection
-      title="/* Education */"
+      title="Education"
       items={educations}
       emptyStateIcon={GraduationCap}
       emptyStateTitle="No education added yet"

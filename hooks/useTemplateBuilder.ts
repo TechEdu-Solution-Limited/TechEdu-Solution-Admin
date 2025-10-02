@@ -23,20 +23,18 @@ import {
 } from "@/types";
 import { TemplateLayout } from "@/types/template";
 
-// Helper function to get persisted data
+// Helper function to get persisted data from secure draft
 const getPersistedData = <T>(key: string, defaultValue: T): T => {
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultValue;
-  }
+  // Note: This will be replaced with secure draft API calls
+  // For now, return default values to avoid localStorage usage
   return defaultValue;
 };
 
-// Helper function to save data
+// Helper function to save data to secure draft
 const saveData = (key: string, data: any) => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(key, JSON.stringify(data));
-  }
+  // Note: This will be replaced with secure draft API calls
+  // Data will be saved via useSecureDraft hook
+  console.log(`Data would be saved to secure draft for key: ${key}`);
 };
 
 export function useTemplateBuilder(templateId: string) {
@@ -220,69 +218,54 @@ export function useTemplateBuilder(templateId: string) {
       const sections: ResumeSection[] = [];
 
       // Personal Information (always present)
-      if (
-        personalInfo.firstName ||
-        personalInfo.lastName ||
-        personalInfo.email
-      ) {
-        sections.push({
-          id: "personal-info",
-          type: "personal-info",
-          heading:
-            customSectionHeadings["personal-info"] || "Personal Information",
-          visible: true,
-          data: personalInfo,
-        });
-      }
+      sections.push({
+        id: "personal-info",
+        type: "personal-info",
+        heading:
+          customSectionHeadings["personal-info"] || "Personal Information",
+        visible: true,
+        data: personalInfo,
+      });
 
-      // Professional Summary
-      if (professionalSummary.summary) {
-        sections.push({
-          id: "professional-summary",
-          type: "professional-summary",
-          heading:
-            customSectionHeadings["professional-summary"] ||
-            "Professional Summary",
-          visible: true,
-          data: professionalSummary,
-        });
-      }
+      // Professional Summary (always present)
+      sections.push({
+        id: "professional-summary",
+        type: "professional-summary",
+        heading:
+          customSectionHeadings["professional-summary"] ||
+          "Professional Summary",
+        visible: true,
+        data: professionalSummary,
+      });
 
-      // Work Experience
-      if (experiences.length > 0) {
-        sections.push({
-          id: "work-experience",
-          type: "work-experience",
-          heading:
-            customSectionHeadings["work-experience"] || "Work Experience",
-          visible: true,
-          data: experiences,
-        });
-      }
+      // Work Experience (always present)
+      sections.push({
+        id: "work-experience",
+        type: "work-experience",
+        heading: customSectionHeadings["work-experience"] || "Work Experience",
+        visible: true,
+        data: experiences,
+      });
 
-      // Education
-      if (educations.length > 0) {
-        sections.push({
-          id: "education",
-          type: "education",
-          heading: customSectionHeadings["education"] || "Education",
-          visible: true,
-          data: educations,
-        });
-      }
+      // Education (always present)
+      sections.push({
+        id: "education",
+        type: "education",
+        heading: customSectionHeadings["education"] || "Education",
+        visible: true,
+        data: educations,
+      });
 
-      // Skills
-      if (skills.length > 0) {
-        sections.push({
-          id: "skills",
-          type: "skills",
-          heading: customSectionHeadings["skills"] || "Skills",
-          visible: true,
-          data: skills,
-        });
-      }
+      // Skills (always present)
+      sections.push({
+        id: "skills",
+        type: "skills",
+        heading: customSectionHeadings["skills"] || "Skills",
+        visible: true,
+        data: skills,
+      });
 
-      // Languages
+      // Optional sections - only show if they have data
       if (languages.length > 0) {
         sections.push({
           id: "languages",
@@ -293,7 +276,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Certifications
       if (certifications.length > 0) {
         sections.push({
           id: "certifications",
@@ -304,7 +286,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Awards
       if (awards.length > 0) {
         sections.push({
           id: "awards",
@@ -315,7 +296,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Projects
       if (projects.length > 0) {
         sections.push({
           id: "projects",
@@ -326,7 +306,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Interests
       if (interests.length > 0) {
         sections.push({
           id: "interests",
@@ -337,7 +316,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Courses
       if (courses.length > 0) {
         sections.push({
           id: "courses",
@@ -348,7 +326,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Organizations
       if (organizations.length > 0) {
         sections.push({
           id: "organizations",
@@ -359,7 +336,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Publications
       if (publications.length > 0) {
         sections.push({
           id: "publications",
@@ -370,7 +346,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // References
       if (references.length > 0) {
         sections.push({
           id: "references",
@@ -381,7 +356,6 @@ export function useTemplateBuilder(templateId: string) {
         });
       }
 
-      // Declarations
       if (declarations.length > 0) {
         sections.push({
           id: "declarations",

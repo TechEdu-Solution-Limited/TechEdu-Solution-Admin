@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { ResumeSection } from "@/types";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { useAIFeatures } from "@/hooks/useAIFeatures";
+// import { useAIFeatures } from "@/hooks/useAIFeatures";
 import {
   Sparkles,
   Wand2,
@@ -35,20 +35,44 @@ export function AIEnhancedSectionArrangement({
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [showAIPanel, setShowAIPanel] = useState(false);
 
-  const {
-    aiResults,
-    loading: aiFeaturesLoading,
-    error: aiError,
-    analyzeExperience,
-    generateSummary,
-    extractSkills,
-    getMatchScore,
-    enhanceWorkExperience,
-    formatEducation,
-    prioritizeSkills,
-    summarizeProjects,
-    clearAIResult,
-  } = useAIFeatures(cvId);
+  // AI Features (commented out - hook deleted)
+  // const {
+  //   aiResults,
+  //   loading: aiFeaturesLoading,
+  //   error: aiError,
+  //   analyzeExperience,
+  //   generateSummary,
+  //   extractSkills,
+  //   getMatchScore,
+  //   enhanceWorkExperience,
+  //   formatEducation,
+  //   prioritizeSkills,
+  //   summarizeProjects,
+  //   clearAIResult,
+  // } = useAIFeatures(cvId);
+
+  // Default values for AI features
+  const aiResults = null;
+  const aiFeaturesLoading = false;
+  const aiError = null;
+  const analyzeExperience = (...args: any[]) => ({
+    success: false,
+    data: null,
+  });
+  const generateSummary = (...args: any[]) => ({ success: false, data: null });
+  const extractSkills = (...args: any[]) => ({ success: false, data: null });
+  const getMatchScore = (...args: any[]) => ({ success: false, data: null });
+  const enhanceWorkExperience = (...args: any[]) => ({
+    success: false,
+    data: null,
+  });
+  const formatEducation = (...args: any[]) => ({ success: false, data: null });
+  const prioritizeSkills = (...args: any[]) => ({ success: false, data: null });
+  const summarizeProjects = (...args: any[]) => ({
+    success: false,
+    data: null,
+  });
+  const clearAIResult = (...args: any[]) => {};
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -89,7 +113,9 @@ export function AIEnhancedSectionArrangement({
     };
     return (
       names[type] ||
-      type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+      type?.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) ||
+      type ||
+      "Unknown Section"
     );
   };
 
@@ -228,7 +254,7 @@ export function AIEnhancedSectionArrangement({
 
   const getAIResult = (sectionType: string, analysisType: string) => {
     const key = `${sectionType}-${analysisType}`;
-    return aiResults[key] || aiResults[analysisType];
+    return aiResults?.[key] || aiResults?.[analysisType];
   };
 
   return (

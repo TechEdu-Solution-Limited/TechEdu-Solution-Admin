@@ -47,7 +47,7 @@ interface BuilderLayoutProps {
   error?: string | null;
   apiError?: string | null;
   onClearError?: () => void;
-  cvId?: string;
+  cvId?: string; // CV ID for AI operations
   isCreating?: boolean;
   // Success feedback
   showSuccessMessage?: boolean;
@@ -68,6 +68,7 @@ interface BuilderLayoutProps {
   onTemplateConfigSave?: (template: any) => void;
   // Add section functionality
   onAddSection?: () => void;
+  onRemoveSection?: (sectionId: string) => void;
   // Section data for modal editing
   personalInfo?: any;
   professionalSummary?: any;
@@ -110,6 +111,10 @@ interface BuilderLayoutProps {
   onImageUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage?: () => void;
   onShowAIConsent?: () => void;
+  aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
+  onCheckExistingConsent?: (
+    cvId: string
+  ) => Promise<{ aiProcessing: boolean; aiTraining: boolean } | null>;
   onUpdateSection?: (
     sectionId: string,
     updates: Partial<ResumeSection>
@@ -152,6 +157,7 @@ export default function BuilderLayout({
   selectedTemplate = "modern",
   onTemplateConfigSave,
   onAddSection,
+  onRemoveSection,
   // Section data
   personalInfo,
   professionalSummary,
@@ -194,6 +200,8 @@ export default function BuilderLayout({
   onImageUpload,
   onRemoveImage,
   onShowAIConsent,
+  aiConsent,
+  onCheckExistingConsent,
   onUpdateSection,
 }: BuilderLayoutProps) {
   const [template, setTemplate] = useState<TemplateLayout | null>(null);
@@ -402,6 +410,7 @@ export default function BuilderLayout({
                     sections={sections}
                     onSectionClick={handleSectionClick}
                     onAddSection={onAddSection || (() => {})}
+                    onRemoveSection={onRemoveSection}
                   />
                 </div>
               ) : (
@@ -439,64 +448,73 @@ export default function BuilderLayout({
                 onUpdateSection={onUpdateSection}
               >
                 {selectedSection && (
-                  <SectionContentRenderer
-                    section={selectedSection}
-                    onUpdate={(updates) => {
-                      // Handle section updates based on section type
-                      switch (selectedSection.type) {
-                        case "personal-info":
-                          onUpdatePersonalInfo?.(updates);
-                          break;
-                        case "professional-summary":
-                          onUpdateProfessionalSummary?.(updates);
-                          break;
-                        default:
-                          console.log(
-                            "Section update:",
-                            selectedSection.type,
-                            updates
-                          );
-                      }
-                    }}
-                    onShowAIConsent={onShowAIConsent}
-                    personalInfo={personalInfo}
-                    professionalSummary={professionalSummary}
-                    experiences={experiences}
-                    educations={educations}
-                    skills={skills}
-                    languages={languages}
-                    certifications={certifications}
-                    awards={awards}
-                    projects={projects}
-                    interests={interests}
-                    customSections={customSections}
-                    onAddExperience={onAddExperience}
-                    onRemoveExperience={onRemoveExperience}
-                    onUpdateExperience={onUpdateExperience}
-                    onAddEducation={onAddEducation}
-                    onRemoveEducation={onRemoveEducation}
-                    onUpdateEducation={onUpdateEducation}
-                    onAddSkill={onAddSkill}
-                    onRemoveSkill={onRemoveSkill}
-                    onUpdateSkill={onUpdateSkill}
-                    onAddLanguage={onAddLanguage}
-                    onRemoveLanguage={onRemoveLanguage}
-                    onUpdateLanguage={onUpdateLanguage}
-                    onAddCertification={onAddCertification}
-                    onRemoveCertification={onRemoveCertification}
-                    onUpdateCertification={onUpdateCertification}
-                    onAddAward={onAddAward}
-                    onRemoveAward={onRemoveAward}
-                    onUpdateAward={onUpdateAward}
-                    onAddProject={onAddProject}
-                    onRemoveProject={onRemoveProject}
-                    onUpdateProject={onUpdateProject}
-                    onAddInterest={onAddInterest}
-                    onRemoveInterest={onRemoveInterest}
-                    onUpdateInterest={onUpdateInterest}
-                    onImageUpload={onImageUpload}
-                    onRemoveImage={onRemoveImage}
-                  />
+                  <>
+                    {console.log(
+                      "BuilderLayout - cvId being passed to SectionContentRenderer:",
+                      cvId
+                    )}
+                    <SectionContentRenderer
+                      section={selectedSection}
+                      onUpdate={(updates) => {
+                        // Handle section updates based on section type
+                        switch (selectedSection.type) {
+                          case "personal-info":
+                            onUpdatePersonalInfo?.(updates);
+                            break;
+                          case "professional-summary":
+                            onUpdateProfessionalSummary?.(updates);
+                            break;
+                          default:
+                            console.log(
+                              "Section update:",
+                              selectedSection.type,
+                              updates
+                            );
+                        }
+                      }}
+                      onShowAIConsent={onShowAIConsent}
+                      aiConsent={aiConsent}
+                      cvId={cvId}
+                      onCheckExistingConsent={onCheckExistingConsent}
+                      personalInfo={personalInfo}
+                      professionalSummary={professionalSummary}
+                      experiences={experiences}
+                      educations={educations}
+                      skills={skills}
+                      languages={languages}
+                      certifications={certifications}
+                      awards={awards}
+                      projects={projects}
+                      interests={interests}
+                      customSections={customSections}
+                      onAddExperience={onAddExperience}
+                      onRemoveExperience={onRemoveExperience}
+                      onUpdateExperience={onUpdateExperience}
+                      onAddEducation={onAddEducation}
+                      onRemoveEducation={onRemoveEducation}
+                      onUpdateEducation={onUpdateEducation}
+                      onAddSkill={onAddSkill}
+                      onRemoveSkill={onRemoveSkill}
+                      onUpdateSkill={onUpdateSkill}
+                      onAddLanguage={onAddLanguage}
+                      onRemoveLanguage={onRemoveLanguage}
+                      onUpdateLanguage={onUpdateLanguage}
+                      onAddCertification={onAddCertification}
+                      onRemoveCertification={onRemoveCertification}
+                      onUpdateCertification={onUpdateCertification}
+                      onAddAward={onAddAward}
+                      onRemoveAward={onRemoveAward}
+                      onUpdateAward={onUpdateAward}
+                      onAddProject={onAddProject}
+                      onRemoveProject={onRemoveProject}
+                      onUpdateProject={onUpdateProject}
+                      onAddInterest={onAddInterest}
+                      onRemoveInterest={onRemoveInterest}
+                      onUpdateInterest={onUpdateInterest}
+                      onImageUpload={onImageUpload}
+                      onRemoveImage={onRemoveImage}
+                    />
+                  </>
                 )}
               </SectionModal>
             </div>

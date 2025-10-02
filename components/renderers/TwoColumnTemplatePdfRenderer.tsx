@@ -183,7 +183,7 @@ export function TwoColumnTemplatePdfRenderer({
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemDescription: {
-      fontSize: 8, // Reduced to match HTML
+      fontSize: 8.5, // Reduced to match HTML
       marginBottom: 4,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
       textAlign: "justify",
@@ -194,7 +194,7 @@ export function TwoColumnTemplatePdfRenderer({
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     bulletList: {
-      marginTop: 4,
+      marginTop: 2,
     },
     rightItemTitle: {
       color: rightColumn?.styles?.textColor || "#000000",
@@ -237,8 +237,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.email && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -259,8 +259,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.phone && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -277,8 +277,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.location && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -295,8 +295,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.linkedin && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -313,8 +313,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.github && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -331,8 +331,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.twitter && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -349,8 +349,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.instagram && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -367,8 +367,8 @@ export function TwoColumnTemplatePdfRenderer({
                 {personalInfo.data.website && (
                   <View style={styles.contactItemWithIcon}>
                     <Svg
-                      width="10"
-                      height="10"
+                      width="11"
+                      height="11"
                       viewBox="0 0 20 20"
                       style={styles.contactIcon}
                     >
@@ -591,7 +591,6 @@ export function TwoColumnTemplatePdfRenderer({
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "flex-start",
-                                marginBottom: 2,
                               }}
                             >
                               <Text
@@ -612,7 +611,6 @@ export function TwoColumnTemplatePdfRenderer({
                                     styles.itemDate,
                                     {
                                       color: "#1e3a8a",
-                                      fontWeight: "bold",
                                     },
                                   ]}
                                 >
@@ -625,7 +623,6 @@ export function TwoColumnTemplatePdfRenderer({
                                 flexDirection: "row",
                                 justifyContent: "space-between",
                                 alignItems: "flex-start",
-                                marginBottom: 2,
                               }}
                             >
                               <Text
@@ -711,7 +708,6 @@ export function TwoColumnTemplatePdfRenderer({
                                     styles.itemDate,
                                     {
                                       color: "#1e3a8a",
-                                      fontWeight: "bold",
                                     },
                                   ]}
                                 >
@@ -761,7 +757,6 @@ export function TwoColumnTemplatePdfRenderer({
                                   styles.rightItemDescription,
                                   {
                                     fontSize: 8,
-                                    marginTop: 2,
                                   },
                                 ]}
                               >

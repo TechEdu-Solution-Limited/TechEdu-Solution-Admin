@@ -68,7 +68,9 @@ export default function CVBuilderMain({
     aiProcessing: boolean;
     aiTraining: boolean;
   }) => {
-    localStorage.setItem("cv-builder-ai-consent", JSON.stringify(consent));
+    // TODO: Save consent to secure draft API instead of localStorage
+    // This will be implemented with the useSecureDraft hook
+    console.log("AI consent would be saved to secure draft:", consent);
     setShowAIConsentModal(false);
     console.log("Consent accepted:", consent);
   };
@@ -81,7 +83,7 @@ export default function CVBuilderMain({
     history,
     autoSave,
     cvApi,
-    aiFeatures,
+    // aiFeatures,
     sections,
     handleModeSelect,
     handleTemplateSelect,

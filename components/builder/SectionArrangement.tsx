@@ -57,7 +57,9 @@ export function SectionArrangement({
     };
     return (
       names[type] ||
-      type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+      type?.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) ||
+      type ||
+      "Unknown Section"
     );
   };
 

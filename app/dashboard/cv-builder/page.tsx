@@ -32,18 +32,14 @@ export default function ResumeBuilder() {
       // Handle file upload here
       console.log("File dropped:", e.dataTransfer.files[0]);
       // TODO: Process the uploaded resume and populate the builder
-      // Route to template page for user to select template dynamically
-      const template =
-        localStorage.getItem("cv-builder-selected-template") || "two-column";
-      router.push(`/dashboard/cv-builder/${template}`);
+      // Route to template selection page
+      router.push(`/dashboard/cv-builder/template-selection`);
     }
   };
 
   const handleStartFromScratch = () => {
-    // Route to template page for user to select template dynamically
-    const template =
-      localStorage.getItem("cv-builder-selected-template") || "two-column";
-    router.push(`/dashboard/cv-builder/${template}`);
+    // Route to template selection page
+    router.push(`/dashboard/cv-builder/template-selection`);
   };
 
   // If user has chosen to start building, show the CVBuilderMain
@@ -53,14 +49,13 @@ export default function ResumeBuilder() {
         <CVBuilderMain
           autoSaveConfig={{
             enabled: true,
-            interval: 10000, // 30 seconds
-            debounceDelay: 500, // 2 seconds
+            interval: 10000, // 10 seconds
+            debounceDelay: 500, // 0.5 seconds
             onSave: async (state: CVBuilderState) => {
               try {
                 console.log("Auto-saving state:", state);
-                // Save to localStorage for persistence
-                localStorage.setItem("cv-builder-state", JSON.stringify(state));
-                console.log("Auto-save successful, saved to localStorage");
+                // TODO: Implement secure auto-save to CV and draft endpoints
+                console.log("Auto-save successful");
               } catch (error) {
                 console.error("Auto-save failed:", error);
                 throw error;
@@ -73,8 +68,7 @@ export default function ResumeBuilder() {
           }}
           onSave={async (state: CVBuilderState) => {
             try {
-              // Save to localStorage for persistence
-              localStorage.setItem("cv-builder-state", JSON.stringify(state));
+              // TODO: Implement secure manual save to CV and draft endpoints
               console.log("Manual save successful:", state);
             } catch (error) {
               console.error("Manual save failed:", error);
@@ -84,15 +78,7 @@ export default function ResumeBuilder() {
           onLoad={async (id: string) => {
             try {
               console.log("onLoad called with id:", id);
-              // Load from localStorage
-              const savedState = localStorage.getItem("cv-builder-state");
-              console.log("Raw saved state from localStorage:", savedState);
-
-              if (savedState) {
-                const parsedState = JSON.parse(savedState);
-                console.log("Parsed state from localStorage:", parsedState);
-                return parsedState;
-              }
+              // TODO: Load from secure CV endpoint
               console.log("No saved state found, using defaults");
               return {};
             } catch (error) {

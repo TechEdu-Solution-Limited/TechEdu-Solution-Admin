@@ -6,8 +6,7 @@ import { Experience, PersonalInfo } from "@/types";
 import AccordionSection from "./AccordionSection";
 import RichTextEditor from "./RichTextEditor";
 import { Button } from "@/components/ui/button";
-import { postApiRequest } from "@/lib/apiFetch";
-import { getTokenFromCookies } from "@/lib/cookies";
+import { cvService } from "@/services/cvServiceOptimized";
 
 interface ExperienceSectionProps {
   experiences: Experience[];
@@ -39,7 +38,11 @@ export default function ExperienceSection({
     return exp.position || exp.company || "";
   };
 
-  const generateAISuggestion = async (expId: string, jobTitle: string) => {
+  const generateAISuggestion = async (
+    expId: string,
+    jobTitle: string,
+    company: string
+  ) => {
     if (!personalInfo || !personalInfo.industry) {
       alert(
         "Please select your industry in the Personal Information section first."
@@ -72,24 +75,14 @@ export default function ExperienceSection({
     setIsGeneratingAI(expId);
 
     try {
-      // Get the authentication token
-      const token = getTokenFromCookies();
+      // Call AI service using optimized CV service
+      const data = await cvService.generateExperience(
+        "temp-cv-id", // TODO: Pass actual cvId when available
+        jobTitle,
+        company || "Company",
+        personalInfo?.industry || "Technology"
+      );
 
-      if (!token) {
-        alert("Please log in to use AI suggestions.");
-        return;
-      }
-
-      // Call real AI service via apiFetch helper
-      const response = await postApiRequest(`/api/cv/ai/experience`, token, {
-        context: {
-          targetRole: jobTitle,
-          industry: personalInfo?.industry || "Technology",
-          additionalContext: personalInfo?.targetedJobTitle || undefined,
-        },
-      });
-
-      const data: any = response.data;
       console.log("AI Experience API Response:", data);
 
       // Use the first suggestion and format it
@@ -219,7 +212,9 @@ export default function ExperienceSection({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => generateAISuggestion(exp.id, exp.position)}
+                  onClick={() =>
+                    generateAISuggestion(exp.id, exp.position, exp.company)
+                  }
                   disabled={isGeneratingAI === exp.id || !exp.position.trim()}
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50"
                 >
