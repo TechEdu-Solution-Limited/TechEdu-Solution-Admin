@@ -1,5 +1,5 @@
+import { CVBuilderState } from "@/types/cv/cv-builder";
 import { useState, useCallback, useMemo } from "react";
-import { CVBuilderState } from "@/types/cv-builder";
 
 interface JobBoard {
   id: string;

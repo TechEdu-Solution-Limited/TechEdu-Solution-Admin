@@ -9,7 +9,7 @@ import {
   Project,
   Interest,
   CustomSection,
-} from "@/types";
+} from "@/types/cv";
 
 export function useFormHandlers() {
   // Experience handlers

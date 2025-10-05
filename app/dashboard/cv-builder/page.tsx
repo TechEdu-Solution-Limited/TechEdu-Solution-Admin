@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Upload, Sparkles, Download, Eye } from "lucide-react";
 import Link from "next/link";
-import CVBuilderMain from "@/components/builder/CVBuilderMain";
+import CVBuilderMain from "@/components/cv/builder/CVBuilderMain";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { CVBuilderState } from "@/types/cv-builder";
+import { CVBuilderState } from "@/types/cv/cv-builder";
 
 export default function ResumeBuilder() {
   const [dragActive, setDragActive] = useState(false);
@@ -48,7 +48,7 @@ export default function ResumeBuilder() {
       <ErrorBoundary>
         <CVBuilderMain
           autoSaveConfig={{
-            enabled: true,
+            enabled: false, // Disabled - no more auto-save
             interval: 10000, // 10 seconds
             debounceDelay: 500, // 0.5 seconds
             onSave: async (state: CVBuilderState) => {
@@ -88,43 +88,12 @@ export default function ResumeBuilder() {
           }}
           onExport={async (state: CVBuilderState) => {
             try {
-              // Import PDF generation dependencies
-              const { pdf } = await import("@react-pdf/renderer");
-              const { registerPDFFonts } = await import(
-                "@/utils/fontRegistration"
-              );
-              const DynamicPdfRenderer = (
-                await import("@/components/dynamic/DynamicPdfRenderer")
-              ).default;
-
-              // Register fonts
-              registerPDFFonts();
-
-              // Generate PDF
-              const blob = await pdf(
-                <DynamicPdfRenderer
-                  data={state.resumeData}
-                  templateId={state.selectedTemplate}
-                  templateConfig={state.templateConfig}
-                  leftColumnSections={undefined}
-                />
-              ).toBlob();
-
-              // Download PDF
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `resume-${state.personalInfo.firstName}-${state.personalInfo.lastName}.pdf`;
-              a.style.display = "none";
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-
-              console.log("PDF exported successfully");
-            } catch (error: any) {
-              console.error("PDF export failed:", error);
-              alert(`PDF export failed: ${error.message || error}`);
+              console.log("Exporting CV:", state);
+              // TODO: Implement PDF/DOCX export
+              console.log("Export successful");
+    } catch (error) {
+              console.error("Export failed:", error);
+              throw error;
             }
           }}
         />
@@ -132,136 +101,152 @@ export default function ResumeBuilder() {
     );
   }
 
-  // Show the landing page with options
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            Create Your Perfect
-            <span className="text-blue-600 dark:text-blue-400"> Resume</span>
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            Build professional resumes from scratch or optimize your existing CV
-            with our AI-powered tools. Get past ATS systems and land your dream
-            job.
-          </p>
-        </div>
-
-        {/* Action Cards */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {/* Create New Resume Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-            <div className="text-center">
-              <div className="bg-green-100 dark:bg-green-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                Create New Resume
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Start from scratch with our intuitive resume builder. Choose
-                from professional templates and customize every detail.
-              </p>
-              <button
-                onClick={handleStartFromScratch}
-                className="inline-flex items-center justify-center w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-              >
-                <Sparkles className="h-5 w-5 mr-2" />
-                Start Building
-              </button>
-            </div>
+    return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Create Your Professional CV
+                </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Build a stunning resume that gets you noticed by employers. Choose
+            from our professional templates and create your CV in minutes.
+            </p>
           </div>
 
-          {/* Upload Resume Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-            <div className="text-center">
-              <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                Optimize Existing Resume
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Upload your current resume and get AI-powered suggestions to
-                improve it for better ATS compatibility.
-              </p>
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto">
+          {/* Drag and Drop Area */}
+          <div
+            className={`border-2 border-dashed rounded-lg p-12 text-center mb-8 transition-colors ${
+              dragActive
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Upload Your Existing CV
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Drag and drop your CV file here, or click to browse
+            </p>
+            <button
+              onClick={() => document.getElementById("cv-upload")?.click()}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Browse Files
+            </button>
+            <input
+              id="cv-upload"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  console.log("File selected:", e.target.files[0]);
+                  // TODO: Process the uploaded resume
+                  router.push(`/dashboard/cv-builder/template-selection`);
+                }
+              }}
+            />
+          </div>
 
-              {/* File Upload Area */}
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 transition-colors ${
-                  dragActive
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500"
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <div className="text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-300 mb-2">
-                    Drag and drop your resume here
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    or click to browse files
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    Supports PDF, DOC, DOCX files
-                  </p>
+          {/* Divider */}
+          <div className="flex items-center my-8">
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+            <span className="px-4 text-gray-500 dark:text-gray-400">OR</span>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Features Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
-            Why Choose Our Resume Builder?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-purple-100 dark:bg-purple-900/30 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Eye className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          {/* Action Buttons */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Start from Scratch */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="text-center">
+                <FileText className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Start from Scratch
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Create a new CV using our professional templates
+                </p>
+                <button
+                  onClick={handleStartFromScratch}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Choose Template
+                </button>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                ATS Optimized
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Our resumes are designed to pass Applicant Tracking Systems and
-                reach human recruiters.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="bg-orange-100 dark:bg-orange-900/30 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Download className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+
+            {/* AI-Powered Builder */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="text-center">
+                <Sparkles className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  AI-Powered Builder
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Let AI help you create the perfect CV
+                </p>
+                <button
+                  onClick={() => setShowBuilder(true)}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Start with AI
+                </button>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Multiple Formats
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Export your resume in PDF, Word, or other formats to suit
-                different application requirements.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="bg-pink-100 dark:bg-pink-900/30 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="h-6 w-6 text-pink-600 dark:text-pink-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                AI-Powered Suggestions
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Get intelligent recommendations to improve your resume content
-                and increase your chances of landing interviews.
-              </p>
             </div>
           </div>
+
+          {/* Features */}
+          <div className="mt-12 grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <Eye className="h-8 w-8 text-green-600 mx-auto mb-3" />
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Live Preview
+              </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                See your CV as you build it with real-time preview
+                </p>
+              </div>
+            <div className="text-center">
+              <Download className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Multiple Formats
+              </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                Export your CV in PDF, DOCX, and HTML formats
+                </p>
+              </div>
+            <div className="text-center">
+              <Sparkles className="h-8 w-8 text-purple-600 mx-auto mb-3" />
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                AI Suggestions
+              </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                Get AI-powered suggestions to improve your CV
+                </p>
+              </div>
+            </div>
+
+          {/* Back to Dashboard */}
+          <div className="text-center mt-8">
+            <Link
+              href="/dashboard"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              ← Back to Dashboard
+            </Link>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

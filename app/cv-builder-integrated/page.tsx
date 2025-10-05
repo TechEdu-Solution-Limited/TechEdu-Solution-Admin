@@ -1,175 +1,138 @@
 "use client";
-
 import React from "react";
-import CVBuilderMain from "@/components/builder/CVBuilderMain";
-import { CVBuilderState } from "@/types/cv-builder";
 
-export default function CVBuilderIntegratedPage() {
-  // Initialize with some default state
-  const initialState: Partial<CVBuilderState> = {
-    selectedMode: "scratch",
-    selectedTemplate: "modern",
-    activeSection: "personal-info",
-    enabledSections: [
-      "personal-info",
-      "work-experience",
-      "education",
-      "skills",
-      "professional-summary",
-    ],
-    // Add dummy data to initial state
-    personalInfo: {
-      firstName: "John",
-      lastName: "Doe",
-      targetedJobTitle: "Senior Software Engineer",
-      email: "john.doe@email.com",
-      phone: "+1 (555) 123-4567",
-      location: "San Francisco, CA",
-      linkedin: "linkedin.com/in/johndoe",
-      github: "github.com/johndoe",
-      website: "johndoe.dev",
-    },
-    professionalSummary: {
-      id: "professional-summary",
-      summary:
-        "Experienced software developer with 5+ years of expertise in building scalable web applications using React, Node.js, and cloud technologies. Passionate about creating user-friendly solutions and leading cross-functional teams to deliver high-quality products.",
-    },
-    experiences: [
-      {
-        id: "exp-1",
-        position: "Senior Software Engineer",
-        company: "TechCorp Inc.",
-        startDate: "2021-01",
-        endDate: "2024-01",
-        location: "San Francisco, CA",
-        description:
-          "<ul><li>Led development of microservices architecture serving 1M+ users</li><li>Mentored 3 junior developers and improved team productivity by 40%</li><li>Implemented CI/CD pipelines reducing deployment time by 60%</li></ul>",
-      },
-    ],
-    educations: [
-      {
-        id: "edu-1",
-        degree: "Bachelor of Science in Computer Science",
-        institution: "University of California, Berkeley",
-        field: "Computer Science",
-        startDate: "2015-09",
-        endDate: "2019-05",
-        location: "Berkeley, CA",
-        gpa: "3.8/4.0",
-      },
-    ],
-    skills: [
-      { id: "skill-1", name: "JavaScript", level: "Expert" },
-      { id: "skill-2", name: "React", level: "Advanced" },
-      { id: "skill-3", name: "Node.js", level: "Advanced" },
-      { id: "skill-4", name: "TypeScript", level: "Expert" },
-    ],
-  };
-
-  // Auto-save configuration
-  const autoSaveConfig = {
-    enabled: true,
-    delay: 2000, // 2 seconds
-  };
-
-  // State change handler
-  const handleStateChange = (state: CVBuilderState) => {
-    console.log("CV Builder state changed:", state);
-  };
-
-  // Save handler
-  const handleSave = async (state: CVBuilderState) => {
-    console.log("Saving CV:", state);
-    // The actual saving is handled by the useCV hook internally
-  };
-
-  // Load handler
-  const handleLoad = async (id: string): Promise<Partial<CVBuilderState>> => {
-    console.log("Loading CV with ID:", id);
-    // The actual loading is handled by the useCV hook internally
-    return {};
-  };
-
-  // Export handler
-  const handleExport = async (state: CVBuilderState) => {
-    console.log("Exporting CV:", state);
-
-    try {
-      // Register fonts before PDF generation
-      const { registerPDFFonts } = await import("@/utils/fontRegistration");
-      registerPDFFonts();
-
-      // Import PDF generation utilities
-      const { pdf } = await import("@react-pdf/renderer");
-      const DynamicPdfRenderer = (
-        await import("@/components/dynamic/DynamicPdfRenderer")
-      ).default;
-
-      // Map the state to resume data format
-      const { mapResumePropsToSectionsWithTemplate } = await import(
-        "@/utils/resumeSectionMapper"
-      );
-      const resumeData = await mapResumePropsToSectionsWithTemplate(
-        {
-          personalInfo: state.personalInfo,
-          professionalSummary: state.professionalSummary,
-          experiences: state.experiences,
-          educations: state.educations,
-          skills: state.skills,
-          languages: state.languages,
-          certifications: state.certifications,
-          awards: state.awards,
-          projects: state.projects,
-          interests: state.interests,
-          courses: state.courses,
-          organizations: state.organizations,
-          publications: state.publications,
-          references: state.references,
-          declarations: state.declarations,
-          customSections: state.customSections,
-        },
-        state.templateConfig
-      );
-
-      const blob = await pdf(
-        <DynamicPdfRenderer
-          data={resumeData}
-          templateId={state.selectedTemplate}
-          templateConfig={state.templateConfig}
-          leftColumnSections={[
-            "professional-summary",
-            "skills",
-            "languages",
-            "awards",
-            "certifications",
-          ]}
-        />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${state.personalInfo.firstName}-${state.personalInfo.lastName}-resume.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert("Failed to export PDF. Please try again.");
-    }
-  };
-
+export const Template1 = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <CVBuilderMain
-        initialState={initialState}
-        autoSaveConfig={autoSaveConfig}
-        onStateChange={handleStateChange}
-        onSave={handleSave}
-        onLoad={handleLoad}
-        onExport={handleExport}
-      />
+    <div className="w-full h-full p-6">
+      {/* USER DETAILS */}
+      <section className="text-center mb-6">
+        <h3 className="text-2xl font-semibold mb-2">ANNIE PARKER</h3>
+        <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-700">
+          <p>annieparker@example.com</p>
+          <span>|</span>
+          <p>(555) 555 5555</p>
+          <span>|</span>
+          <p>No 16, Abraham Street, Lagos, Nigeria</p>
+        </div>
+      </section>
+
+      {/* PROFESSIONAL SUMMARY */}
+      <section className="mb-6">
+        <h5 className="bg-gray-300 px-2 py-1 text-lg font-medium mb-3">
+          PROFESSIONAL SUMMARY
+        </h5>
+        <p className="text-sm text-gray-800 text-justify">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorem sunt
+          consectetur doloribus molestias, distinctio, minima aliquid enim
+          soluta obcaecati facilis reiciendis voluptatibus veniam sint
+          perferendis error in earum architecto ipsam! Amet minus quia obcaecati
+          maxime repellat, voluptatum dicta necessitatibus adipisci non ut autem
+          quis modi voluptatibus, doloribus placeat nihil dolore cupiditate
+          quasi sunt minima? Debitis totam perferendis vitae laboriosam ea!
+        </p>
+      </section>
+
+      {/* WORK HISTORY */}
+      <section className="mb-6">
+        <h5 className="bg-gray-300 px-2 py-1 text-lg font-medium mb-3">
+          WORK HISTORY
+        </h5>
+
+        {[1, 2, 3].map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col md:flex-row gap-4 mb-4 border-b border-gray-200 pb-3"
+          >
+            <div className="md:w-2/5">
+              <p className="font-semibold text-sm">Finance Controller</p>
+              <div className="flex gap-2 text-sm">
+                <p>
+                  <em>Google</em>
+                </p>
+                <span>|</span>
+                <p>City, Country</p>
+              </div>
+              <div className="flex gap-2 text-sm">
+                <p>12/07/2015</p>
+                <span>-</span>
+                <p>16/09/2023</p>
+              </div>
+            </div>
+            <div className="md:w-3/5 text-sm text-justify">
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorem
+              sunt consectetur doloribus molestias, distinctio, minima aliquid
+              enim soluta obcaecati facilis reiciendis voluptatibus veniam sint
+              perferendis error in earum architecto ipsa!
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* SKILLS */}
+      <section className="mb-6">
+        <h5 className="bg-gray-300 px-2 py-1 text-lg font-medium mb-3">
+          SKILLS
+        </h5>
+        <div className="grid grid-cols-2 gap-2 text-sm ml-4">
+          <p>~ Pricing and coding</p>
+          <p>~ Corporate finance</p>
+          <p>~ Analytical</p>
+          <p>~ MS Office expertise</p>
+        </div>
+      </section>
+
+      {/* EDUCATION */}
+      <section className="mb-6">
+        <h5 className="bg-gray-300 px-2 py-1 text-lg font-medium mb-3">
+          EDUCATION
+        </h5>
+        <div className="grid md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((_, i) => (
+            <div key={i} className="border border-gray-200 rounded p-3">
+              <div className="flex flex-wrap items-center gap-1 text-sm">
+                <p className="font-semibold">Master of Science</p>
+                <span>:</span>
+                <p>Accounting and finance</p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-sm">
+                <p>University of Austin</p>
+                <span>|</span>
+                <p>London</p>
+              </div>
+              <div className="flex gap-2 text-sm">
+                <p>12/09/2013</p>
+                <span>-</span>
+                <p>09/07/2018</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CERTIFICATES */}
+      <section>
+        <h5 className="bg-gray-300 px-2 py-1 text-lg font-medium mb-3">
+          CERTIFICATES
+        </h5>
+        <div className="grid md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((_, i) => (
+            <div key={i} className="border border-gray-200 rounded p-3">
+              <p className="font-semibold text-sm">
+                Certified Public Accountant (CPA)
+              </p>
+              <div className="flex justify-between text-sm text-gray-700">
+                <p>Udemy</p>
+                <p>12/09/2013</p>
+              </div>
+              <p className="text-sm text-gray-800 mt-1">
+                Amet minus quia obcaecati maxime repellat.
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
-}
+};
+
+export default Template1;

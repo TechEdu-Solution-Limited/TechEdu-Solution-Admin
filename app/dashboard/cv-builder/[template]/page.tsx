@@ -1,31 +1,32 @@
 "use client";
 
 import { useState, useMemo, use, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { getTokenFromCookies } from "@/lib/cookies";
 
 // Import shared components
-import BuilderLayout from "@/components/builder/BuilderLayout";
-import TemplateRenderer from "@/components/dynamic/TemplateRenderer";
-import DynamicPdfRenderer from "@/components/dynamic/DynamicPdfRenderer";
-import SimplePreviewModal from "@/components/builder/modals/SimplePreviewModal";
-import AddSectionModal from "@/components/builder/modals/AddSectionModal";
-import TemplateSelectorModal from "@/components/TemplateSelectorModal";
-import AIConsentModal from "@/components/builder/modals/AIConsentModal";
-import { StatusBar } from "@/components/builder/StatusBar";
+import BuilderLayout from "@/components/cv/builder/BuilderLayout";
+import TemplateRenderer from "@/components/cv/dynamic/TemplateRenderer";
+import DynamicPdfRenderer from "@/components/cv/dynamic/DynamicPdfRenderer";
+import SimplePreviewModal from "@/components/cv/builder/modals/SimplePreviewModal";
+import AddSectionModal from "@/components/cv/builder/modals/AddSectionModal";
+import TemplateSelectorModal from "@/components/cv/TemplateSelectorModal";
+import AIConsentModal from "@/components/cv/builder/modals/AIConsentModal";
+import { StatusBar } from "@/components/cv/builder/StatusBar";
 
 // Import custom hooks
-import { useTemplateBuilder } from "@/hooks/useTemplateBuilder";
-import { useCVSimplified } from "@/hooks/useCVSimplified";
+import { useTemplateBuilder } from "@/hooks/cv/useTemplateBuilder";
+import { useCVSimplified } from "@/hooks/cv/useCVSimplified";
 // import { useAIFeatures } from "@/hooks/useAIFeatures";
 
 // Import utilities
-import { templateManager } from "@/lib/templates/templateManager";
+import { templateManager } from "@/lib/cv/templates/templateManager";
 import { pdf } from "@react-pdf/renderer";
 
 // Initialize dynamic sections
-import "@/lib/sections/initializeSections";
+import "@/lib/cv/sections/initializeSections";
 
 interface TemplateBuilderPageProps {
   params: Promise<{
@@ -37,7 +38,15 @@ export default function TemplateBuilderPage({
   params,
 }: TemplateBuilderPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { template: templateId } = use(params);
+
+  // Get URL parameters
+  const cvId = searchParams.get("cvId");
+  const mode = searchParams.get("mode");
+  const draftId = searchParams.get("draftId");
+  const isNew = searchParams.get("new") === "1";
+  const isViewMode = mode === "view";
 
   // Validate template exists
   const template = templateManager.getTemplate(templateId);
@@ -67,12 +76,59 @@ export default function TemplateBuilderPage({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [cvId, setCvId] = useState<string | undefined>(undefined);
+  const [currentCvId, setCurrentCvId] = useState<string | undefined>(() => {
+    // Initialize cvId from URL parameter or localStorage
+    if (typeof window !== "undefined") {
+      return cvId || localStorage.getItem("cvId") || undefined;
+    }
+    return cvId || undefined;
+  });
   const [showAIConsentModal, setShowAIConsentModal] = useState(false); // Don't show immediately
   const [aiConsent, setAiConsent] = useState<{
     aiProcessing: boolean;
     aiTraining: boolean;
   } | null>(null);
+  const [loadingExistingCV, setLoadingExistingCV] = useState(false);
+  const [showSaveNotification, setShowSaveNotification] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [loadedSections, setLoadedSections] = useState<any[] | null>(null);
+
+  // Helper to reset builder state for brand new CV/Draft
+  const resetBuilderState = () => {
+    setCurrentCvId(undefined);
+    setLoadedSections(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cvId");
+      localStorage.removeItem("cvDraftId");
+    }
+    templateBuilder.setPersonalInfo({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      location: "",
+      linkedin: "",
+      github: "",
+      website: "",
+      targetedJobTitle: "",
+      industry: "",
+      image: "",
+    });
+    templateBuilder.setProfessionalSummary({
+      id: "professional-summary",
+      summary: "",
+    });
+    templateBuilder.setExperiences([]);
+    templateBuilder.setEducations([]);
+    templateBuilder.setSkills([]);
+    templateBuilder.setLanguages([]);
+    templateBuilder.setCertifications([]);
+    templateBuilder.setAwards([]);
+    templateBuilder.setProjects([]);
+    templateBuilder.setInterests([]);
+    templateBuilder.setCustomSections([]);
+    templateBuilder.setCustomSectionHeadings({});
+  };
 
   // Handle AI consent
   const handleAIConsent = (consent: {
@@ -115,9 +171,13 @@ export default function TemplateBuilderPage({
 
   // Generate preview data
   const previewData = useMemo(() => {
+    const dataForPreview =
+      templateBuilder.resumeData && templateBuilder.resumeData.length > 0
+        ? templateBuilder.resumeData
+        : loadedSections || [];
     return (
       <TemplateRenderer
-        data={templateBuilder.resumeData}
+        data={dataForPreview}
         templateId={templateId}
         mode="preview"
         templateConfig={templateBuilder.templateConfig}
@@ -126,6 +186,7 @@ export default function TemplateBuilderPage({
     );
   }, [
     templateBuilder.resumeData,
+    loadedSections,
     templateId,
     templateBuilder.templateConfig,
     templateBuilder.leftColumnSections,
@@ -140,14 +201,17 @@ export default function TemplateBuilderPage({
     const newCvId = await cvOperations.handleCreateCV(
       templateBuilder.personalInfo,
       templateBuilder.resumeData,
-      aiConsent || undefined // Pass consent data or undefined
+      aiConsent || undefined, // Pass consent data or undefined
+      templateId // Pass template name
     );
 
     console.log("cvOperations.handleCreateCV returned:", newCvId);
 
     if (newCvId) {
-      setCvId(newCvId);
-      console.log("setCvId called with:", newCvId);
+      setCurrentCvId(newCvId);
+      // Also save to localStorage for persistence
+      localStorage.setItem("cvId", newCvId);
+      console.log("setCurrentCvId called with:", newCvId);
     }
     return newCvId;
   };
@@ -159,18 +223,68 @@ export default function TemplateBuilderPage({
     );
   };
 
-  const handleSaveDraft = async () => {
-    await cvOperations.handleSaveDraft(
-      templateBuilder.personalInfo,
-      templateBuilder.resumeData
+  const handleSaveDraft = async (providedCvId?: string, template?: string) => {
+    // Use provided cvId or current cvId from page state
+    const currentCvId = providedCvId || cvId;
+
+    if (!currentCvId) {
+      console.warn("⚠️ No cvId available for draft save");
+      throw new Error("CV must be created before saving draft");
+    }
+
+    // Check if we have an existing draftId for PATCH update
+    const currentDraftId = cvOperations.draftId;
+    console.log(
+      "💾 Manual Save Draft - cvId:",
+      currentCvId,
+      "draftId:",
+      currentDraftId
     );
+
+    // Call saveDraft directly with current cvId
+    await cvOperations.saveDraft(
+      templateBuilder.personalInfo,
+      templateBuilder.resumeData,
+      currentCvId, // Pass the current cvId
+      template || templateId // Pass template name
+    );
+    // Show save notification
+    setLastSaved(new Date());
+    setShowSaveNotification(true);
+    setTimeout(() => setShowSaveNotification(false), 2000);
+  };
+
+  // Wrapper for ResumeNav onSaveDraft (no parameters)
+  const handleSaveDraftWrapper = async () => {
+    console.log("🔧 handleSaveDraftWrapper called with cvId:", currentCvId);
+    console.log("🔧 cvOperations.cvId:", cvOperations.cvId);
+    console.log("🔧 cvOperations.draftId:", cvOperations.draftId);
+    await handleSaveDraft();
   };
 
   const handlePublishDraft = async () => {
-    await cvOperations.handlePublishDraft(
-      templateBuilder.personalInfo,
-      templateBuilder.resumeData
-    );
+    try {
+      // Use the current draftId from cvOperations
+      const currentDraftId = cvOperations.draftId;
+      if (!currentDraftId) {
+        console.warn("⚠️ No draftId available for publishing");
+        alert("No draft available to publish. Please save a draft first.");
+        return;
+      }
+
+      await cvOperations.handlePublishDraft(
+        templateBuilder.personalInfo,
+        templateBuilder.resumeData,
+        currentDraftId
+      );
+      // Show publish success notification
+      setLastSaved(new Date());
+      setShowSaveNotification(true);
+      setTimeout(() => setShowSaveNotification(false), 3000); // Show longer for publish
+    } catch (error) {
+      console.error("❌ Error publishing CV:", error);
+      // Could add error notification here
+    }
   };
 
   // AI suggestion handler
@@ -210,14 +324,16 @@ export default function TemplateBuilderPage({
       console.log("Creating final draft before PDF export...");
       await cvOperations.handleSaveDraft(
         templateBuilder.personalInfo,
-        templateBuilder.resumeData
+        templateBuilder.resumeData,
+        undefined, // cvId
+        templateId // template
       );
 
       // Note: In a real implementation, you'd get the draft ID and publish it
       // For now, we'll proceed with PDF generation
 
       // Register fonts before PDF generation
-      const { registerPDFFonts } = await import("@/utils/fontRegistration");
+      const { registerPDFFonts } = await import("@/utils/cv/fontUtils");
       registerPDFFonts();
 
       const blob = await pdf(
@@ -248,69 +364,292 @@ export default function TemplateBuilderPage({
     }
   };
 
-  console.log("CV Builder Page - cvId being passed to BuilderLayout:", cvId);
+  console.log(
+    "CV Builder Page - cvId being passed to BuilderLayout:",
+    currentCvId
+  );
 
-  // Create CV only once when personal info is available
-  useEffect(() => {
-    const createCVOnce = async () => {
-      // Only create if we don't have a CV ID and have personal info
-      if (
-        !cvId &&
-        templateBuilder.personalInfo.firstName &&
-        templateBuilder.personalInfo.lastName
-      ) {
-        try {
-          console.log("Creating CV once with personal info...");
-          const newCvId = await cvOperations.handleCreateCV(
-            templateBuilder.personalInfo,
-            templateBuilder.resumeData
-          );
+  // Load existing CV data when cvId is provided
+  const loadExistingCV = async (cvIdToLoad: string) => {
+    try {
+      setLoadingExistingCV(true);
+      const token = getTokenFromCookies();
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
 
-          if (newCvId) {
-            setCvId(newCvId);
-            console.log("CV created with ID:", newCvId);
-          }
-        } catch (error) {
-          console.error("Failed to create CV:", error);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/cv/${cvIdToLoad}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch CV: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const cv = data.data;
+
+      console.log("📄 Loading existing CV data:", cv);
+
+      // Extract personal info from sections
+      const personalInfoSection = cv.sections.find(
+        (s: any) => s.type === "personal-info"
+      );
+      const personalInfo = personalInfoSection?.data || {};
+
+      // Extract other sections
+      const resumeData = cv.sections.map((section: any) => ({
+        id: section.id,
+        type: section.type,
+        heading: section.heading,
+        visible: section.visible,
+        data: section.data,
+      }));
+
+      // Update template builder with CV data
+      templateBuilder.setPersonalInfo(personalInfo);
+      templateBuilder.setTemplateConfig(
+        templateManager.getTemplate(cv.template) || undefined
+      );
+      setLoadedSections(resumeData);
+
+      // Update individual section data
+      resumeData.forEach((section: any) => {
+        switch (section.type) {
+          case "professional-summary":
+            templateBuilder.setProfessionalSummary(section.data);
+            break;
+          case "work-experience":
+            templateBuilder.setExperiences(section.data || []);
+            break;
+          case "education":
+            templateBuilder.setEducations(section.data || []);
+            break;
+          case "skills":
+            templateBuilder.setSkills(section.data || []);
+            break;
+          case "languages":
+            templateBuilder.setLanguages(section.data || []);
+            break;
+          case "certifications":
+            templateBuilder.setCertifications(section.data || []);
+            break;
+          case "awards":
+            templateBuilder.setAwards(section.data || []);
+            break;
+          case "projects":
+            templateBuilder.setProjects(section.data || []);
+            break;
+          case "interests":
+            templateBuilder.setInterests(section.data || []);
+            break;
+        }
+      });
+
+      // Set AI consent
+      setAiConsent(cv.consent);
+
+      console.log("✅ CV data loaded into template builder:", {
+        personalInfo: Object.keys(personalInfo),
+        resumeDataCount: resumeData.length,
+        template: cv.template,
+      });
+    } catch (err) {
+      console.error("Error loading existing CV:", err);
+    } finally {
+      setLoadingExistingCV(false);
+    }
+  };
+
+  // Load existing Draft data when draftId is provided
+  const loadExistingDraft = async (draftIdToLoad: string) => {
+    try {
+      setLoadingExistingCV(true);
+      const token = getTokenFromCookies();
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/cv/drafts/${draftIdToLoad}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Draft: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const draft = data.data;
+
+      console.log("📄 Loading existing Draft data:", draft);
+
+      const sections = draft.working || [];
+      const personalInfoSection = sections.find(
+        (s: any) => s.type === "personal-info"
+      );
+      const personalInfo = personalInfoSection?.data || {};
+
+      const resumeData = sections.map((section: any) => ({
+        id: section.id,
+        type: section.type,
+        heading: section.heading,
+        visible: section.visible,
+        data: section.data,
+      }));
+
+      // Update template builder with Draft data
+      templateBuilder.setPersonalInfo(personalInfo);
+      templateBuilder.setTemplateConfig(
+        templateManager.getTemplate(draft.template || templateId) || undefined
+      );
+      setLoadedSections(resumeData);
+
+      resumeData.forEach((section: any) => {
+        switch (section.type) {
+          case "professional-summary":
+            templateBuilder.setProfessionalSummary(section.data);
+            break;
+          case "work-experience":
+            templateBuilder.setExperiences(section.data || []);
+            break;
+          case "education":
+            templateBuilder.setEducations(section.data || []);
+            break;
+          case "skills":
+            templateBuilder.setSkills(section.data || []);
+            break;
+          case "languages":
+            templateBuilder.setLanguages(section.data || []);
+            break;
+          case "certifications":
+            templateBuilder.setCertifications(section.data || []);
+            break;
+          case "awards":
+            templateBuilder.setAwards(section.data || []);
+            break;
+          case "projects":
+            templateBuilder.setProjects(section.data || []);
+            break;
+          case "interests":
+            templateBuilder.setInterests(section.data || []);
+            break;
+        }
+      });
+
+      // Persist cvId/draftId for refresh
+      if (draft.cvId) {
+        setCurrentCvId(draft.cvId);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cvId", draft.cvId);
         }
       }
-    };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cvDraftId", draft._id);
+      }
+    } catch (err) {
+      console.error("Error loading existing Draft:", err);
+    } finally {
+      setLoadingExistingCV(false);
+    }
+  };
 
-    createCVOnce();
-  }, [
-    templateBuilder.personalInfo.firstName,
-    templateBuilder.personalInfo.lastName,
-  ]); // Only depend on personal info
+  // Persist ids from URL and hydrate from server (CV or Draft)
+  useEffect(() => {
+    // Clear any previously loaded preview to avoid stale flashes
+    setLoadedSections(null);
+
+    // Start clean for brand new CV/Draft
+    if (isNew) {
+      resetBuilderState();
+      return;
+    }
+
+    // If URL has explicit draftId or cvId, prefer those over stored values
+    if (draftId) {
+      if (typeof window !== "undefined")
+        localStorage.setItem("cvDraftId", draftId);
+      loadExistingDraft(draftId);
+      return;
+    }
+    if (cvId) {
+      setCurrentCvId(cvId);
+      if (typeof window !== "undefined") localStorage.setItem("cvId", cvId);
+      loadExistingCV(cvId);
+      return;
+    }
+
+    // Fallback to stored values when URL params are absent
+    if (typeof window !== "undefined") {
+      const storedDraftId = localStorage.getItem("cvDraftId");
+      const storedCvId = localStorage.getItem("cvId");
+      if (storedDraftId) {
+        loadExistingDraft(storedDraftId);
+        return;
+      }
+      if (storedCvId) {
+        setCurrentCvId(storedCvId);
+        loadExistingCV(storedCvId);
+        return;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cvId, draftId, templateId, isNew]);
 
   // Monitor cvId changes
   useEffect(() => {
-    console.log("cvId state changed to:", cvId);
-  }, [cvId]);
+    console.log("cvId state changed to:", currentCvId);
+  }, [currentCvId]);
 
-  // Auto-save when CV exists and data changes
+  // Auto-save draft when CV exists and data changes
   useEffect(() => {
-    if (cvId) {
+    if (currentCvId && !isViewMode) {
       const interval = setInterval(() => {
-        console.log("Auto-saving CV and draft:", cvId);
-        // Update main CV
-        cvOperations.handleUpdateCV(
-          templateBuilder.personalInfo,
-          templateBuilder.resumeData
-        );
-        // Create/update draft with working data
-        cvOperations.handleSaveDraft(
-          templateBuilder.personalInfo,
-          templateBuilder.resumeData
-        );
-      }, 5000); // Auto-save every 5 seconds
+        // Only auto-save draft if we have personal info and not currently saving
+        if (
+          templateBuilder.personalInfo.firstName &&
+          templateBuilder.personalInfo.lastName &&
+          !cvOperations.isCreating &&
+          !cvOperations.isUpdating
+        ) {
+          console.log("🤖 Auto-saving draft for cvId:", currentCvId);
+          cvOperations.handleSaveDraft(
+            templateBuilder.personalInfo,
+            templateBuilder.resumeData,
+            undefined, // cvId
+            templateId // template
+          );
+          // Show auto-save notification
+          setLastSaved(new Date());
+          setShowSaveNotification(true);
+          setTimeout(() => setShowSaveNotification(false), 2000);
+        } else {
+          console.log(
+            "⏭️ Auto-save skipped - personal info not ready or already saving"
+          );
+        }
+      }, 10000); // Auto-save draft every 10 seconds
 
       return () => clearInterval(interval);
     }
   }, [
-    cvId,
+    currentCvId,
     templateBuilder.personalInfo,
     templateBuilder.resumeData,
-    cvOperations,
+    cvOperations.isCreating,
+    cvOperations.isUpdating,
+    isViewMode,
   ]);
 
   // Function to check existing consent from CV
@@ -636,7 +975,7 @@ export default function TemplateBuilderPage({
         }}
         onShowAIConsent={() => setShowAIConsentModal(true)}
         aiConsent={aiConsent}
-        cvId={cvId}
+        cvId={currentCvId}
         onCheckExistingConsent={checkExistingConsent}
         onUpdateSection={(sectionId, updates) => {
           // Update the custom section heading
@@ -647,11 +986,15 @@ export default function TemplateBuilderPage({
             });
           }
         }}
-        // CV Management buttons - Commented out for auto-save flow
-        // onCreateCV={handleCreateCV}
+        // CV Management buttons - Only Save Draft and Publish CV
+        onCreateCV={handleCreateCV}
         // onUpdateCV={handleUpdateCV}
-        // onSaveDraft={handleSaveDraft}
+        onSaveDraft={handleSaveDraftWrapper}
         // onPublishDraft={handlePublishDraft}
+        // onLoadCV={() => {}}
+        onPublishCV={handlePublishDraft}
+        isSaving={cvOperations.cvLoading}
+        isLoading={cvOperations.cvLoading}
         isCreating={cvOperations.isCreating}
         loading={cvOperations.cvLoading}
         error={cvOperations.cvError}
@@ -662,7 +1005,7 @@ export default function TemplateBuilderPage({
           lastSaved={cvOperations.lastSaved}
           error={cvOperations.cvError}
           isCreating={cvOperations.isCreating}
-          cvId={cvId}
+          cvId={currentCvId}
         />
       </BuilderLayout>
 
@@ -806,6 +1149,16 @@ export default function TemplateBuilderPage({
         onClose={() => setShowAIConsentModal(false)}
         onAccept={handleConsentAccept}
       />
+
+      {/* Save Notification */}
+      {showSaveNotification && (
+        <div className="fixed bottom-4 right-4 z-50 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 animate-slide-in-right">
+          <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-md font-medium">
+            {lastSaved ? `Auto-saved` : "Saved"}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

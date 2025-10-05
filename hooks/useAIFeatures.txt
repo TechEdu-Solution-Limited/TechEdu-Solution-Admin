@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { cvService } from "@/services/cvServiceOptimized";
+import { cvService } from "@/services/cv/cvServiceOptimized";
 
 interface AIAnalysisResult {
   success: boolean;

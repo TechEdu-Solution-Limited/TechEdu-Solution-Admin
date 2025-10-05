@@ -98,7 +98,7 @@ export const dashboardSidebarConfig = {
       {
         title: "Profiles & CVs",
         items: [
-          { label: "CVs / Profiles", icon: FileText, href: "/dashboard/cvs" },
+          { label: "My Resumes", icon: FileText, href: "/dashboard/cvs" },
           {
             label: "CV Builder",
             icon: FileText,

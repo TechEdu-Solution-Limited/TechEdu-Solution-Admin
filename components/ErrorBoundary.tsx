@@ -2,7 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
-import { ErrorBoundaryProps, ErrorBoundaryState } from "@/types/cv-builder";
+import { ErrorBoundaryProps, ErrorBoundaryState } from "@/types/cv/cv-builder";
 
 interface ErrorFallbackProps {
   error: Error;

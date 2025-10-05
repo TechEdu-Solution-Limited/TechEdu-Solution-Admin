@@ -8,25 +8,25 @@ import Image from "next/image";
 
 const templates = [
   {
+    id: "classic",
+    name: "Classic",
+    description: "Traditional single-column layout for conservative industries",
+    preview: "/templates/classic-preview.jpg",
+    popular: true,
+  },
+  {
     id: "two-column",
     name: "Two Column",
     description:
       "Classic two-column layout perfect for experienced professionals",
     preview: "/templates/two-column-preview.jpg",
-    popular: true,
+    popular: false,
   },
   {
     id: "modern",
     name: "Modern",
     description: "Clean and contemporary design with modern typography",
     preview: "/templates/modern-preview.jpg",
-    popular: false,
-  },
-  {
-    id: "classic",
-    name: "Classic",
-    description: "Traditional single-column layout for conservative industries",
-    preview: "/templates/classic-preview.jpg",
     popular: false,
   },
   {
@@ -39,13 +39,12 @@ const templates = [
 ];
 
 export default function TemplateSelection() {
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<string>("two-column");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
   const router = useRouter();
 
   const handleContinue = () => {
-    // Navigate to the CV builder with selected template
-    router.push(`/dashboard/cv-builder/${selectedTemplate}`);
+    // Navigate to the CV builder with selected template, starting a fresh CV
+    router.push(`/dashboard/cv-builder/${selectedTemplate}?new=1`);
   };
 
   return (
