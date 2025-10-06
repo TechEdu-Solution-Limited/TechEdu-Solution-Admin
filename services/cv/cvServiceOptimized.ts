@@ -381,26 +381,35 @@ class OptimizedCVService {
 
   // AI Operations
   async generateSummary(
+    cvId: string,
     tone: string = "professional and concise"
   ): Promise<string> {
     const response = await this.apiRequest<{
       success: boolean;
       summary: string;
-    }>("/api/cv/ai/summary", "POST", { tone });
+    }>(`/api/cv/ai/summary?cvId=${encodeURIComponent(cvId)}`, "POST", { tone });
     return response.summary;
   }
 
-  async generateExperience(context: {
-    targetRole: string;
-    industry: string;
-  }): Promise<any> {
-    const response = await this.apiRequest("/api/cv/ai/experience", "POST", {
-      context,
-    });
+  async generateExperience(
+    cvId: string,
+    context: {
+      targetRole: string;
+      industry: string;
+    }
+  ): Promise<any> {
+    const response = await this.apiRequest(
+      `/api/cv/ai/experience?cvId=${encodeURIComponent(cvId)}`,
+      "POST",
+      {
+        context,
+      }
+    );
     return response;
   }
 
   async generateSkills(
+    cvId: string,
     level: "all" | "top-5" = "all",
     prompt?: string,
     context?: { targetRole: string; emphasize: string[] }
@@ -410,7 +419,7 @@ class OptimizedCVService {
     if (context) requestBody.context = context;
 
     const response = await this.apiRequest(
-      "/api/cv/ai/skills",
+      `/api/cv/ai/skills?cvId=${encodeURIComponent(cvId)}`,
       "POST",
       requestBody
     );
@@ -418,6 +427,7 @@ class OptimizedCVService {
   }
 
   async generateProjects(
+    cvId: string,
     prompt?: string,
     context?: { targetRole: string; emphasize: string[] }
   ): Promise<any> {
@@ -426,17 +436,21 @@ class OptimizedCVService {
     if (context) requestBody.context = context;
 
     const response = await this.apiRequest(
-      "/api/cv/ai/projects",
+      `/api/cv/ai/projects?cvId=${encodeURIComponent(cvId)}`,
       "POST",
       requestBody
     );
     return response;
   }
 
-  async getMatchScore(jobDescription: string): Promise<any> {
-    const response = await this.apiRequest("/api/cv/ai/match-score", "POST", {
-      jobDescription,
-    });
+  async getMatchScore(cvId: string, jobDescription: string): Promise<any> {
+    const response = await this.apiRequest(
+      `/api/cv/ai/match-score?cvId=${encodeURIComponent(cvId)}`,
+      "POST",
+      {
+        jobDescription,
+      }
+    );
     return response;
   }
 

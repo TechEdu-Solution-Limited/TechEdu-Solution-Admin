@@ -19,6 +19,11 @@ interface ExperienceSectionProps {
     value: string | boolean
   ) => void;
   onShowAIConsent?: () => void;
+  aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
+  cvId?: string;
+  onCheckExistingConsent?: (
+    cvId: string
+  ) => Promise<{ aiProcessing: boolean; aiTraining: boolean } | null>;
 }
 
 export default function ExperienceSection({
@@ -28,6 +33,9 @@ export default function ExperienceSection({
   onRemove,
   onUpdate,
   onShowAIConsent,
+  aiConsent,
+  cvId,
+  onCheckExistingConsent,
 }: ExperienceSectionProps) {
   const [isGeneratingAI, setIsGeneratingAI] = useState<string | null>(null);
 
@@ -50,10 +58,17 @@ export default function ExperienceSection({
       return;
     }
 
-    // Check for AI consent
-    const savedConsent = localStorage.getItem("cv-builder-ai-consent");
-    if (!savedConsent) {
-      // Show consent modal
+    // Check for AI consent - first check existing consent from CV
+    let currentConsent = aiConsent;
+
+    if (!currentConsent && cvId && onCheckExistingConsent) {
+      console.log("Checking existing consent from CV...");
+      currentConsent = await onCheckExistingConsent(cvId);
+    }
+
+    // If no consent found or aiProcessing is false, show consent modal
+    if (!currentConsent || !currentConsent.aiProcessing) {
+      console.log("No valid consent found, showing consent modal");
       if (onShowAIConsent) {
         onShowAIConsent();
       } else {
@@ -64,19 +79,13 @@ export default function ExperienceSection({
       return;
     }
 
-    const consent = JSON.parse(savedConsent);
-    if (!consent.aiProcessing) {
-      alert(
-        "AI processing consent is required. Please give consent to use AI features."
-      );
-      return;
-    }
+    console.log("Valid consent found:", currentConsent);
 
     setIsGeneratingAI(expId);
 
     try {
       // Call AI service using optimized CV service
-      const data = await cvService.generateExperience({
+      const data = await cvService.generateExperience(cvId!, {
         targetRole: jobTitle,
         industry: personalInfo?.industry || "Technology",
       });
@@ -213,8 +222,19 @@ export default function ExperienceSection({
                   onClick={() =>
                     generateAISuggestion(exp.id, exp.position, exp.company)
                   }
-                  disabled={isGeneratingAI === exp.id || !exp.position.trim()}
+                  disabled={
+                    isGeneratingAI === exp.id || !exp.position.trim() || !cvId
+                  }
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                  title={
+                    !exp.position.trim()
+                      ? "Please enter a job position first"
+                      : !cvId
+                      ? "CV must be created first"
+                      : !aiConsent?.aiProcessing
+                      ? "AI processing consent required - click to give consent"
+                      : "Generate AI-powered experience description"
+                  }
                 >
                   {isGeneratingAI === exp.id ? (
                     <>

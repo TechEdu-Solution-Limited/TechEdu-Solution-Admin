@@ -379,7 +379,7 @@ export default function CVsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+    <div>
           <h1 className="text-2xl font-bold text-gray-900">My CVs</h1>
           <p className="text-gray-600 mt-1">
             Manage and edit your professional CVs
@@ -546,7 +546,7 @@ export default function CVsPage() {
                     <Eye className="h-4 w-4" />
                     <span>View</span>
                   </button>
-                  <button
+          <button
                     onClick={() => handleDownloadPDF(cv)}
                     disabled={downloadingPdf === cv._id}
                     className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
@@ -558,12 +558,12 @@ export default function CVsPage() {
                       <Download className="h-4 w-4" />
                     )}
                     <span>PDF</span>
-                  </button>
+          </button>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+        ))}
+      </div>
       )}
     </div>
   );

@@ -131,13 +131,31 @@ export default function TemplateBuilderPage({
   };
 
   // Handle AI consent
-  const handleAIConsent = (consent: {
+  const handleAIConsent = async (consent: {
     aiProcessing: boolean;
     aiTraining: boolean;
   }) => {
     setAiConsent(consent);
     setShowAIConsentModal(false);
-    // TODO: Store consent securely via API
+
+    // Update CV with consent if we have a cvId
+    if (currentCvId) {
+      try {
+        console.log("🔄 Updating CV with AI consent:", consent);
+        await cvOperations.updateCV(
+          templateBuilder.personalInfo,
+          templateBuilder.resumeData,
+          consent
+        );
+        console.log("✅ CV updated with AI consent successfully");
+      } catch (error) {
+        console.error("❌ Failed to update CV with consent:", error);
+        alert("Failed to save consent. Please try again.");
+      }
+    } else {
+      console.log("⚠️ No cvId available to update consent");
+    }
+
     console.log("AI consent received:", consent);
   };
 
@@ -452,13 +470,15 @@ export default function TemplateBuilderPage({
         }
       });
 
-      // Set AI consent
+      // Set AI consent from CV data
       setAiConsent(cv.consent);
+      console.log("✅ AI consent loaded from CV:", cv.consent);
 
       console.log("✅ CV data loaded into template builder:", {
         personalInfo: Object.keys(personalInfo),
         resumeDataCount: resumeData.length,
         template: cv.template,
+        consent: cv.consent,
       });
     } catch (err) {
       console.error("Error loading existing CV:", err);
@@ -656,9 +676,19 @@ export default function TemplateBuilderPage({
   const checkExistingConsent = async (cvId: string) => {
     try {
       console.log("Checking existing consent for CV:", cvId);
+
+      // First check if we already have consent loaded from the current CV
+      if (aiConsent && cvId === currentCvId) {
+        console.log("Using already loaded consent:", aiConsent);
+        return aiConsent;
+      }
+
+      // Fallback to API call if consent not loaded yet
       const cvData = await cvOperations.handleLoadCV(cvId);
       if (cvData && cvData.consent) {
-        console.log("Found existing consent:", cvData.consent);
+        console.log("Found existing consent via API:", cvData.consent);
+        // Update the local consent state
+        setAiConsent(cvData.consent);
         return cvData.consent;
       }
       return null;
@@ -973,7 +1003,14 @@ export default function TemplateBuilderPage({
             image: "",
           });
         }}
-        onShowAIConsent={() => setShowAIConsentModal(true)}
+        onShowAIConsent={() => {
+          // Only show consent modal if AI processing consent is not already given
+          if (!aiConsent?.aiProcessing) {
+            setShowAIConsentModal(true);
+          } else {
+            console.log("AI processing consent already given:", aiConsent);
+          }
+        }}
         aiConsent={aiConsent}
         cvId={currentCvId}
         onCheckExistingConsent={checkExistingConsent}
@@ -1145,7 +1182,7 @@ export default function TemplateBuilderPage({
       />
 
       <AIConsentModal
-        isOpen={showAIConsentModal}
+        isOpen={showAIConsentModal && !aiConsent?.aiProcessing}
         onClose={() => setShowAIConsentModal(false)}
         onAccept={handleConsentAccept}
       />

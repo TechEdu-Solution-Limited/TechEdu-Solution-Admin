@@ -129,6 +129,9 @@ export function SectionContentRenderer({
           onRemove={onRemoveExperience || (() => {})}
           onUpdate={onUpdateExperience || (() => {})}
           onShowAIConsent={onShowAIConsent}
+          aiConsent={aiConsent}
+          cvId={cvId}
+          onCheckExistingConsent={onCheckExistingConsent}
         />
       );
 
@@ -146,9 +149,14 @@ export function SectionContentRenderer({
       return (
         <SkillsSection
           skills={skills}
+          personalInfo={personalInfo}
           onAdd={onAddSkill || (() => {})}
           onRemove={onRemoveSkill || (() => {})}
           onUpdate={onUpdateSkill || (() => {})}
+          onShowAIConsent={onShowAIConsent}
+          aiConsent={aiConsent}
+          cvId={cvId}
+          onCheckExistingConsent={onCheckExistingConsent}
         />
       );
 

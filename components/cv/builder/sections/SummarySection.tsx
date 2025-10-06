@@ -89,7 +89,8 @@ export default function ProfessionalSummarySection({
       console.log("cvId type:", typeof cvId);
 
       const summary = await cvService.generateSummary(
-        "professional and concise"
+        String(cvId), // Pass cvId as first parameter
+        "professional and concise" // Pass tone as second parameter
       );
       console.log("AI Summary generated:", summary);
 
@@ -123,11 +124,15 @@ export default function ProfessionalSummarySection({
               isGeneratingAI || !personalInfo?.targetedJobTitle?.trim() || !cvId
             }
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50"
-            title={`Debug: isGeneratingAI=${isGeneratingAI}, targetedJobTitle="${
-              personalInfo?.targetedJobTitle
-            }", cvId="${cvId}", disabled=${
-              isGeneratingAI || !personalInfo?.targetedJobTitle?.trim() || !cvId
-            }`}
+            title={
+              !personalInfo?.targetedJobTitle?.trim()
+                ? "Please fill in your targeted job title first"
+                : !cvId
+                ? "CV must be created first"
+                : !aiConsent?.aiProcessing
+                ? "AI processing consent required - click to give consent"
+                : "Generate AI-powered professional summary"
+            }
           >
             {isGeneratingAI ? (
               <>

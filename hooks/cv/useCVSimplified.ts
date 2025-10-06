@@ -84,7 +84,11 @@ export function useCVSimplified() {
 
   // Update CV
   const updateCV = useCallback(
-    async (personalInfo: any, sections: any[]): Promise<void> => {
+    async (
+      personalInfo: any,
+      sections: any[],
+      consent?: any
+    ): Promise<void> => {
       if (!cvId) {
         console.log("⏭️ updateCV skipped - no cvId");
         return;
@@ -94,11 +98,12 @@ export function useCVSimplified() {
         cvId,
         hasPersonalInfo: !!personalInfo,
         hasSections: sections.length,
+        hasConsent: !!consent,
       });
 
       setIsUpdating(true);
       try {
-        const cvData = cvService.createCVData(personalInfo, sections);
+        const cvData = cvService.createCVData(personalInfo, sections, consent);
         console.log("📤 Updating CV with data:", cvData);
         await cvService.updateCV(cvId, cvData);
         setLastSaved(new Date());
@@ -202,28 +207,36 @@ export function useCVSimplified() {
     async (
       tone: string = "professional and concise"
     ): Promise<string | null> => {
+      if (!cvId) {
+        console.warn("⚠️ No cvId available for AI summary generation");
+        return null;
+      }
       try {
-        const summary = await cvService.generateSummary(tone);
+        const summary = await cvService.generateSummary(cvId, tone);
         return summary;
       } catch (error) {
         console.error("Failed to generate summary:", error);
         return null;
       }
     },
-    []
+    [cvId]
   );
 
   // Generate AI Experience
   const generateExperience = useCallback(
     async (context: { targetRole: string; industry: string }): Promise<any> => {
+      if (!cvId) {
+        console.warn("⚠️ No cvId available for AI experience generation");
+        return null;
+      }
       try {
-        return await cvService.generateExperience(context);
+        return await cvService.generateExperience(cvId, context);
       } catch (error) {
         console.error("Failed to generate experience:", error);
         return null;
       }
     },
-    []
+    [cvId]
   );
 
   // Generate AI Skills
@@ -233,14 +246,18 @@ export function useCVSimplified() {
       prompt?: string,
       context?: { targetRole: string; emphasize: string[] }
     ): Promise<any> => {
+      if (!cvId) {
+        console.warn("⚠️ No cvId available for AI skills generation");
+        return null;
+      }
       try {
-        return await cvService.generateSkills(level, prompt, context);
+        return await cvService.generateSkills(cvId, level, prompt, context);
       } catch (error) {
         console.error("Failed to generate skills:", error);
         return null;
       }
     },
-    []
+    [cvId]
   );
 
   // Generate AI Projects
@@ -249,27 +266,35 @@ export function useCVSimplified() {
       prompt?: string,
       context?: { targetRole: string; emphasize: string[] }
     ): Promise<any> => {
+      if (!cvId) {
+        console.warn("⚠️ No cvId available for AI projects generation");
+        return null;
+      }
       try {
-        return await cvService.generateProjects(prompt, context);
+        return await cvService.generateProjects(cvId, prompt, context);
       } catch (error) {
         console.error("Failed to generate projects:", error);
         return null;
       }
     },
-    []
+    [cvId]
   );
 
   // Get Match Score
   const getMatchScore = useCallback(
     async (jobDescription: string): Promise<any> => {
+      if (!cvId) {
+        console.warn("⚠️ No cvId available for match score");
+        return null;
+      }
       try {
-        return await cvService.getMatchScore(jobDescription);
+        return await cvService.getMatchScore(cvId, jobDescription);
       } catch (error) {
         console.error("Failed to get match score:", error);
         return null;
       }
     },
-    []
+    [cvId]
   );
 
   // Publish draft to live CV
