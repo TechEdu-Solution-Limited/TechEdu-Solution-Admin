@@ -16,6 +16,7 @@ import { cvService } from "@/services/cv/cvServiceOptimized";
 
 interface JobMatchScoreProps {
   onScoreGenerated?: (score: number, analysis: any) => void;
+  cvId?: string;
 }
 
 interface MatchAnalysis {
@@ -29,6 +30,7 @@ interface MatchAnalysis {
 
 export default function JobMatchScore({
   onScoreGenerated,
+  cvId,
 }: JobMatchScoreProps) {
   const [jobDescription, setJobDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -46,7 +48,12 @@ export default function JobMatchScore({
     setAnalysis(null);
 
     try {
-      const result = await cvService.getMatchScore(jobDescription);
+      if (!cvId) {
+        setError("CV must be created first to analyze job match");
+        return;
+      }
+
+      const result = await cvService.getMatchScore(cvId, jobDescription);
 
       if (result.success && result.data) {
         const matchAnalysis: MatchAnalysis = {
