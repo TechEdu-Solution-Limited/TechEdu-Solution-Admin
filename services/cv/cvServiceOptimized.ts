@@ -138,6 +138,176 @@ interface DraftResponse {
   message?: string;
 }
 
+// Normalized shapes the UI can rely on
+export type ExperienceAssessment = {
+  seniority: "junior" | "mid" | "senior" | "lead";
+  minYears: number; // >= 0
+  topSkills: string[]; // unique, non-empty
+  rationale: string; // string (may be empty)
+};
+
+export type SkillItem = {
+  name: string;
+  score: number; // 0..100
+  evidence?: string;
+};
+
+export type SkillsAssessment = {
+  skills: SkillItem[]; // deduped by name
+  top: string[]; // unique names
+};
+
+/*===========================================================================*/
+/*===========================================================================*/
+/*===============================AI NORMALIZER===============================*/
+/*===========================================================================*/
+/*===========================================================================*/
+
+// Add this near the "Types" section
+export type AiSummary = { content: string; bullets: string[] };
+
+function normalizeSummary(raw: any): AiSummary {
+  // 1) plain string => treat as content only
+  if (typeof raw === "string") return { content: raw.trim(), bullets: [] };
+  if (!raw || typeof raw !== "object") return { content: "", bullets: [] };
+
+  // 2) common shapes the frontend may see
+  // a) { success, data: { content, bullets } }
+  if (raw.success && raw.data && (raw.data.content || raw.data.bullets)) {
+    return {
+      content: String(raw.data.content ?? "").trim(),
+      bullets: Array.isArray(raw.data.bullets) ? raw.data.bullets : [],
+    };
+  }
+
+  // b) axios-like: { data: { success, data: { content, bullets } } }
+  if (raw.data && raw.data.success && raw.data.data) {
+    const d = raw.data.data;
+    return {
+      content: String(d.content ?? d.summary ?? "").trim(),
+      bullets: Array.isArray(d.bullets) ? d.bullets : [],
+    };
+  }
+
+  // c) axios-like: { data: { content, bullets } } or { data: { summary } }
+  if (raw.data && (raw.data.content || raw.data.bullets || raw.data.summary)) {
+    return {
+      content: String(raw.data.content ?? raw.data.summary ?? "").trim(),
+      bullets: Array.isArray(raw.data.bullets) ? raw.data.bullets : [],
+    };
+  }
+
+  // d) flat: { content, bullets } or { summary }
+  if (raw.content || raw.bullets || raw.summary) {
+    return {
+      content: String(raw.content ?? raw.summary ?? "").trim(),
+      bullets: Array.isArray(raw.bullets) ? raw.bullets : [],
+    };
+  }
+
+  return { content: "", bullets: [] };
+}
+
+function normalizeExperience(raw: any): ExperienceAssessment {
+  // unwrap common axios/wrapper shapes
+  const d = (raw?.data?.data ?? raw?.data ?? raw) as {
+    seniority?: unknown;
+    minYears?: unknown;
+    topSkills?: unknown;
+    rationale?: unknown;
+  };
+
+  // seniority
+  let seniority = String(d?.seniority ?? "").toLowerCase();
+  const valid = new Set<ExperienceAssessment["seniority"]>([
+    "junior",
+    "mid",
+    "senior",
+    "lead",
+  ]);
+  if (!valid.has(seniority as any)) seniority = "mid";
+
+  // minYears
+  const minYearsRaw = Number(d?.minYears);
+  let minYears = Number.isFinite(minYearsRaw) ? minYearsRaw : 0;
+  if (minYears < 0) minYears = 0;
+
+  // topSkills (force element type to string)
+  const topSkillsInput = Array.isArray(d?.topSkills)
+    ? (d!.topSkills as unknown[])
+    : [];
+  const topSkills: string[] = Array.from(
+    new Set<string>(
+      topSkillsInput
+        .map((s) => String(s).trim())
+        .filter((s): s is string => s.length > 0)
+    )
+  );
+
+  // rationale
+  const rationale = String(d?.rationale ?? "").trim();
+
+  return {
+    seniority: seniority as ExperienceAssessment["seniority"],
+    minYears,
+    topSkills,
+    rationale,
+  };
+}
+
+function normalizeSkills(raw: any): SkillsAssessment {
+  // unwrap common axios/wrapper shapes
+  const d = (raw?.data?.data ?? raw?.data ?? raw) as {
+    skills?: unknown;
+    top?: unknown;
+  };
+
+  // skills[]
+  const incomingSkills = Array.isArray(d?.skills)
+    ? (d.skills as unknown[])
+    : [];
+  const skillsMap = new Map<string, SkillItem>();
+
+  for (const itemAny of incomingSkills) {
+    const item = itemAny as Partial<SkillItem> & {
+      name?: unknown;
+      score?: unknown;
+      evidence?: unknown;
+    };
+    const name = String(item?.name ?? "").trim();
+    if (!name) continue;
+
+    let score = Number(item?.score);
+    if (!Number.isFinite(score)) score = 0;
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    const ev = item?.evidence;
+    const evidence = ev == null ? undefined : String(ev);
+
+    const prev = skillsMap.get(name);
+    if (
+      !prev ||
+      score > prev.score ||
+      (evidence?.length ?? 0) > (prev.evidence?.length ?? 0)
+    ) {
+      skillsMap.set(name, { name, score, evidence });
+    }
+  }
+  const skills = Array.from(skillsMap.values());
+
+  // top[] as string[]
+  const topInput = Array.isArray(d?.top) ? (d.top as unknown[]) : [];
+  const top: string[] = Array.from(
+    new Set<string>(
+      topInput
+        .map((s) => String(s).trim())
+        .filter((s): s is string => s.length > 0)
+    )
+  );
+
+  return { skills, top };
+}
+
 /* -----------------------------------------------------------------------------
    Optimized CV service
 ----------------------------------------------------------------------------- */
@@ -281,6 +451,7 @@ class OptimizedCVService {
       hasTitle: !!data.title,
       hasSections: !!data.sections,
       sectionsCount: data.sections?.length,
+      hasConsent: !!data.consent,
     });
 
     const response = await this.apiRequest<CVResponse>(
@@ -313,6 +484,26 @@ class OptimizedCVService {
       "GET"
     );
     return response.data;
+  }
+
+  // Try to find a draft by associated CV id
+  async getDraftIdForCv(cvId: string): Promise<string | null> {
+    try {
+      const response = await this.apiRequest<{
+        success: boolean;
+        data: DraftResponse["data"];
+      }>(`/api/cv/drafts/by-cv/${encodeURIComponent(cvId)}`, "GET");
+      return response?.data?._id || null;
+    } catch (error) {
+      console.warn(
+        "No existing draft found for cvId or endpoint unavailable:",
+        {
+          cvId,
+          error,
+        }
+      );
+      return null;
+    }
   }
 
   // Create draft with working data (template draft or with cvId)
@@ -379,51 +570,54 @@ class OptimizedCVService {
     return response.data.id;
   }
 
-  // AI Operations
+  /*****************************************************************
+ *****************************************************************
+// AI OPERATIONS
+******************************************************************
+******************************************************************/
+  // GENERATE SUMMARY
   async generateSummary(
     cvId: string,
     tone: string = "professional and concise"
-  ): Promise<string> {
-    const response = await this.apiRequest<{
-      success: boolean;
-      summary: string;
-    }>(`/api/cv/ai/summary?cvId=${encodeURIComponent(cvId)}`, "POST", { tone });
-    return response.summary;
+  ): Promise<AiSummary> {
+    const response = await this.apiRequest<any>(
+      `/api/cv/ai/summary?cvId=${encodeURIComponent(cvId)}`,
+      "POST",
+      { tone }
+    );
+    return normalizeSummary(response);
   }
 
+  // EXPERIENCE: returns ExperienceAssessment
   async generateExperience(
     cvId: string,
-    context: {
-      targetRole: string;
-      industry: string;
-    }
-  ): Promise<any> {
-    const response = await this.apiRequest(
+    context: { targetRole: string; industry: string }
+  ): Promise<ExperienceAssessment> {
+    const res = await this.apiRequest<any>(
       `/api/cv/ai/experience?cvId=${encodeURIComponent(cvId)}`,
       "POST",
-      {
-        context,
-      }
+      { context }
     );
-    return response;
+    return normalizeExperience(res);
   }
 
+  // SKILLS: returns SkillsAssessment
   async generateSkills(
     cvId: string,
     level: "all" | "top-5" = "all",
     prompt?: string,
-    context?: { targetRole: string; emphasize: string[] }
-  ): Promise<any> {
-    const requestBody: any = { level };
-    if (prompt) requestBody.prompt = prompt;
-    if (context) requestBody.context = context;
+    context?: { targetRole: string; industry: string | undefined }
+  ): Promise<SkillsAssessment> {
+    const body: any = { level };
+    if (prompt) body.prompt = prompt;
+    if (context) body.context = context;
 
-    const response = await this.apiRequest(
+    const res = await this.apiRequest<any>(
       `/api/cv/ai/skills?cvId=${encodeURIComponent(cvId)}`,
       "POST",
-      requestBody
+      body
     );
-    return response;
+    return normalizeSkills(res);
   }
 
   async generateProjects(

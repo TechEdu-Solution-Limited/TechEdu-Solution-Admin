@@ -4,9 +4,12 @@ import { useState } from "react";
 import { Briefcase, Sparkles, Loader2 } from "lucide-react";
 import { Experience, PersonalInfo } from "@/types/cv";
 import AccordionSection from "./AccordionSection";
-import RichTextEditor from "./RichTextEditor";
 import { Button } from "@/components/ui/button";
-import { cvService } from "@/services/cv/cvServiceOptimized";
+import QuillTextEditor from "./QuillTextEditor";
+import {
+  cvService,
+  type ExperienceAssessment,
+} from "@/services/cv/cvServiceOptimized";
 
 interface ExperienceSectionProps {
   experiences: Experience[];
@@ -26,6 +29,32 @@ interface ExperienceSectionProps {
   ) => Promise<{ aiProcessing: boolean; aiTraining: boolean } | null>;
 }
 
+/* ---------------- helpers ---------------- */
+function stripTags(s = "") {
+  return s.replace(/<[^>]*>/g, "");
+}
+
+function normalizeHtml(s = "") {
+  return s.replace(/\s+/g, " ").trim();
+}
+
+/** Build Quill-friendly HTML: rationale as <p>, topSkills as <ul><li> */
+function buildExperienceHtml(rationale?: string, topSkills?: string[]) {
+  const blocks: string[] = [];
+  const r = (rationale || "").trim();
+  if (r) blocks.push(`<p>${stripTags(r)}</p>`);
+
+  const items = (topSkills || [])
+    .map((b) => String(b || "").trim())
+    .filter(Boolean)
+    .map((b) => `<li>${stripTags(b)}</li>`)
+    .join("");
+
+  if (items) blocks.push(`<ul>${items}</ul>`);
+  return blocks.join("");
+}
+/* ----------------------------------------- */
+
 export default function ExperienceSection({
   experiences,
   personalInfo,
@@ -35,7 +64,6 @@ export default function ExperienceSection({
   onShowAIConsent,
   aiConsent,
   cvId,
-  onCheckExistingConsent,
 }: ExperienceSectionProps) {
   const [isGeneratingAI, setIsGeneratingAI] = useState<string | null>(null);
 
@@ -58,58 +86,61 @@ export default function ExperienceSection({
       return;
     }
 
-    // Check for AI consent - first check existing consent from CV
-    let currentConsent = aiConsent;
-
-    if (!currentConsent && cvId && onCheckExistingConsent) {
-      console.log("Checking existing consent from CV...");
-      currentConsent = await onCheckExistingConsent(cvId);
+    // Always fetch latest consent from server by CV id
+    let currentConsent = aiConsent as {
+      aiProcessing: boolean;
+      aiTraining: boolean;
+    } | null;
+    try {
+      if (cvId) {
+        const cv = await cvService.getCV(String(cvId));
+        const serverConsent = cv?.consent;
+        if (serverConsent) {
+          currentConsent = {
+            aiProcessing: !!serverConsent.aiProcessing,
+            aiTraining: !!serverConsent.aiTraining,
+          };
+        }
+      }
+    } catch {
+      // fall back to local aiConsent
     }
 
-    // If no consent found or aiProcessing is false, show consent modal
-    if (!currentConsent || !currentConsent.aiProcessing) {
-      console.log("No valid consent found, showing consent modal");
-      if (onShowAIConsent) {
-        onShowAIConsent();
-      } else {
+    if (
+      !currentConsent ||
+      !currentConsent.aiProcessing ||
+      !currentConsent.aiTraining
+    ) {
+      if (onShowAIConsent) onShowAIConsent();
+      else
         alert(
-          "AI processing consent is required. Please give consent to use AI features."
+          "AI processing and AI training consent are required. Please give consent to use AI features."
         );
-      }
       return;
     }
-
-    console.log("Valid consent found:", currentConsent);
 
     setIsGeneratingAI(expId);
 
     try {
-      // Call AI service using optimized CV service
-      const data = await cvService.generateExperience(cvId!, {
-        targetRole: jobTitle,
-        industry: personalInfo?.industry || "Technology",
-      });
-
-      console.log("AI Experience API Response:", data);
-
-      // Use the first suggestion and format it
-      if (data.suggestions && data.suggestions.length > 0) {
-        const suggestion = data.suggestions[0];
-        let description = suggestion.description;
-
-        if (
-          suggestion.keyAchievements &&
-          suggestion.keyAchievements.length > 0
-        ) {
-          description += "\n\nKey Achievements:\n";
-          suggestion.keyAchievements.forEach((achievement: string) => {
-            description += `• ${achievement}\n`;
-          });
+      // Expecting a normalized object: { seniority, minYears, topSkills, rationale }
+      const data: ExperienceAssessment = await cvService.generateExperience(
+        cvId!,
+        {
+          targetRole: jobTitle,
+          industry: personalInfo?.industry || "Technology",
         }
+      );
 
-        // Update the experience with the AI-generated description
-        onUpdate(expId, "description", description);
+      // Build HTML: rationale -> paragraph, topSkills -> bullets
+      const html = buildExperienceHtml(data?.rationale, data?.topSkills);
+
+      if (!html) {
+        alert("AI did not return any content for this experience.");
+        return;
       }
+
+      // Update the experience description (controlled by parent)
+      onUpdate(expId, "description", html);
     } catch (error) {
       console.error("Error generating AI suggestions:", error);
       alert("Failed to generate AI suggestions. Please try again.");
@@ -249,9 +280,19 @@ export default function ExperienceSection({
                   )}
                 </Button>
               </div>
-              <RichTextEditor
+
+              {/* 🔄 Quill Text Editor (controlled) */}
+              <QuillTextEditor
                 value={exp.description || ""}
-                onChange={(value) => onUpdate(exp.id, "description", value)}
+                onChange={(value) => {
+                  // avoid noisy updates if identical
+                  if (
+                    normalizeHtml(value) ===
+                    normalizeHtml(exp.description || "")
+                  )
+                    return;
+                  onUpdate(exp.id, "description", value);
+                }}
                 placeholder="Describe your key responsibilities and achievements..."
               />
             </div>

@@ -15,6 +15,7 @@ import { ThemeProvider } from "next-themes";
 import InternetCheck from "@/utils/internetCheck";
 import NoSSR from "@/components/NoSSR";
 import ClientOnly from "@/components/ClientOnly";
+import "quill/dist/quill.snow.css";
 
 const rubik = Rubik({
   subsets: ["latin"],

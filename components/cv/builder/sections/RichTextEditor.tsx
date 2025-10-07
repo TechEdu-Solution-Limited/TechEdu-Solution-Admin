@@ -1,3 +1,4 @@
+// components/cv/builder/RichTextEditor.tsx
 "use client";
 
 import React, { useEffect, useMemo } from "react";

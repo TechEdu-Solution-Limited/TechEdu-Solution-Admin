@@ -1,13 +1,12 @@
 // src/components/builder/sections/SummarySection.tsx
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { ProfessionalSummary, PersonalInfo } from "@/types/cv";
-import RichTextEditor from "./RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { cvService } from "@/services/cv/cvServiceOptimized";
+import QuillTextEditor, { EditorApi } from "./QuillTextEditor";
 
 interface ProfessionalSummarySectionProps {
   professionalSummary: ProfessionalSummary;
@@ -21,6 +20,39 @@ interface ProfessionalSummarySectionProps {
   ) => Promise<{ aiProcessing: boolean; aiTraining: boolean } | null>;
 }
 
+type AISummary = { content?: string; bullets?: string[] };
+
+function stripTags(s = "") {
+  return s.replace(/<[^>]*>/g, "");
+}
+function normalizeHtml(s = "") {
+  return s.replace(/\s+/g, " ").trim();
+}
+function buildHtml({
+  content,
+  bullets,
+  includeContent,
+  includeBullets,
+}: {
+  content?: string;
+  bullets?: string[];
+  includeContent: boolean;
+  includeBullets: boolean;
+}) {
+  const blocks: string[] = [];
+  if (includeContent && content?.trim()) {
+    blocks.push(`<p>${stripTags(content.trim())}</p>`);
+  }
+  if (includeBullets && bullets && bullets.length) {
+    const items = bullets
+      .filter((b) => b && b.trim())
+      .map((b) => `<li>${stripTags(b.trim())}</li>`)
+      .join("");
+    if (items) blocks.push(`<ul>${items}</ul>`);
+  }
+  return blocks.join("");
+}
+
 export default function ProfessionalSummarySection({
   professionalSummary,
   personalInfo,
@@ -28,76 +60,184 @@ export default function ProfessionalSummarySection({
   onShowAIConsent,
   aiConsent,
   cvId,
-  onCheckExistingConsent,
 }: ProfessionalSummarySectionProps) {
+  // --- Editor state (controlled) ---
+  const incoming = professionalSummary?.summary || "";
+  const [localSummary, setLocalSummary] = useState<string>(incoming);
+  const [isLocalDirty, setIsLocalDirty] = useState(false);
+  const editorApiRef = useRef<EditorApi | null>(null);
+
+  useEffect(() => {
+    if (
+      !isLocalDirty &&
+      normalizeHtml(incoming) !== normalizeHtml(localSummary)
+    ) {
+      setLocalSummary(incoming);
+    }
+  }, [incoming, isLocalDirty, localSummary]);
+
+  useEffect(() => {
+    if (
+      normalizeHtml(incoming) === normalizeHtml(localSummary) &&
+      isLocalDirty
+    ) {
+      setIsLocalDirty(false);
+    }
+  }, [incoming, localSummary, isLocalDirty]);
+
+  // --- AI state ---
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [ai, setAi] = useState<AISummary | null>(null);
+  const [selected, setSelected] = useState<Record<number, boolean>>({});
+  const [insertMode, setInsertMode] = useState<"append" | "replace">("append");
+  // const editorRef = useRef<QuillTextEditorHandle | null>(null);
 
+  // default mode: replace when editor empty, else append
+  useEffect(() => {
+    const empty = normalizeHtml(localSummary).length === 0;
+    setInsertMode(empty ? "replace" : "append");
+  }, []); // run once on mount
+
+  const selectedBullets = useMemo(() => {
+    if (!ai?.bullets?.length) return [];
+    return ai.bullets.filter((_, idx) => !!selected[idx]);
+  }, [ai, selected]);
+
+  // --- Insert helpers (update editor + notify parent) ---
+  const commitHtml = (html: string, mode: "append" | "replace") => {
+    let next = html;
+    if (mode === "append" && normalizeHtml(localSummary).length) {
+      next = `${localSummary}\n<p></p>\n${html}`;
+    }
+    if (normalizeHtml(next) === normalizeHtml(localSummary)) return;
+    setLocalSummary(next);
+    setIsLocalDirty(true);
+    onUpdateProfessionalSummary({ summary: next });
+  };
+
+  const insertContent = () => {
+    if (!ai?.content?.trim()) return;
+    const html = buildHtml({
+      content: ai.content,
+      bullets: [],
+      includeContent: true,
+      includeBullets: false,
+    });
+    if (html) commitHtml(html, insertMode);
+  };
+
+  const addSelectedBullets = () => {
+    const bullets = selectedBullets;
+    if (!bullets.length) return;
+    const html = buildHtml({
+      content: undefined,
+      bullets,
+      includeContent: false,
+      includeBullets: true,
+    });
+    if (html) commitHtml(html, insertMode);
+  };
+
+  const addAllBullets = () => {
+    const bullets = ai?.bullets ?? [];
+    if (!bullets.length) return;
+    const html = buildHtml({
+      content: undefined,
+      bullets,
+      includeContent: false,
+      includeBullets: true,
+    });
+    if (html) commitHtml(html, insertMode);
+  };
+
+  const replaceWithAll = () => {
+    const html = buildHtml({
+      content: ai?.content,
+      bullets: ai?.bullets,
+      includeContent: !!ai?.content?.trim(),
+      includeBullets: !!(ai?.bullets && ai.bullets.length),
+    });
+    if (html) commitHtml(html, "replace");
+  };
+
+  // --- AI request ---
   const generateAISuggestion = async () => {
-    if (!personalInfo || !personalInfo.targetedJobTitle) {
-      alert(
-        "Please fill in your targeted job title in the Personal Information section first."
-      );
+    if (!personalInfo?.targetedJobTitle?.trim()) {
+      alert("Please fill in your targeted job title in Personal Information.");
       return;
     }
-
-    if (!cvId) {
-      alert(
-        "CV must be created first. Please wait for the CV to be created or refresh the page."
-      );
+    if (!cvId || cvId === "undefined" || cvId === "null") {
+      alert("CV must be created first.");
       return;
     }
-
-    if (cvId === "undefined" || cvId === "null") {
-      alert("CV ID is invalid. Please refresh the page and try again.");
-      return;
-    }
-
-    // Check for AI consent - first check existing consent from CV
-    let currentConsent = aiConsent;
-
-    if (!currentConsent && cvId && onCheckExistingConsent) {
-      console.log("Checking existing consent from CV...");
-      currentConsent = await onCheckExistingConsent(cvId);
-    }
-
-    // If no consent found or aiProcessing is false, show consent modal
-    if (!currentConsent || !currentConsent.aiProcessing) {
-      console.log("No valid consent found, showing consent modal");
-      if (onShowAIConsent) {
-        onShowAIConsent();
-      } else {
-        alert(
-          "AI processing consent is required. Please give consent to use AI features."
-        );
-      }
-      return;
-    }
-
-    console.log("Valid consent found:", currentConsent);
-
-    setIsGeneratingAI(true);
 
     try {
-      // Call AI service for professional summary generation
-      const requestData = {
-        cvId: String(cvId), // Ensure cvId is a string
-        tone: "professional and concise",
-      };
+      const cv = await cvService.getCV(String(cvId));
+      const ok = !!cv?.consent?.aiProcessing && !!cv?.consent?.aiTraining;
+      if (!ok && !(aiConsent?.aiProcessing && aiConsent?.aiTraining)) {
+        onShowAIConsent ? onShowAIConsent() : alert("AI consent is required.");
+      return;
+    }
+    } catch {
+      if (!aiConsent?.aiProcessing || !aiConsent?.aiTraining) {
+        onShowAIConsent ? onShowAIConsent() : alert("AI consent is required.");
+      return;
+    }
+    }
 
-      console.log("AI Summary Request Data:", requestData);
-      console.log("cvId value:", cvId);
-      console.log("cvId type:", typeof cvId);
-
-      const summary = await cvService.generateSummary(
-        String(cvId), // Pass cvId as first parameter
-        "professional and concise" // Pass tone as second parameter
+    setIsGeneratingAI(true);
+    try {
+      // NEW: service now returns { content, bullets }
+      const { content = "", bullets = [] } = await cvService.generateSummary(
+        String(cvId),
+        "professional and concise"
       );
-      console.log("AI Summary generated:", summary);
 
-      // Update the professional summary with AI-generated content
-      onUpdateProfessionalSummary({ summary });
-    } catch (error) {
-      console.error("Error generating AI summary:", error);
+      setAi({ content, bullets });
+      setSelected({});
+
+      const hasContent = !!content?.trim();
+      const hasBullets = Array.isArray(bullets) && bullets.length > 0;
+      if (!hasContent && !hasBullets) {
+        alert("AI returned empty result.");
+      return;
+    }
+
+      // Build HTML for Quill
+      const html = buildHtml({
+        content,
+        bullets,
+        includeContent: hasContent,
+        includeBullets: hasBullets,
+      });
+
+      // Replace if editor empty; otherwise honor toggle
+      const editorIsEmpty = normalizeHtml(localSummary).length === 0;
+      const mode: "append" | "replace" = editorIsEmpty ? "replace" : insertMode;
+
+      // 1) Update controlled state FIRST (prevents overwrite by child effect)
+      let next = html;
+      if (mode === "append" && normalizeHtml(localSummary).length) {
+        next = `${localSummary}\n<p></p>\n${html}`;
+      }
+      setLocalSummary(next);
+      setIsLocalDirty(true);
+      onUpdateProfessionalSummary({ summary: next });
+      if (mode === "replace") setInsertMode("append");
+
+      // 2) Paste into Quill on the next frame (avoids race with value-sync effect)
+      requestAnimationFrame(() => {
+        const api = editorApiRef.current;
+        if (!api || !api.isReady()) {
+          requestAnimationFrame(() =>
+            editorApiRef.current?.setHtml(html, mode)
+          );
+          return;
+        }
+        api.setHtml(html, mode);
+      });
+    } catch (e) {
+      console.error("AI summary error:", e);
       alert("Failed to generate AI summary. Please try again.");
     } finally {
       setIsGeneratingAI(false);
@@ -115,13 +255,45 @@ export default function ProfessionalSummarySection({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Professional Summary
           </label>
+
+          <div className="flex items-center gap-2">
+            {/* Insert mode toggle */}
+            <div className="text-xs text-gray-600 dark:text-gray-300 border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setInsertMode("append")}
+                className={`px-2 py-1 ${
+                  insertMode === "append"
+                    ? "bg-blue-600 text-white"
+                    : "bg-transparent"
+                }`}
+                title="Append to the editor"
+              >
+                Append
+              </button>
+              <button
+                type="button"
+                onClick={() => setInsertMode("replace")}
+                className={`px-2 py-1 ${
+                  insertMode === "replace"
+                    ? "bg-blue-600 text-white"
+                    : "bg-transparent"
+                }`}
+                title="Replace editor content"
+              >
+                Replace
+              </button>
+            </div>
+
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={generateAISuggestion}
             disabled={
-              isGeneratingAI || !personalInfo?.targetedJobTitle?.trim() || !cvId
+                isGeneratingAI ||
+                !cvId ||
+                !personalInfo?.targetedJobTitle?.trim()
             }
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50"
             title={
@@ -129,9 +301,9 @@ export default function ProfessionalSummarySection({
                 ? "Please fill in your targeted job title first"
                 : !cvId
                 ? "CV must be created first"
-                : !aiConsent?.aiProcessing
-                ? "AI processing consent required - click to give consent"
-                : "Generate AI-powered professional summary"
+                  : !aiConsent?.aiProcessing || !aiConsent?.aiTraining
+                  ? "AI consent required - clicking will prompt for consent"
+                  : "Generate AI suggestions"
             }
           >
             {isGeneratingAI ? (
@@ -147,11 +319,124 @@ export default function ProfessionalSummarySection({
             )}
           </Button>
         </div>
-        <RichTextEditor
-          value={professionalSummary.summary || ""}
-          onChange={(value) => onUpdateProfessionalSummary({ summary: value })}
+        </div>
+
+        {/* Quill editor */}
+        <QuillTextEditor
+          value={localSummary}
+          onChange={(value) => {
+            if (normalizeHtml(value) === normalizeHtml(localSummary)) return;
+            setLocalSummary(value);
+            setIsLocalDirty(true);
+            onUpdateProfessionalSummary({ summary: value });
+          }}
+          onReady={(api) => {
+            editorApiRef.current = api;
+            // eslint-disable-next-line no-console
+            console.log("[Parent] Editor ready?", api.isReady());
+          }}
           placeholder="Write a brief summary of your professional background and key achievements..."
         />
+
+        {/* AI suggestions UNDER the editor */}
+        {/* {ai && (ai.content?.trim() || ai.bullets?.length) ? (
+          <div className="mt-4 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                AI Suggestions
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={insertContent}
+                  disabled={!ai.content?.trim()}
+                  title="Insert the paragraph content"
+                >
+                  Insert Content ({insertMode})
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSelectedBullets}
+                  disabled={!selectedBullets.length}
+                  title="Add the selected bullets"
+                >
+                  Add Selected Bullets ({selectedBullets.length})
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addAllBullets}
+                  disabled={!(ai.bullets && ai.bullets.length)}
+                  title="Add all bullets"
+                >
+                  Add All Bullets
+                </Button>
+                <Button
+                  type="button"
+                  onClick={replaceWithAll}
+                  title="Replace editor with content + bullets"
+                >
+                  Replace with All
+                </Button>
+              </div>
+            </div> */}
+
+        {/* Content preview */}
+        {/* {ai.content?.trim() ? (
+              <div className="px-3 py-2">
+                <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                  Content
+                </div>
+                <div className="text-sm text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700/40 rounded p-3">
+                  {stripTags(ai.content!)}
+                </div>
+              </div>
+            ) : null} */}
+
+        {/* Bullets with selection */}
+        {/* {ai.bullets && ai.bullets.length > 0 ? (
+              <div className="px-3 py-2">
+                <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">
+                  Bullets (click to select)
+                </div>
+                <ul className="space-y-1">
+                  {ai.bullets.map((b, i) => {
+                    const on = !!selected[i];
+                    return (
+                      <li
+                        key={i}
+                        className={`flex items-start gap-2 p-2 rounded cursor-pointer ${
+                          on
+                            ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-700/40"
+                        }`}
+                        onClick={() =>
+                          setSelected((s) => ({ ...s, [i]: !s[i] }))
+                        }
+                        title="Click to toggle"
+                      >
+                        <input
+                          type="checkbox"
+                          readOnly
+                          checked={on}
+                          className="mt-0.5"
+                        />
+                        <span className="text-sm text-gray-800 dark:text-gray-100">
+                          {stripTags(b)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : null} */}
       </div>
     </div>
   );

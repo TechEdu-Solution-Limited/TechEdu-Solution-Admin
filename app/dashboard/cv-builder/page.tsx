@@ -49,7 +49,7 @@ export default function ResumeBuilder() {
         <CVBuilderMain
           autoSaveConfig={{
             enabled: false, // Disabled - no more auto-save
-            interval: 10000, // 10 seconds
+            interval: 20000, // 20 seconds
             debounceDelay: 500, // 0.5 seconds
             onSave: async (state: CVBuilderState) => {
               try {
@@ -91,7 +91,7 @@ export default function ResumeBuilder() {
               console.log("Exporting CV:", state);
               // TODO: Implement PDF/DOCX export
               console.log("Export successful");
-    } catch (error) {
+            } catch (error) {
               console.error("Export failed:", error);
               throw error;
             }
@@ -101,19 +101,19 @@ export default function ResumeBuilder() {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
-          {/* Header */}
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Create Your Professional CV
-                </h1>
+          </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Build a stunning resume that gets you noticed by employers. Choose
             from our professional templates and create your CV in minutes.
-            </p>
-          </div>
+          </p>
+        </div>
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
@@ -162,7 +162,7 @@ export default function ResumeBuilder() {
             <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             <span className="px-4 text-gray-500 dark:text-gray-400">OR</span>
             <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
-                </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="grid md:grid-cols-2 gap-6">
@@ -183,7 +183,7 @@ export default function ResumeBuilder() {
                   Choose Template
                 </button>
               </div>
-                </div>
+            </div>
 
             {/* AI-Powered Builder */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -212,29 +212,29 @@ export default function ResumeBuilder() {
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                 Live Preview
               </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 See your CV as you build it with real-time preview
-                </p>
-              </div>
+              </p>
+            </div>
             <div className="text-center">
               <Download className="h-8 w-8 text-blue-600 mx-auto mb-3" />
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                 Multiple Formats
               </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Export your CV in PDF, DOCX, and HTML formats
-                </p>
-              </div>
+              </p>
+            </div>
             <div className="text-center">
               <Sparkles className="h-8 w-8 text-purple-600 mx-auto mb-3" />
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                 AI Suggestions
               </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Get AI-powered suggestions to improve your CV
-                </p>
-              </div>
+              </p>
             </div>
+          </div>
 
           {/* Back to Dashboard */}
           <div className="text-center mt-8">

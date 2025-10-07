@@ -1,6 +1,7 @@
+// components/cv/builder/SectionContentRenderer.tsx
 "use client";
-import React from "react";
-import { ResumeSection } from "@/types/cv";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { ResumeSection, Skill } from "@/types/cv";
 import PersonalInfoSection from "./sections/PersonalInfoSection";
 import ExperienceSection from "./sections/ExperienceSection";
 import EducationSection from "./sections/EducationSection";
@@ -15,12 +16,20 @@ import CertificationsSection from "./sections/CertificationsSection";
 interface SectionContentRendererProps {
   section: ResumeSection;
   onUpdate: (updates: any) => void;
+
+  // NEW: allow the renderer to push section-level updates up immediately
+  onUpdateSection?: (
+    sectionId: string,
+    updates: Partial<ResumeSection>
+  ) => void;
+
   onShowAIConsent?: () => void;
   aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
   cvId?: string;
   onCheckExistingConsent?: (
     cvId: string
   ) => Promise<{ aiProcessing: boolean; aiTraining: boolean } | null>;
+
   personalInfo?: any;
   professionalSummary?: any;
   experiences?: any[];
@@ -32,30 +41,39 @@ interface SectionContentRendererProps {
   projects?: any[];
   interests?: any[];
   customSections?: any[];
+
   onAddExperience?: () => void;
   onRemoveExperience?: (id: string) => void;
   onUpdateExperience?: (id: string, field: string, value: any) => void;
+
   onAddEducation?: () => void;
   onRemoveEducation?: (id: string) => void;
   onUpdateEducation?: (id: string, field: string, value: any) => void;
+
   onAddSkill?: () => void;
   onRemoveSkill?: (id: string) => void;
   onUpdateSkill?: (id: string, field: string, value: any) => void;
+
   onAddLanguage?: () => void;
   onRemoveLanguage?: (id: string) => void;
   onUpdateLanguage?: (id: string, field: string, value: any) => void;
+
   onAddCertification?: () => void;
   onRemoveCertification?: (id: string) => void;
   onUpdateCertification?: (id: string, field: string, value: any) => void;
+
   onAddAward?: () => void;
   onRemoveAward?: (id: string) => void;
   onUpdateAward?: (id: string, field: string, value: any) => void;
+
   onAddProject?: () => void;
   onRemoveProject?: (id: string) => void;
   onUpdateProject?: (id: string, field: string, value: any) => void;
+
   onAddInterest?: () => void;
   onRemoveInterest?: (id: string) => void;
   onUpdateInterest?: (id: string, field: string, value: any) => void;
+
   onImageUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage?: () => void;
 }
@@ -63,6 +81,7 @@ interface SectionContentRendererProps {
 export function SectionContentRenderer({
   section,
   onUpdate,
+  onUpdateSection, // NEW
   onShowAIConsent,
   aiConsent,
   cvId,
@@ -105,9 +124,75 @@ export function SectionContentRenderer({
   onImageUpload,
   onRemoveImage,
 }: SectionContentRendererProps) {
-  const commonProps = {
-    onShowAIConsent,
-  };
+  // ---------- local working copy for SKILLS (prevents "save clears inputs") ----------
+  const [localSkills, setLocalSkills] = useState(skills);
+
+  // Keep local copy in sync if the user switches to another section or external refresh happens
+  useEffect(() => {
+    if (section.type === "skills") {
+      setLocalSkills(skills);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section.id, section.type, JSON.stringify(skills)]);
+
+  // Push localSkills to parent immediately so Save won’t wipe them
+  const commitSkills = useCallback(
+    (next: Skill[]) => {
+      setLocalSkills(next);
+
+      // keep existing per-row flow if you rely on it
+      if (onUpdateSkill) {
+        next.forEach((s) => {
+          onUpdateSkill(s.id, "name", s.name ?? "");
+          onUpdateSkill(s.id, "level", (s.level ?? "Beginner") as string);
+        });
+      }
+
+      // update the whole section immediately (narrowed to 'skills' case)
+      if (onUpdateSection) {
+        const update = {
+          data: { ...(section.data as any), skills: next },
+        } as unknown as Partial<ResumeSection>;
+        onUpdateSection(section.id, update);
+      }
+    },
+    [onUpdateSkill, onUpdateSection, section.data, section.id]
+  );
+
+  // wrappers we pass to SkillsSection that update the local copy first
+  const handleAddSkillLocal = useCallback(() => {
+    if (!onAddSkill) return;
+    onAddSkill(); // let parent create id
+    // local add placeholder so UI doesn’t jump; real id arrives from parent shortly
+    commitSkills([
+      ...localSkills,
+      {
+        id: `temp-${Date.now()}`,
+        name: "",
+        level: "Beginner",
+      } as any,
+    ]);
+  }, [onAddSkill, localSkills, commitSkills]);
+
+  const handleRemoveSkillLocal = useCallback(
+    (id: string) => {
+      onRemoveSkill?.(id);
+      commitSkills(localSkills.filter((s) => s.id !== id));
+    },
+    [onRemoveSkill, localSkills, commitSkills]
+  );
+
+  const handleUpdateSkillLocal = useCallback(
+    (id: string, field: keyof Skill, value: string) => {
+      onUpdateSkill?.(id, field as any, value);
+      commitSkills(
+        localSkills.map((s) => (s.id === id ? { ...s, [field]: value } : s))
+      );
+    },
+    [onUpdateSkill, localSkills, commitSkills]
+  );
+
+  // -------------------------------------------------------------------------------
 
   switch (section.type) {
     case "personal-info":
@@ -148,23 +233,18 @@ export function SectionContentRenderer({
     case "skills":
       return (
         <SkillsSection
-          skills={skills}
+          skills={localSkills} // ← use local working copy
           personalInfo={personalInfo}
-          onAdd={onAddSkill || (() => {})}
-          onRemove={onRemoveSkill || (() => {})}
-          onUpdate={onUpdateSkill || (() => {})}
+          onAdd={handleAddSkillLocal}
+          onRemove={handleRemoveSkillLocal}
+          onUpdate={handleUpdateSkillLocal}
           onShowAIConsent={onShowAIConsent}
           aiConsent={aiConsent}
           cvId={cvId}
-          onCheckExistingConsent={onCheckExistingConsent}
         />
       );
 
     case "professional-summary":
-      console.log(
-        "SectionContentRenderer - cvId being passed to SummarySection:",
-        cvId
-      );
       return (
         <SummarySection
           professionalSummary={professionalSummary || section.data}

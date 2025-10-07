@@ -1,5 +1,13 @@
+// hooks/cv/useCVSimplified.ts
+
 import { useState, useCallback, useEffect } from "react";
-import { cvService, CreateCVRequest } from "@/services/cv/cvServiceOptimized";
+import {
+  cvService,
+  CreateCVRequest,
+  AiSummary,
+  SkillsAssessment,
+  ExperienceAssessment,
+} from "@/services/cv/cvServiceOptimized";
 
 export function useCVSimplified() {
   const [cvId, setCvId] = useState<string | undefined>(undefined);
@@ -202,18 +210,19 @@ export function useCVSimplified() {
     }
   }, []);
 
-  // Generate AI Summary
+  // Generate AI Summary (normalized)
   const generateSummary = useCallback(
     async (
       tone: string = "professional and concise"
-    ): Promise<string | null> => {
+    ): Promise<AiSummary | null> => {
       if (!cvId) {
         console.warn("⚠️ No cvId available for AI summary generation");
         return null;
       }
       try {
-        const summary = await cvService.generateSummary(cvId, tone);
-        return summary;
+        // returns: { content: string, bullets: string[] }
+        const result = await cvService.generateSummary(cvId, tone);
+        return result;
       } catch (error) {
         console.error("Failed to generate summary:", error);
         return null;
@@ -224,13 +233,17 @@ export function useCVSimplified() {
 
   // Generate AI Experience
   const generateExperience = useCallback(
-    async (context: { targetRole: string; industry: string }): Promise<any> => {
+    async (context: {
+      targetRole: string;
+      industry: string;
+    }): Promise<ExperienceAssessment | null> => {
       if (!cvId) {
         console.warn("⚠️ No cvId available for AI experience generation");
         return null;
       }
       try {
-        return await cvService.generateExperience(cvId, context);
+        const res = await cvService.generateExperience(cvId, context);
+        return res; // { seniority, minYears, topSkills, rationale }
       } catch (error) {
         console.error("Failed to generate experience:", error);
         return null;
@@ -240,18 +253,28 @@ export function useCVSimplified() {
   );
 
   // Generate AI Skills
+  // Generate AI Skills (UI keeps emphasize[]; service currently ignores or handles it)
   const generateSkills = useCallback(
     async (
       level: "all" | "top-5" = "all",
       prompt?: string,
       context?: { targetRole: string; emphasize: string[] }
-    ): Promise<any> => {
+    ): Promise<SkillsAssessment | null> => {
       if (!cvId) {
         console.warn("⚠️ No cvId available for AI skills generation");
         return null;
       }
       try {
-        return await cvService.generateSkills(cvId, level, prompt, context);
+        // If your service doesn't take emphasize, just pass through; it's optional.
+        const res = await cvService.generateSkills(
+          cvId,
+          level,
+          prompt,
+          // If your service expects { targetRole, industry }, you could map here.
+          // For now, pass as-is; the service normalizer will handle the response.
+          context as any
+        );
+        return res; // { skills: [{name, score, evidence?}...], top: [...] }
       } catch (error) {
         console.error("Failed to generate skills:", error);
         return null;

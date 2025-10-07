@@ -10,6 +10,7 @@ import {
   Send,
   Download,
   Target,
+  File,
 } from "lucide-react";
 import MobileActionMenu from "./MobileActionMenu";
 
@@ -29,10 +30,13 @@ interface ResumeNavProps {
 
   // Export
   onExportPDF: () => void;
+  onExportHTML2PDF?: () => void;
 
   // Job Match
   onShowJobMatch?: () => void;
-  onExportHTML2PDF?: () => void;
+
+  // Preview
+  onPreview?: () => void; // NEW
 
   // State
   isSaving?: boolean;
@@ -57,6 +61,7 @@ export default function ResumeNav({
   onShowJobMatch,
   onExportPDF,
   onExportHTML2PDF,
+  onPreview, // NEW
   isSaving = false,
   isLoading = false,
   isExporting = false,
@@ -104,7 +109,7 @@ export default function ResumeNav({
             </button>
           </div>
 
-          {/* API Functionality - Grouped with visual separator */}
+          {/* API buttons */}
           <div className="hidden lg:flex items-center space-x-1 pl-2 border-l border-gray-200 dark:border-gray-700">
             {onSaveDraft && (
               <button
@@ -145,49 +150,19 @@ export default function ResumeNav({
               </button>
             )}
 
-            {/* New CV Management Buttons */}
-            {/* {onCreateCV && !cvId && (
+            {/* NEW: Preview */}
+            {onPreview && (
               <button
-                onClick={onCreateCV}
-                disabled={isCreating || loading}
-                className="flex items-center space-x-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 disabled:bg-blue-50 dark:disabled:bg-blue-900/10 text-blue-700 dark:text-blue-300 rounded-lg transition-all duration-200 group"
+                onClick={onPreview}
+                className="flex items-center space-x-2 px-3 py-2 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-all duration-200 group"
               >
-                <FileText className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-sm">
-                  {isCreating ? "Creating..." : "Create CV"}
-                </span>
-              </button>
-            )} */}
-
-            {/* Manual CV Management buttons - Commented out for auto-save flow */}
-            {/* {onUpdateCV && cvId && (
-              <button
-                onClick={onUpdateCV}
-                disabled={isSaving || loading}
-                className="flex items-center space-x-2 px-3 py-2 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 disabled:bg-orange-50 dark:disabled:bg-orange-900/10 text-orange-700 dark:text-orange-300 rounded-lg transition-all duration-200 group"
-              >
-                <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-sm">
-                  {isSaving ? "Updating..." : "Update CV"}
-                </span>
+                <File className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-sm">Preview</span>
               </button>
             )}
-
-            {onPublishDraft && cvId && (
-              <button
-                onClick={onPublishDraft}
-                disabled={isSaving || loading}
-                className="flex items-center space-x-2 px-3 py-2 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 disabled:bg-emerald-50 dark:disabled:bg-emerald-900/10 text-emerald-700 dark:text-emerald-300 rounded-lg transition-all duration-200 group"
-              >
-                <Send className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-sm">
-                  {isSaving ? "Publishing..." : "Publish Draft"}
-                </span>
-              </button>
-            )} */}
           </div>
 
-          {/* Job Match Button */}
+          {/* Job Match */}
           {onShowJobMatch && (
             <button
               onClick={onShowJobMatch}
@@ -198,7 +173,7 @@ export default function ResumeNav({
             </button>
           )}
 
-          {/* Export Button */}
+          {/* Export PDF */}
           <button
             onClick={onExportPDF}
             disabled={isExporting}
@@ -208,6 +183,7 @@ export default function ResumeNav({
             <span>{isExporting ? "Exporting..." : "Export PDF"}</span>
           </button>
 
+          {/* Optional HTML2PDF */}
           {onExportHTML2PDF && (
             <button
               onClick={onExportHTML2PDF}
@@ -219,7 +195,7 @@ export default function ResumeNav({
             </button>
           )}
 
-          {/* Mobile Action Menu */}
+          {/* Mobile menu (unchanged; add preview here later if desired) */}
           <MobileActionMenu
             onSaveDraft={onSaveDraft}
             onLoadCV={onLoadCV}

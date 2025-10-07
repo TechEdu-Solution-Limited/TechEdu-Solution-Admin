@@ -659,7 +659,7 @@ export default function TemplateBuilderPage({
             "⏭️ Auto-save skipped - personal info not ready or already saving"
           );
         }
-      }, 10000); // Auto-save draft every 10 seconds
+      }, 20000); // Auto-save draft every 20 seconds
 
       return () => clearInterval(interval);
     }

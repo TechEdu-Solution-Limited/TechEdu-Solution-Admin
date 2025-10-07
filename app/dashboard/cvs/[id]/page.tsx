@@ -18,6 +18,7 @@ import { StatusBar } from "@/components/cv/builder/StatusBar";
 import { useTemplateBuilder } from "@/hooks/cv/useTemplateBuilder";
 import { useCVSimplified } from "@/hooks/cv/useCVSimplified";
 import { templateManager } from "@/lib/cv/templates/templateManager";
+import { cvService } from "@/services/cv/cvServiceOptimized";
 
 interface CVSection {
   id: string;
@@ -75,10 +76,12 @@ export default function CVPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [showAIConsent, setShowAIConsent] = useState(false);
   const [aiConsent, setAiConsent] = useState<any>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
 
   // Initialize template builder with default template first
   const templateBuilder = useTemplateBuilder("classic");
@@ -90,24 +93,61 @@ export default function CVPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  // Auto-save when CV exists and data changes
+  // Ensure a draft exists for this CV once it is loaded
+  useEffect(() => {
+    const ensureDraft = async () => {
+      if (!cv) return;
+
+      try {
+        // If we already have a draftId in state, do nothing
+        if (draftId) return;
+
+        // Query server for existing draft for this CV
+        const existing = await cvService.getDraftIdForCv(cv._id);
+        if (existing) {
+          setDraftId(existing);
+          return;
+        }
+
+        // Create a draft for this CV if none exists yet
+        const working = cv.sections.map((s) => ({
+          id: s.id,
+          type: s.type,
+          heading: s.heading,
+          visible: s.visible,
+          data: s.data,
+        }));
+
+        const newDraftId = await cvService.createOrUpdateDraft({
+          cvId: cv._id,
+          working,
+          isDirty: false,
+          template: cv.template,
+        });
+        setDraftId(newDraftId);
+        console.log("✅ Draft ready for CV:", newDraftId);
+      } catch (e) {
+        console.error("❌ Failed to ensure draft:", e);
+      }
+    };
+
+    ensureDraft();
+  }, [cv, draftId]);
+
+  // Auto-save draft when CV exists and data changes
   useEffect(() => {
     if (cv && !isViewMode) {
       const interval = setInterval(() => {
-        // Only auto-save if we have CV data loaded and not currently saving
-        if (cv.sections && cv.sections.length > 0 && !saving) {
-          console.log("Auto-saving CV:", cv._id);
-          handleSaveCV();
-        } else {
-          console.log(
-            "Skipping auto-save - CV data not loaded yet or already saving"
-          );
+        // Only auto-save if we have CV data loaded, a draftId, and not currently saving
+        if (cv.sections && cv.sections.length > 0 && draftId && !draftSaving) {
+          console.log("Auto-saving Draft:", draftId);
+          handleSaveDraft();
         }
       }, 5000); // Auto-save every 5 seconds
 
       return () => clearInterval(interval);
     }
-  }, [cv, isViewMode, saving]);
+  }, [cv, isViewMode, draftId, draftSaving]);
 
   // Initialize template builder with CV data
   useEffect(() => {
@@ -287,6 +327,39 @@ export default function CVPage({ params }: { params: { id: string } }) {
     }
   };
 
+  // Save current builder state to Draft (create or update)
+  const handleSaveDraft = async () => {
+    if (!cv) return;
+    if (!draftId) return; // ensureDraft effect will create one
+
+    try {
+      setDraftSaving(true);
+
+      const working = (templateBuilder.resumeData ||
+        cv.sections.map((s) => ({
+          id: s.id,
+          type: s.type,
+          heading: s.heading,
+          visible: s.visible,
+          data: s.data,
+        }))) as any[];
+
+      const newDraftId = await cvService.createOrUpdateDraft({
+        cvId: cv._id,
+        working,
+        isDirty: true,
+        template: cv.template,
+        draftId: draftId || undefined,
+      });
+      if (newDraftId && newDraftId !== draftId) setDraftId(newDraftId);
+      console.log("✅ Draft saved:", newDraftId || draftId);
+    } catch (e) {
+      console.error("❌ Failed to save draft:", e);
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
   const handleDeleteCV = async () => {
     if (
       !cv ||
@@ -447,12 +520,28 @@ export default function CVPage({ params }: { params: { id: string } }) {
           {!isViewMode && (
             <>
               <button
-                onClick={handleSaveCV}
-                disabled={saving}
+                onClick={handleSaveDraft}
+                disabled={draftSaving || !draftId}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
-                <span>{saving ? "Saving..." : "Save"}</span>
+                <span>{draftSaving ? "Saving Draft..." : "Save Draft"}</span>
+              </button>
+              <button
+                onClick={async () => {
+                  if (!draftId) return;
+                  try {
+                    const publishedCvId = await cvService.publishCV(draftId);
+                    console.log("🚀 Published to CV:", publishedCvId);
+                    await loadCV(publishedCvId);
+                  } catch (e) {
+                    console.error("❌ Failed to publish CV:", e);
+                  }
+                }}
+                disabled={!draftId}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                Publish
               </button>
               <button
                 onClick={() => setShowAddSection(true)}
