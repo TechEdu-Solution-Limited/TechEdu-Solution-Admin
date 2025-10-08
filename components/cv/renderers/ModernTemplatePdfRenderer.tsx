@@ -24,6 +24,7 @@ import {
   SECTION_ORDER,
   FONTS,
 } from "@/utils/cv/templateConstants";
+import RichPdf from "../RichPdf";
 
 export function ModernTemplatePdfRenderer({
   data,
@@ -36,6 +37,106 @@ export function ModernTemplatePdfRenderer({
 }) {
   // Register fonts before creating styles
   registerPDFFonts();
+
+  // Helper function to convert HTML to PDF-friendly text with enhanced formatting
+  function convertHtmlToPdfText(html: string): string {
+    if (!html) return "";
+
+    let result = html;
+
+    // Handle headers with emphasis
+    result = result.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "**$1**\n"); // H1 as bold
+    result = result.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "**$1**\n"); // H2 as bold
+    result = result.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "**$1**\n"); // H3 as bold
+
+    // Handle text formatting
+    result = result.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**"); // Bold
+    result = result.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**"); // Bold
+    result = result.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*"); // Italic
+    result = result.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*"); // Italic
+    result = result.replace(/<u[^>]*>(.*?)<\/u>/gi, "_$1_"); // Underline
+    result = result.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~"); // Strikethrough
+    result = result.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~"); // Strikethrough
+
+    // Handle lists
+    result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+      const items = content.match(/<li[^>]*>(.*?)<\/li>/gi);
+      if (items) {
+        return (
+          items
+            .map((item: string, index: number) => {
+              const text = item.replace(/<li[^>]*>(.*?)<\/li>/i, "$1");
+              return `${index + 1}. ${convertHtmlToPdfText(text)}`;
+            })
+            .join("\n") + "\n"
+        );
+      }
+      return "";
+    });
+
+    result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+      const items = content.match(/<li[^>]*>(.*?)<\/li>/gi);
+      if (items) {
+        return (
+          items
+            .map((item: string) => {
+              const text = item.replace(/<li[^>]*>(.*?)<\/li>/i, "$1");
+              return `• ${convertHtmlToPdfText(text)}`;
+            })
+            .join("\n") + "\n"
+        );
+      }
+      return "";
+    });
+
+    // Handle individual list items (only if not part of a proper list)
+    // Note: This is handled by the <ul> and <ol> processing above
+
+    // Handle blockquotes
+    result = result.replace(
+      /<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi,
+      (match, content) => {
+        return `> ${convertHtmlToPdfText(content)}\n`;
+      }
+    );
+
+    // Handle code blocks
+    result = result.replace(
+      /<pre[^>]*>([\s\S]*?)<\/pre>/gi,
+      (match, content) => {
+        return `\`\`\`\n${convertHtmlToPdfText(content)}\n\`\`\`\n`;
+      }
+    );
+    result = result.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`"); // Inline code
+
+    // Handle links
+    result = result.replace(
+      /<a[^>]*href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
+      "$2 ($1)"
+    );
+
+    // Handle paragraphs
+    result = result.replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n");
+
+    // Handle line breaks
+    result = result.replace(/<br[^>]*\/?>/gi, "\n");
+
+    // Remove remaining HTML tags
+    result = result.replace(/<[^>]*>/g, "");
+
+    // Handle HTML entities
+    result = result.replace(/&nbsp;/g, " ");
+    result = result.replace(/&amp;/g, "&");
+    result = result.replace(/&lt;/g, "<");
+    result = result.replace(/&gt;/g, ">");
+    result = result.replace(/&quot;/g, '"');
+    result = result.replace(/&apos;/g, "'");
+
+    // Normalize whitespace
+    result = result.replace(/\s+/g, " ").trim();
+
+    return result;
+  }
 
   const personalInfo = data.find((s) => s.type === "personal-info");
 
@@ -510,9 +611,10 @@ export function ModernTemplatePdfRenderer({
                             {item.summary &&
                               section.type === "professional-summary" && (
                                 <View style={styles.summaryBox}>
-                                  <Text style={styles.itemDescription}>
-                                    {item.summary.replace(/<[^>]*>/g, "")}
-                                  </Text>
+                                  <RichPdf
+                                    html={item.summary}
+                                    template={template}
+                                  />
                                 </View>
                               )}
 
@@ -547,11 +649,12 @@ export function ModernTemplatePdfRenderer({
                                       {item.date}
                                     </Text>
                                   )}
-                                  {item.description && (
-                                    <Text style={styles.itemDescription}>
-                                      {item.description.replace(/<[^>]*>/g, "")}
-                                    </Text>
-                                  )}
+                                  {item.description ? (
+                                    <RichPdf
+                                      html={item.description}
+                                      template={template}
+                                    />
+                                  ) : null}
                                 </View>
                               )}
                           </View>
@@ -585,9 +688,10 @@ export function ModernTemplatePdfRenderer({
                             {item.summary &&
                               section.type === "professional-summary" && (
                                 <View style={styles.summaryBox}>
-                                  <Text style={styles.itemDescription}>
-                                    {item.summary.replace(/<[^>]*>/g, "")}
-                                  </Text>
+                                  <RichPdf
+                                    html={item.summary}
+                                    template={template}
+                                  />
                                 </View>
                               )}
 
@@ -612,6 +716,16 @@ export function ModernTemplatePdfRenderer({
                                     {item.location}
                                   </Text>
                                 )}
+
+                                {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                                {item.description ? (
+                                  <RichPdf
+                                    html={item.description}
+                                    template={template}
+                                  />
+                                ) : null}
+
+                                {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
                                 {item.bullets?.length > 0 && (
                                   <View style={styles.bulletList}>
                                     {item.bullets.map(
@@ -647,13 +761,13 @@ export function ModernTemplatePdfRenderer({
                             )}
 
                             {/* Education */}
-                            {item.degree && item.school && (
+                            {item.degree && item.field && (
                               <View style={styles.borderedItem}>
                                 <View style={styles.educationHeader}>
                                   <Text style={styles.itemTitle}>
                                     {item.degree} —{" "}
                                     <Text style={{ fontStyle: "italic" }}>
-                                      {item.school}
+                                      {item.field}
                                     </Text>
                                   </Text>
                                   {item.startDate && (
@@ -662,9 +776,9 @@ export function ModernTemplatePdfRenderer({
                                     </Text>
                                   )}
                                 </View>
-                                {item.location && (
+                                {item.school && (
                                   <Text style={styles.itemDate}>
-                                    {item.location}
+                                    {item.school}
                                     {item.gpa && ` • GPA: ${item.gpa}`}
                                   </Text>
                                 )}

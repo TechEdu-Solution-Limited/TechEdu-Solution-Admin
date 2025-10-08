@@ -280,13 +280,16 @@ export default function CVPage({ params }: { params: { id: string } }) {
           data: s.data,
         }));
 
-      // Transform data for API - preserve section IDs
+      // Transform data for API - preserve section IDs and use templateBuilder data for skills
       const sections = resumeData.map((section) => ({
         id: section.id, // Preserve section ID from existing CV
         type: section.type,
         heading: section.heading,
         visible: section.visible,
-        data: section.data,
+        data:
+          section.type === "skills"
+            ? templateBuilder.skills || section.data
+            : section.data,
       }));
 
       const updateData = {
@@ -341,7 +344,7 @@ export default function CVPage({ params }: { params: { id: string } }) {
           type: s.type,
           heading: s.heading,
           visible: s.visible,
-          data: s.data,
+          data: s.type === "skills" ? templateBuilder.skills || s.data : s.data,
         }))) as any[];
 
       const newDraftId = await cvService.createOrUpdateDraft({
@@ -622,7 +625,11 @@ export default function CVPage({ params }: { params: { id: string } }) {
           cv.sections.find((s) => s.type === "work-experience")?.data || []
         }
         educations={cv.sections.find((s) => s.type === "education")?.data || []}
-        skills={cv.sections.find((s) => s.type === "skills")?.data || []}
+        skills={
+          templateBuilder.skills ||
+          cv.sections.find((s) => s.type === "skills")?.data ||
+          []
+        }
         languages={cv.sections.find((s) => s.type === "languages")?.data || []}
         certifications={
           cv.sections.find((s) => s.type === "certifications")?.data || []
@@ -639,9 +646,26 @@ export default function CVPage({ params }: { params: { id: string } }) {
         onAddEducation={() => {}}
         onRemoveEducation={() => {}}
         onUpdateEducation={() => {}}
-        onAddSkill={() => {}}
-        onRemoveSkill={() => {}}
-        onUpdateSkill={() => {}}
+        onAddSkill={() => {
+          const newSkill = {
+            id: `skill-${Date.now()}`,
+            name: "",
+            level: "Beginner" as const,
+          };
+          templateBuilder.setSkills([...templateBuilder.skills, newSkill]);
+        }}
+        onRemoveSkill={(id: string) => {
+          templateBuilder.setSkills(
+            templateBuilder.skills.filter((s: any) => s.id !== id)
+          );
+        }}
+        onUpdateSkill={(id: string, field: string, value: any) => {
+          templateBuilder.setSkills(
+            templateBuilder.skills.map((s: any) =>
+              s.id === id ? { ...s, [field]: value } : s
+            )
+          );
+        }}
         onAddLanguage={() => {}}
         onRemoveLanguage={() => {}}
         onUpdateLanguage={() => {}}
@@ -716,7 +740,10 @@ export default function CVPage({ params }: { params: { id: string } }) {
                 type: s.type as any,
                 heading: s.heading,
                 visible: s.visible,
-                data: s.data,
+                data:
+                  s.type === "skills"
+                    ? templateBuilder.skills || s.data
+                    : s.data,
               })),
             theme: cv.theme,
           }}

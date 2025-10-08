@@ -126,8 +126,8 @@ export default function ExperienceSection({
       const data: ExperienceAssessment = await cvService.generateExperience(
         cvId!,
         {
-          targetRole: jobTitle,
-          industry: personalInfo?.industry || "Technology",
+        targetRole: jobTitle,
+        industry: personalInfo?.industry || "Technology",
         }
       );
 

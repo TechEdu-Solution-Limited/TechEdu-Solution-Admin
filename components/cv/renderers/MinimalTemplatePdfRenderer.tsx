@@ -1,7 +1,6 @@
 /**
- * Classic Template PDF Renderer
- *
- * Renders the classic template for PDF using shared section logic
+ * Minimal Template PDF Renderer (drop-in)
+ * Follows the same flow as the PdfRenderer + RichPdf pipeline
  */
 
 import React from "react";
@@ -20,21 +19,70 @@ import {
   getSectionDisplayName,
 } from "@/utils/cv/sectionHelpers";
 import { registerPDFFonts, mapFontFamily } from "@/utils/cv/fontUtils";
-import {
-  SPACING,
-  FONT_SIZES,
-  LAYOUT,
-  SECTION_ORDER,
-} from "@/utils/cv/templateConstants";
-import {
-  scaleToPDF,
-  getConsistentFontSize,
-  getConsistentPadding,
-  PDF_SCALE_FACTOR,
-  A4_WIDTH,
-  A4_HEIGHT,
-} from "@/utils/cv/pdfScaling";
+import { SECTION_ORDER } from "@/utils/cv/templateConstants";
+import RichPdf from "../RichPdf";
 import { BulletList } from "./BulletList";
+
+// (Optional) Legacy helper used only for explicit bullets[] fallback.
+// If you no longer rely on bullets[], you can remove this helper entirely.
+function convertHtmlToPdfText(html: string): string {
+  if (!html) return "";
+  let result = html;
+  // Lists → plain bullets/numbers
+  result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, c) => {
+    const items = c.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+    return (
+      items
+        .map(
+          (item: string, i: number) =>
+            `${i + 1}. ${convertHtmlToPdfText(
+              item.replace(/^<li[^>]*>/i, "").replace(/<\/li>$/i, "")
+            )}`
+        )
+        .join("\n") + "\n"
+    );
+  });
+  result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, c) => {
+    const items = c.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+    return (
+      items
+        .map(
+          (item: string) =>
+            `• ${convertHtmlToPdfText(
+              item.replace(/^<li[^>]*>/i, "").replace(/<\/li>$/i, "")
+            )}`
+        )
+        .join("\n") + "\n"
+    );
+  });
+  // Block/inline basics
+  result = result.replace(/<br[^>]*\/?>/gi, "\n");
+  result = result.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, "$1\n\n");
+  result = result.replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, "$1");
+  result = result.replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, "$1");
+  result = result.replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, "$1");
+  result = result.replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, "$1");
+  result = result.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, "$1");
+  result = result.replace(/<s[^>]*>([\s\S]*?)<\/s>/gi, "$1");
+  result = result.replace(/<strike[^>]*>([\s\S]*?)<\/strike>/gi, "$1");
+  result = result.replace(
+    /<a[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi,
+    "$2 ($1)"
+  );
+  // Strip residual tags & entities
+  result = result.replace(/<[^>]*>/g, "");
+  result = result
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+  return result
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export function MinimalTemplatePdfRenderer({
   data,
@@ -43,36 +91,31 @@ export function MinimalTemplatePdfRenderer({
   data: ResumeSection[];
   template: TemplateLayout;
 }) {
-  // Register fonts before creating styles
   registerPDFFonts();
 
   const personalInfo = data.find((s) => s.type === "personal-info");
-
-  // Use standardized section order
-  const sectionOrder = SECTION_ORDER;
-
-  // Filter and sort other sections according to the desired order
   const otherSections = data
     .filter((s) => s.type !== "personal-info")
     .sort((a, b) => {
-      const aIndex = sectionOrder.indexOf(a.type as string);
-      const bIndex = sectionOrder.indexOf(b.type as string);
-
-      // If section is not in the order list, put it at the end
+      const aIndex = SECTION_ORDER.indexOf(a.type as string);
+      const bIndex = SECTION_ORDER.indexOf(b.type as string);
       if (aIndex === -1 && bIndex === -1) return 0;
       if (aIndex === -1) return 1;
       if (bIndex === -1) return -1;
-
       return aIndex - bIndex;
     });
 
+  const fontFamily = mapFontFamily(template.styles.typography.fontFamily);
+  const textColor = template.styles.colors.text;
+  const secondary = template.styles.colors.secondary || "#6b7280";
+
   const styles = StyleSheet.create({
     page: {
-      padding: 20, // Reduced padding to match web preview better
-      fontSize: 10, // Smaller base font size to match web preview
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-      lineHeight: 1.4, // Tighter line height
-      color: template.styles.colors.text,
+      padding: 20,
+      fontSize: 10,
+      fontFamily,
+      lineHeight: 1.3,
+      color: textColor,
     },
     header: {
       flexDirection: "row",
@@ -81,114 +124,78 @@ export function MinimalTemplatePdfRenderer({
       backgroundColor: template.styles.colors.headerBackground || "#f8fafc",
       borderBottomWidth: 2,
       borderBottomColor: template.styles.colors.primary || "#dc2626",
-      paddingHorizontal: 20, // Reduced padding
-      paddingVertical: 15, // Reduced padding
+      paddingHorizontal: 18,
+      paddingVertical: 14,
       marginBottom: 0,
-      lineHeight: 1.0,
     },
-    headerLeft: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 16, // space-x-4 = 16px
-      lineHeight: 1,
-    },
+    headerLeft: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
     profileImage: {
-      width: 90, // Reduced size to match web preview better
-      height: 90, // Reduced size to match web preview better
-      borderRadius: 30, // rounded-full
+      width: 88,
+      height: 88,
+      borderRadius: 44,
       objectFit: "cover",
     },
-    nameTitle: {
-      flexDirection: "column",
-    },
-    name: {
-      fontSize: 18, // Reduced from 24 to match web preview better
-      fontWeight: "bold",
-      color: template.styles.colors.text,
-      marginBottom: 4,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-    },
+    nameTitle: { flexDirection: "column" },
+    name: { fontSize: 18, fontWeight: "bold", marginBottom: 4 },
     title: {
-      fontSize: 12, // text-lg = 14px
-      color: template.styles.colors.secondary,
-      marginTop: 4, // mt-1 = 4px
-      paddingBottom: 4,
+      fontSize: 12,
+      color: secondary,
       fontStyle: "italic",
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      paddingBottom: 4,
     },
-    contactInfo: {
-      flexDirection: "column",
-      alignItems: "flex-end",
-      gap: 8, // space-y-2 = 8px
-    },
-    contactItem: {
-      fontSize: 10, // text-sm = 14px
-      color: template.styles.colors.text,
-      fontWeight: "normal",
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-    },
-    socialLinks: {
-      flexDirection: "column",
-      marginTop: 8, // mt-2 = 8px
-      gap: 4, // space-y-1 = 4px
-    },
-    socialLink: {
-      fontSize: 10, // text-sm = 14px
-      color: template.styles.colors.text,
-      fontWeight: "normal",
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-    },
-    mainContent: {
-      //   paddingHorizontal: 32, // p-8 = 32px
-      paddingVertical: 16, // p-8 = 32px
-    },
-    sectionContainer: {
-      marginBottom: 8, // space-y-6 = 18px
-    },
+    contactInfo: { flexDirection: "column", alignItems: "flex-end", gap: 6 },
+    contactItem: { fontSize: 10 },
+    socialLinks: { flexDirection: "column", marginTop: 6, gap: 3 },
+    socialLink: { fontSize: 10 },
+
+    mainContent: { paddingVertical: 14 },
+    sectionContainer: { marginBottom: 10 },
     sectionTitle: {
-      fontSize: 12, // Match HTML renderer
+      fontSize: 12,
       fontWeight: "bold",
-      marginBottom: 8, // space-y-3 = 12px
+      marginBottom: 8,
       backgroundColor:
         template.styles.colors.sectionHeadingBackground || "#e5e7eb",
       paddingVertical: 6,
       paddingHorizontal: 8,
       textTransform: "uppercase",
-      letterSpacing: 0.05, // tracking-wide
-      color: template.styles.colors.text,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      letterSpacing: 0.05,
       borderRadius: 3,
     },
-    sectionContent: {
-      marginBottom: 12, // space-y-3 = 12px
-    },
-    itemContainer: {
-      marginBottom: 10, // space-y-1 = 4px
+    itemContainer: { marginBottom: 10 },
+
+    rowTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
     },
     itemTitle: {
       fontSize: template.styles.typography.bodySize || 10,
-      fontWeight: "bold", // font-semibold
-      color: template.styles.colors.text,
-      marginBottom: 2,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-    },
-    itemSubtitle: {
-      fontSize: template.styles.typography.bodySize || 10,
-      color: template.styles.colors.secondary,
-      marginBottom: 4,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      fontWeight: "bold",
     },
     itemDate: {
-      fontSize: (template.styles.typography.bodySize || 10) - 1, // text-xs
-      color: template.styles.colors.secondary,
-      marginBottom: 4,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+      fontSize: (template.styles.typography.bodySize || 10) - 1,
+      color: secondary,
     },
-    itemDescription: {
-      fontSize: (template.styles.typography.bodySize || 10) - 2,
-      color: template.styles.colors.text,
-      marginBottom: 4,
-      fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+    itemSubtle: {
+      fontSize: (template.styles.typography.bodySize || 10) - 1,
+      color: secondary,
+      marginTop: 2,
+    },
+
+    // Skills/Languages chips
+    chipWrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
+    chip: {
+      backgroundColor: template.styles.colors.primary || "#dc2626",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 3,
+      marginRight: 6,
+      marginBottom: 6,
+    },
+    chipText: {
+      color: "#fff",
+      fontSize: template.styles.typography.bodySize || 10,
     },
   });
 
@@ -198,14 +205,13 @@ export function MinimalTemplatePdfRenderer({
         {/* Header */}
         {personalInfo && (
           <View style={styles.header}>
-            {/* Left Side - Image, Name, Title, Contact */}
             <View style={styles.headerLeft}>
-              {personalInfo.data.image && (
+              {personalInfo.data.image ? (
                 <Image
                   src={personalInfo.data.image}
                   style={styles.profileImage}
                 />
-              )}
+              ) : null}
               <View style={styles.nameTitle}>
                 <Text style={styles.name}>
                   {personalInfo.data.firstName} {personalInfo.data.lastName}
@@ -215,7 +221,6 @@ export function MinimalTemplatePdfRenderer({
                     {personalInfo.data.targetedJobTitle}
                   </Text>
                 )}
-
                 {personalInfo.data.email && (
                   <Text style={styles.contactItem}>
                     <Text style={{ fontWeight: "600" }}>Email: </Text>
@@ -237,9 +242,7 @@ export function MinimalTemplatePdfRenderer({
               </View>
             </View>
 
-            {/* Right Side - Location and Social Links */}
             <View style={styles.contactInfo}>
-              {/* Social Links */}
               <View style={styles.socialLinks}>
                 {personalInfo.data.linkedin && (
                   <Text style={styles.socialLink}>
@@ -276,7 +279,7 @@ export function MinimalTemplatePdfRenderer({
           </View>
         )}
 
-        {/* Main Content */}
+        {/* Main */}
         <View style={styles.mainContent}>
           {otherSections.map((section) => {
             const items = formatSectionContent(section);
@@ -286,87 +289,31 @@ export function MinimalTemplatePdfRenderer({
               <View key={section.id} style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>{displayName}</Text>
 
-                {/* Skills - Render once for the entire section */}
+                {/* Skills */}
                 {(section.type as string) === "skills" && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: 6,
-                      marginBottom: 10,
-                    }}
-                  >
+                  <View style={styles.chipWrap}>
                     {Array.isArray(items) &&
                       items.map((item: any, i: number) => (
-                        <View
-                          key={i}
-                          style={{
-                            backgroundColor:
-                              template.styles.colors.primary || "#dc2626",
-                            paddingHorizontal: 8, // px-2 = 8px
-                            paddingVertical: 4, // py-1 = 4px
-                            borderRadius: 3, // rounded = 3px
-                            marginBottom: 4,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "#ffffff", // text-white
-                              fontFamily: mapFontFamily(
-                                template.styles.typography.fontFamily
-                              ),
-                              fontSize:
-                                template.styles.typography.bodySize || 10,
-                            }}
-                          >
-                            {item.name}
-                          </Text>
+                        <View key={i} style={styles.chip}>
+                          <Text style={styles.chipText}>{item.name}</Text>
                         </View>
                       ))}
                   </View>
                 )}
 
-                {/* Languages - Render once for the entire section */}
+                {/* Languages */}
                 {(section.type as string) === "languages" && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: 6,
-                      marginBottom: 10,
-                    }}
-                  >
+                  <View style={styles.chipWrap}>
                     {Array.isArray(items) &&
                       items.map((item: any, i: number) => (
-                        <View
-                          key={i}
-                          style={{
-                            backgroundColor:
-                              template.styles.colors.primary || "#dc2626",
-                            paddingHorizontal: 8, // px-2 = 8px
-                            paddingVertical: 4, // py-1 = 4px
-                            borderRadius: 3, // rounded = 3px
-                            marginBottom: 4,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "#ffffff", // text-white
-                              fontFamily: mapFontFamily(
-                                template.styles.typography.fontFamily
-                              ),
-                              fontSize:
-                                template.styles.typography.bodySize || 10,
-                            }}
-                          >
-                            {item.name}
-                          </Text>
+                        <View key={i} style={styles.chip}>
+                          <Text style={styles.chipText}>{item.name}</Text>
                         </View>
                       ))}
                   </View>
                 )}
 
-                {/* Other sections - Individual items */}
+                {/* Others */}
                 {Array.isArray(items) &&
                   (section.type as string) !== "skills" &&
                   (section.type as string) !== "languages" &&
@@ -375,13 +322,7 @@ export function MinimalTemplatePdfRenderer({
                       {/* Work Experience */}
                       {item.title && item.company && (
                         <View>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                            }}
-                          >
+                          <View style={styles.rowTop}>
                             <Text style={styles.itemTitle}>
                               {item.title} —{" "}
                               <Text style={{ fontStyle: "italic" }}>
@@ -395,37 +336,43 @@ export function MinimalTemplatePdfRenderer({
                             )}
                           </View>
                           {item.location && (
-                            <Text style={styles.itemDate}>{item.location}</Text>
+                            <Text style={styles.itemSubtle}>
+                              {item.location}
+                            </Text>
                           )}
+
+                          {/* Rich description (HTML) */}
+                          {item.description ? (
+                            <RichPdf
+                              html={item.description}
+                              template={template}
+                            />
+                          ) : null}
+
+                          {/* Legacy explicit bullets array */}
                           {item.bullets?.length > 0 && (
                             <BulletList
-                              items={item.bullets}
+                              items={item.bullets.map((b: string) =>
+                                convertHtmlToPdfText(b)
+                              )}
                               fontSize={
                                 (template.styles.typography.bodySize || 10) - 1
                               }
-                              color={template.styles.colors.text}
-                              fontFamily={mapFontFamily(
-                                template.styles.typography.fontFamily
-                              )}
+                              color={textColor}
+                              fontFamily={fontFamily}
                             />
                           )}
                         </View>
                       )}
 
                       {/* Education */}
-                      {item.degree && item.school && (
+                      {item.degree && item.field && (
                         <View>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                            }}
-                          >
+                          <View style={styles.rowTop}>
                             <Text style={styles.itemTitle}>
                               {item.degree} —{" "}
                               <Text style={{ fontStyle: "italic" }}>
-                                {item.school}
+                                {item.field}
                               </Text>
                             </Text>
                             {item.startDate && (
@@ -434,12 +381,18 @@ export function MinimalTemplatePdfRenderer({
                               </Text>
                             )}
                           </View>
-                          {item.location && (
-                            <Text style={styles.itemDate}>
-                              {item.location}
-                              {item.gpa && ` • GPA: ${item.gpa}`}
+                          {(item.school || item.gpa) && (
+                            <Text style={styles.itemSubtle}>
+                              {item.school}
+                              {item.gpa ? ` • GPA: ${item.gpa}` : ""}
                             </Text>
                           )}
+                          {item.description ? (
+                            <RichPdf
+                              html={item.description}
+                              template={template}
+                            />
+                          ) : null}
                         </View>
                       )}
 
@@ -455,13 +408,14 @@ export function MinimalTemplatePdfRenderer({
                               </Text>
                             )}
                           </Text>
-                          {item.description && (
-                            <Text style={styles.itemDescription}>
-                              {item.description.replace(/<[^>]*>/g, "")}
-                            </Text>
-                          )}
+                          {item.description ? (
+                            <RichPdf
+                              html={item.description}
+                              template={template}
+                            />
+                          ) : null}
                           {item.technologies?.length > 0 && (
-                            <Text style={styles.itemDate}>
+                            <Text style={styles.itemSubtle}>
                               Technologies: {item.technologies.join(", ")}
                             </Text>
                           )}
@@ -477,12 +431,19 @@ export function MinimalTemplatePdfRenderer({
                               {item.name} — {item.issuer}
                             </Text>
                             {item.date && (
-                              <Text style={styles.itemDate}>
+                              <Text style={styles.itemSubtle}>
                                 {item.date}
-                                {item.credentialId &&
-                                  ` • ID: ${item.credentialId}`}
+                                {item.credentialId
+                                  ? ` • ID: ${item.credentialId}`
+                                  : ""}
                               </Text>
                             )}
+                            {item.description ? (
+                              <RichPdf
+                                html={item.description}
+                                template={template}
+                              />
+                            ) : null}
                           </View>
                         )}
 
@@ -495,31 +456,30 @@ export function MinimalTemplatePdfRenderer({
                               {item.title} — {item.issuer}
                             </Text>
                             {item.date && (
-                              <Text style={styles.itemDate}>{item.date}</Text>
+                              <Text style={styles.itemSubtle}>{item.date}</Text>
                             )}
-                            {item.description && (
-                              <Text style={styles.itemDescription}>
-                                {item.description.replace(/<[^>]*>/g, "")}
-                              </Text>
-                            )}
+                            {item.description ? (
+                              <RichPdf
+                                html={item.description}
+                                template={template}
+                              />
+                            ) : null}
                           </View>
                         )}
 
                       {/* Interests */}
                       {item.name && section.type === "interests" && (
-                        <Text style={styles.itemDescription}>
+                        <Text style={styles.itemSubtle}>
                           {item.name}
-                          {item.description && ` - ${item.description}`}
+                          {item.description ? ` - ${item.description}` : ""}
                         </Text>
                       )}
 
                       {/* Professional Summary */}
                       {item.summary &&
-                        section.type === "professional-summary" && (
-                          <Text style={styles.itemDescription}>
-                            {item.summary.replace(/<[^>]*>/g, "")}
-                          </Text>
-                        )}
+                      section.type === "professional-summary" ? (
+                        <RichPdf html={item.summary} template={template} />
+                      ) : null}
                     </View>
                   ))}
               </View>

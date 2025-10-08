@@ -22,10 +22,10 @@ export default function EducationSection({
   onUpdate,
 }: EducationSectionProps) {
   const getEducationTitle = (edu: Education) => {
-    if (edu.institution && edu.degree) {
+    if (edu.institution && edu.degree && edu.field) {
       return `${edu.degree} in ${edu.field || "General"}`;
     }
-    return edu.institution || edu.degree || "";
+    return edu.institution || edu.degree || edu.field || "";
   };
 
   return (

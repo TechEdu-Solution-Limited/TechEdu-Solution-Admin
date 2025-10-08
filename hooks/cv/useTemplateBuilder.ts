@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { templateManager } from "@/lib/cv/templates/templateManager";
 import { TemplatePersistence } from "@/utils/cv/templatePersistence";
 import {
@@ -39,6 +39,7 @@ const saveData = (key: string, data: any) => {
 
 export function useTemplateBuilder(templateId: string) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Template state
   const [templateConfig, setTemplateConfig] = useState<
@@ -462,8 +463,24 @@ export function useTemplateBuilder(templateId: string) {
     const newTemplate = templateManager.getTemplate(newTemplateId);
     if (newTemplate) {
       setTemplateConfig(newTemplate);
-      // Update the URL to reflect the new template
-      router.push(`/dashboard/cv-builder/${newTemplateId}`);
+
+      // Preserve existing query parameters when changing templates
+      const cvId = searchParams.get("cvId");
+      const mode = searchParams.get("mode");
+      const draftId = searchParams.get("draftId");
+
+      const queryParams = new URLSearchParams();
+      if (cvId) queryParams.set("cvId", cvId);
+      if (mode) queryParams.set("mode", mode);
+      if (draftId) queryParams.set("draftId", draftId);
+
+      const queryString = queryParams.toString();
+      const newUrl = `/dashboard/cv-builder/${newTemplateId}${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      // Update the URL to reflect the new template while preserving query params
+      router.push(newUrl);
     }
     setShowTemplateSelector(false);
   };

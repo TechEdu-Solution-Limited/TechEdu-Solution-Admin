@@ -2,6 +2,8 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { sanitizeHtml } from "@/utils/cv/richText";
+import RichHtml from "../RichHtml";
 
 import { ResumeSection } from "@/types/cv";
 import { ColumnSectionType, TemplateLayout } from "@/types/cv/template";
@@ -431,6 +433,7 @@ export function TwoColumnTemplateHtmlRenderer({
                         {item.summary &&
                           section.type === "professional-summary" && (
                             <div
+                              className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                               style={{
                                 color: leftText,
                                 fontFamily: mapFontFamily(
@@ -440,7 +443,9 @@ export function TwoColumnTemplateHtmlRenderer({
                                 lineHeight:
                                   template.styles.typography.lineHeight,
                               }}
-                              dangerouslySetInnerHTML={{ __html: item.summary }}
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeHtml(item.summary),
+                              }}
                             />
                           )}
                       </div>
@@ -517,7 +522,9 @@ export function TwoColumnTemplateHtmlRenderer({
                                 lineHeight:
                                   template.styles.typography.lineHeight,
                               }}
-                              dangerouslySetInnerHTML={{ __html: item.summary }}
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeHtml(item.summary),
+                              }}
                             />
                           )}
 
@@ -586,6 +593,17 @@ export function TwoColumnTemplateHtmlRenderer({
                                 </p>
                               )}
                             </div>
+
+                            {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                            {item.description && (
+                              <RichHtml
+                                html={item.description}
+                                template={template}
+                                sizeOffset={-1}
+                              />
+                            )}
+
+                            {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
                             {item.bullets?.length > 0 && (
                               <ul className="list-disc pl-6 mt-2 space-y-1">
                                 {item.bullets.map(
@@ -600,6 +618,7 @@ export function TwoColumnTemplateHtmlRenderer({
                                     return paragraphs.map((paragraph, k) => (
                                       <li
                                         key={`${j}-${k}`}
+                                        className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                                         style={{
                                           color: "#000000",
                                           fontFamily: mapFontFamily(
@@ -612,7 +631,7 @@ export function TwoColumnTemplateHtmlRenderer({
                                           }px`,
                                         }}
                                         dangerouslySetInnerHTML={{
-                                          __html: paragraph,
+                                          __html: sanitizeHtml(paragraph),
                                         }}
                                       />
                                     ));
@@ -624,7 +643,7 @@ export function TwoColumnTemplateHtmlRenderer({
                         )}
 
                         {/* Education */}
-                        {item.degree && item.school && (
+                        {item.degree && item.field && (
                           <div className="mb-4">
                             <div className="flex justify-between items-start">
                               <h3
@@ -669,9 +688,9 @@ export function TwoColumnTemplateHtmlRenderer({
                                   fontSize: `${template.styles.typography.bodySize}px`,
                                 }}
                               >
-                                {item.school}
+                                {item.field}
                               </p>
-                              {item.location && (
+                              {item.school && (
                                 <p
                                   className="text-sm"
                                   style={{
@@ -684,7 +703,7 @@ export function TwoColumnTemplateHtmlRenderer({
                                     }px`,
                                   }}
                                 >
-                                  {item.location}
+                                  {item.school}
                                 </p>
                               )}
                             </div>

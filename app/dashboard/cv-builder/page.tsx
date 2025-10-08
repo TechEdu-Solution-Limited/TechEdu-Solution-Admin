@@ -7,11 +7,66 @@ import Link from "next/link";
 import CVBuilderMain from "@/components/cv/builder/CVBuilderMain";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { CVBuilderState } from "@/types/cv/cv-builder";
+import { useFirebaseStorage } from "@/hooks/useFirebaseStorage";
+import { STORAGE_FOLDERS } from "@/lib/firebase-storage-client";
 
 export default function ResumeBuilder() {
   const [dragActive, setDragActive] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "uploading" | "success" | "error"
+  >("idle");
+  const [uploadedFile, setUploadedFile] = useState<{
+    name: string;
+    url: string;
+    size: number;
+  } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const router = useRouter();
+  const { uploadFile, loading, error, progress } = useFirebaseStorage();
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const uploadAndLog = async (file: File) => {
+    setUploadStatus("uploading");
+    setUploadError(null);
+
+    try {
+      const result = await uploadFile(
+        file,
+        STORAGE_FOLDERS.ATTACHMENTS,
+        "cv-uploads"
+      );
+
+      console.log("✅ Uploaded file URL:", result.url);
+      console.log("ℹ️ Uploaded path:", result.path);
+
+      // Store upload success data
+      setUploadedFile({
+        name: file.name,
+        url: result.url,
+        size: file.size,
+      });
+      setUploadStatus("success");
+
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        setUploadStatus("idle");
+      }, 5000);
+    } catch (e) {
+      console.error("❌ Upload failed:", e);
+      setUploadError(
+        e instanceof Error ? e.message : "Upload failed. Please try again."
+      );
+      setUploadStatus("error");
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -29,11 +84,8 @@ export default function ResumeBuilder() {
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      // Handle file upload here
-      console.log("File dropped:", e.dataTransfer.files[0]);
-      // TODO: Process the uploaded resume and populate the builder
-      // Route to template selection page
-      router.push(`/dashboard/cv-builder/template-selection`);
+      const file = e.dataTransfer.files[0];
+      uploadAndLog(file);
     }
   };
 
@@ -120,7 +172,13 @@ export default function ResumeBuilder() {
           {/* Drag and Drop Area */}
           <div
             className={`border-2 border-dashed rounded-lg p-12 text-center mb-8 transition-colors ${
-              dragActive
+              uploadStatus === "uploading"
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                : uploadStatus === "success"
+                ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                : uploadStatus === "error"
+                ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                : dragActive
                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                 : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
             }`}
@@ -129,19 +187,118 @@ export default function ResumeBuilder() {
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Upload Your Existing CV
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Drag and drop your CV file here, or click to browse
-            </p>
-            <button
-              onClick={() => document.getElementById("cv-upload")?.click()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Browse Files
-            </button>
+            {uploadStatus === "uploading" ? (
+              <>
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Uploading CV...
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Please wait while we upload your file
+                </p>
+                {progress > 0 && (
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                )}
+              </>
+            ) : uploadStatus === "success" && uploadedFile ? (
+              <>
+                <div className="h-16 w-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="h-8 w-8 text-green-600 dark:text-green-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">
+                  CV Uploaded Successfully!
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-2">
+                  <strong>{uploadedFile.name}</strong> (
+                  {formatFileSize(uploadedFile.size)})
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Your CV has been uploaded and is ready for processing
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setUploadStatus("idle")}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Upload Another
+                  </button>
+                  <button
+                    onClick={() => {
+                      // TODO: Process the uploaded CV and navigate to template selection
+                      console.log("Process CV with URL:", uploadedFile.url);
+                      router.push(`/dashboard/cv-builder/template-selection`);
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Continue to Template Selection
+                  </button>
+                </div>
+              </>
+            ) : uploadStatus === "error" ? (
+              <>
+                <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="h-8 w-8 text-red-600 dark:text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">
+                  Upload Failed
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  {uploadError || "Something went wrong. Please try again."}
+                </p>
+                <button
+                  onClick={() => setUploadStatus("idle")}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </>
+            ) : (
+              <>
+                <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Upload Your Existing CV
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Drag and drop your CV file here, or click to browse
+                </p>
+                <button
+                  onClick={() => document.getElementById("cv-upload")?.click()}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Browse Files
+                </button>
+              </>
+            )}
+
             <input
               id="cv-upload"
               type="file"
@@ -149,9 +306,8 @@ export default function ResumeBuilder() {
               className="hidden"
               onChange={(e) => {
                 if (e.target.files?.[0]) {
-                  console.log("File selected:", e.target.files[0]);
-                  // TODO: Process the uploaded resume
-                  router.push(`/dashboard/cv-builder/template-selection`);
+                  const file = e.target.files[0];
+                  uploadAndLog(file);
                 }
               }}
             />

@@ -20,6 +20,8 @@ import {
   SECTION_ORDER,
 } from "@/utils/cv/templateConstants";
 import Link from "next/link";
+import { sanitizeHtml } from "@/utils/cv/richText";
+import RichHtml from "../RichHtml";
 
 export function MinimalTemplateHtmlRenderer({
   data,
@@ -337,6 +339,17 @@ export function MinimalTemplateHtmlRenderer({
                             {item.location}
                           </p>
                         )}
+
+                        {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                        {item.description && (
+                          <RichHtml
+                            html={item.description}
+                            template={template}
+                            sizeOffset={-1}
+                          />
+                        )}
+
+                        {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
                         {item.bullets?.length > 0 && (
                           <ul className="list-disc pl-6 mt-2">
                             {item.bullets.map((bullet: string, j: number) => {
@@ -351,6 +364,7 @@ export function MinimalTemplateHtmlRenderer({
                               return paragraphs.map((paragraph, k) => (
                                 <li
                                   key={`${j}-${k}`}
+                                  className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                                   style={{
                                     color: template.styles.colors.text,
                                     fontFamily: mapFontFamily(
@@ -361,7 +375,7 @@ export function MinimalTemplateHtmlRenderer({
                                     }px`,
                                   }}
                                   dangerouslySetInnerHTML={{
-                                    __html: paragraph,
+                                    __html: sanitizeHtml(paragraph),
                                   }}
                                 />
                               ));
@@ -372,7 +386,7 @@ export function MinimalTemplateHtmlRenderer({
                     )}
 
                     {/* Education */}
-                    {item.degree && item.school && (
+                    {item.degree && item.field && (
                       <div>
                         <div className="flex justify-between items-start">
                           <p
@@ -386,7 +400,7 @@ export function MinimalTemplateHtmlRenderer({
                             }}
                           >
                             {item.degree} —{" "}
-                            <span className="italic">{item.school}</span>
+                            <span className="italic">{item.field}</span>
                           </p>
                           {item.startDate && (
                             <p
@@ -402,7 +416,7 @@ export function MinimalTemplateHtmlRenderer({
                             </p>
                           )}
                         </div>
-                        {item.location && (
+                        {item.school && (
                           <p
                             className="text-xs text-gray-500"
                             style={{
@@ -412,7 +426,7 @@ export function MinimalTemplateHtmlRenderer({
                               ),
                             }}
                           >
-                            {item.location}
+                            {item.school}
                             {item.gpa && ` • GPA: ${item.gpa}`}
                           </p>
                         )}
@@ -447,6 +461,7 @@ export function MinimalTemplateHtmlRenderer({
                         </p>
                         {item.description && (
                           <div
+                            className="prose prose-sm max-w-none mt-2 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                             style={{
                               color: template.styles.colors.text,
                               fontFamily: mapFontFamily(
@@ -457,7 +472,7 @@ export function MinimalTemplateHtmlRenderer({
                               }px`,
                             }}
                             dangerouslySetInnerHTML={{
-                              __html: item.description,
+                              __html: sanitizeHtml(item.description),
                             }}
                           />
                         )}
@@ -579,6 +594,7 @@ export function MinimalTemplateHtmlRenderer({
                     {item.summary &&
                       section.type === "professional-summary" && (
                         <div
+                          className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                           style={{
                             color: template.styles.colors.text,
                             fontFamily: mapFontFamily(
@@ -587,7 +603,9 @@ export function MinimalTemplateHtmlRenderer({
                             fontSize: `${template.styles.typography.bodySize}px`,
                             lineHeight: template.styles.typography.lineHeight,
                           }}
-                          dangerouslySetInnerHTML={{ __html: item.summary }}
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeHtml(item.summary),
+                          }}
                         />
                       )}
                   </div>

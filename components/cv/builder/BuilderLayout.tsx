@@ -1,3 +1,5 @@
+// components/cv/builder/BuilderLayout.tsx
+
 "use client";
 
 import { ReactNode, useState, useEffect, useCallback } from "react";
@@ -19,6 +21,8 @@ interface BuilderLayoutProps {
   onChangeTemplate: () => void;
   showPreview: boolean;
   isExporting: boolean;
+  // Mode control
+  mode?: "view" | "edit" | "create";
   // API functionality
   onSaveDraft?: (cvId?: string) => void;
   onLoadCV?: () => void;
@@ -111,6 +115,7 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
     onChangeTemplate,
     builderMode,
     onToggleBuilderMode,
+    mode = "create",
     onCreateCV,
     onUpdateCV,
     onSaveDraft,
@@ -237,7 +242,14 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
             if (onSaveDraft && newCvId) await onSaveDraft(newCvId);
           }
         } else {
-          if (onSaveDraft) await onSaveDraft();
+          // In view/edit mode, save both draft and main CV
+          if (mode === "view" || mode === "edit") {
+            if (onSaveDraft) await onSaveDraft();
+            if (onUpdateCV) await onUpdateCV();
+          } else {
+            // In create mode, only save draft
+            if (onSaveDraft) await onSaveDraft();
+          }
         }
         handleCloseSectionModal();
       } catch (e) {
@@ -245,7 +257,7 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
         handleCloseSectionModal();
       }
     },
-    [handleCloseSectionModal, onSaveDraft, onCreateCV]
+    [handleCloseSectionModal, onSaveDraft, onCreateCV, onUpdateCV, mode]
   );
 
   return (
@@ -256,10 +268,11 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
         onToggleBuilderMode={onToggleBuilderMode}
         onCreateCV={onCreateCV}
         onUpdateCV={onUpdateCV}
-        onSaveDraft={onSaveDraft}
-        onPublishDraft={onPublishDraft}
+        // Hide Save Draft and Publish buttons when in view/edit mode
+        onSaveDraft={mode === "create" ? onSaveDraft : undefined}
+        onPublishDraft={mode === "create" ? onPublishDraft : undefined}
         onLoadCV={onLoadCV}
-        onPublishCV={onPublishCV}
+        onPublishCV={mode === "create" ? onPublishCV : undefined}
         onShowJobMatch={onShowJobMatch}
         onExportPDF={onExportPDF}
         onExportHTML2PDF={onExportHTML2PDF}
@@ -398,8 +411,17 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
                   professionalSummary={professionalSummary}
                   experiences={experiences}
                   educations={educations}
-                  skills={skills}
-                  languages={languages}
+                  // Use the selected section's live data when editing skills/languages
+                  skills={
+                    selectedSection.type === "skills"
+                      ? (selectedSection.data as any[]) || []
+                      : skills
+                  }
+                  languages={
+                    selectedSection.type === "languages"
+                      ? (selectedSection.data as any[]) || []
+                      : languages
+                  }
                   certifications={certifications}
                   awards={awards}
                   projects={projects}

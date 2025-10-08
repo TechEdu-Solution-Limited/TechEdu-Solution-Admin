@@ -148,63 +148,6 @@ export default function CVsPage() {
     );
   };
 
-  const handleDuplicateCV = async (cvId: string) => {
-    try {
-      const token = getTokenFromCookies();
-      if (!token) {
-        throw new Error("Authentication token not found");
-      }
-
-      // First get the CV data
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cv/${cvId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch CV: ${response.status}`);
-      }
-
-      const cvData = await response.json();
-
-      // Create a duplicate with modified title
-      const duplicateData = {
-        ...cvData.data,
-        title: `${cvData.data.title} (Copy)`,
-      };
-      delete duplicateData._id;
-      delete duplicateData.createdAt;
-      delete duplicateData.updatedAt;
-
-      const createResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cv`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(duplicateData),
-        }
-      );
-
-      if (!createResponse.ok) {
-        throw new Error(`Failed to duplicate CV: ${createResponse.status}`);
-      }
-
-      // Refresh the CVs list
-      fetchCVs();
-    } catch (err) {
-      console.error("Error duplicating CV:", err);
-      setError(err instanceof Error ? err.message : "Failed to duplicate CV");
-    }
-  };
-
   const handleDeleteCV = async (cvId: string) => {
     if (
       !confirm(
@@ -379,7 +322,7 @@ export default function CVsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-    <div>
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">My CVs</h1>
           <p className="text-gray-600 mt-1">
             Manage and edit your professional CVs
@@ -546,7 +489,7 @@ export default function CVsPage() {
                     <Eye className="h-4 w-4" />
                     <span>View</span>
                   </button>
-          <button
+                  <button
                     onClick={() => handleDownloadPDF(cv)}
                     disabled={downloadingPdf === cv._id}
                     className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
@@ -558,12 +501,12 @@ export default function CVsPage() {
                       <Download className="h-4 w-4" />
                     )}
                     <span>PDF</span>
-          </button>
+                  </button>
                 </div>
               </div>
             </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
     </div>
   );

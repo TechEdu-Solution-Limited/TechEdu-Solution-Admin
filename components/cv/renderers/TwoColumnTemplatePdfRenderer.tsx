@@ -25,6 +25,7 @@ import {
 } from "@/utils/cv/templateConstants";
 
 Font.registerHyphenationCallback((word) => [word]);
+import RichPdf from "../RichPdf";
 
 export function TwoColumnTemplatePdfRenderer({
   data,
@@ -34,6 +35,106 @@ export function TwoColumnTemplatePdfRenderer({
   template: TemplateLayout;
 }) {
   registerPDFFonts();
+
+  // Helper function to convert HTML to PDF-friendly text with enhanced formatting
+  function convertHtmlToPdfText(html: string): string {
+    if (!html) return "";
+
+    let result = html;
+
+    // Handle headers with emphasis
+    result = result.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "**$1**\n"); // H1 as bold
+    result = result.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "**$1**\n"); // H2 as bold
+    result = result.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "**$1**\n"); // H3 as bold
+
+    // Handle text formatting
+    result = result.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**"); // Bold
+    result = result.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**"); // Bold
+    result = result.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*"); // Italic
+    result = result.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*"); // Italic
+    result = result.replace(/<u[^>]*>(.*?)<\/u>/gi, "_$1_"); // Underline
+    result = result.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~"); // Strikethrough
+    result = result.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~"); // Strikethrough
+
+    // Handle lists
+    result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+      const items = content.match(/<li[^>]*>(.*?)<\/li>/gi);
+      if (items) {
+        return (
+          items
+            .map((item: string, index: number) => {
+              const text = item.replace(/<li[^>]*>(.*?)<\/li>/i, "$1");
+              return `${index + 1}. ${convertHtmlToPdfText(text)}`;
+            })
+            .join("\n") + "\n"
+        );
+      }
+      return "";
+    });
+
+    result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+      const items = content.match(/<li[^>]*>(.*?)<\/li>/gi);
+      if (items) {
+        return (
+          items
+            .map((item: string) => {
+              const text = item.replace(/<li[^>]*>(.*?)<\/li>/i, "$1");
+              return `• ${convertHtmlToPdfText(text)}`;
+            })
+            .join("\n") + "\n"
+        );
+      }
+      return "";
+    });
+
+    // Handle individual list items (only if not part of a proper list)
+    // Note: This is handled by the <ul> and <ol> processing above
+
+    // Handle blockquotes
+    result = result.replace(
+      /<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi,
+      (match, content) => {
+        return `> ${convertHtmlToPdfText(content)}\n`;
+      }
+    );
+
+    // Handle code blocks
+    result = result.replace(
+      /<pre[^>]*>([\s\S]*?)<\/pre>/gi,
+      (match, content) => {
+        return `\`\`\`\n${convertHtmlToPdfText(content)}\n\`\`\`\n`;
+      }
+    );
+    result = result.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`"); // Inline code
+
+    // Handle links
+    result = result.replace(
+      /<a[^>]*href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
+      "$2 ($1)"
+    );
+
+    // Handle paragraphs
+    result = result.replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n");
+
+    // Handle line breaks
+    result = result.replace(/<br[^>]*\/?>/gi, "\n");
+
+    // Remove remaining HTML tags
+    result = result.replace(/<[^>]*>/g, "");
+
+    // Handle HTML entities
+    result = result.replace(/&nbsp;/g, " ");
+    result = result.replace(/&amp;/g, "&");
+    result = result.replace(/&lt;/g, "<");
+    result = result.replace(/&gt;/g, ">");
+    result = result.replace(/&quot;/g, '"');
+    result = result.replace(/&apos;/g, "'");
+
+    // Normalize whitespace
+    result = result.replace(/\s+/g, " ").trim();
+
+    return result;
+  }
 
   const personalInfo = data.find((s) => s.type === "personal-info");
 
@@ -549,11 +650,9 @@ export function TwoColumnTemplatePdfRenderer({
 
                           {/* Summary (left) */}
                           {item.summary &&
-                            section.type === "professional-summary" && (
-                              <Text style={[styles.leftTextBody]}>
-                                {item.summary.replace(/<[^>]*>/g, "")}
-                              </Text>
-                            )}
+                          section.type === "professional-summary" ? (
+                            <RichPdf html={item.summary} template={template} />
+                          ) : null}
                         </View>
                       ))}
                   </View>
@@ -583,11 +682,9 @@ export function TwoColumnTemplatePdfRenderer({
                         <View key={i} style={styles.item}>
                           {/* Summary (right) */}
                           {item.summary &&
-                            section.type === "professional-summary" && (
-                              <Text style={styles.itemDescription}>
-                                {item.summary.replace(/<[^>]*>/g, "")}
-                              </Text>
-                            )}
+                          section.type === "professional-summary" ? (
+                            <RichPdf html={item.summary} template={template} />
+                          ) : null}
 
                           {/* Work Experience */}
                           {item.title && item.company && (
@@ -632,6 +729,15 @@ export function TwoColumnTemplatePdfRenderer({
                                 )}
                               </View>
 
+                              {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                              {item.description ? (
+                                <RichPdf
+                                  html={item.description}
+                                  template={template}
+                                />
+                              ) : null}
+
+                              {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
                               {item.bullets?.length > 0 && (
                                 <View>
                                   {item.bullets.map(
@@ -650,7 +756,7 @@ export function TwoColumnTemplatePdfRenderer({
                                           key={`${j}-${k}`}
                                           style={styles.bullet}
                                         >
-                                          • {paragraph.replace(/<[^>]*>/g, "")}
+                                          • {convertHtmlToPdfText(paragraph)}
                                         </Text>
                                       ));
                                     }
@@ -661,7 +767,7 @@ export function TwoColumnTemplatePdfRenderer({
                           )}
 
                           {/* Education */}
-                          {item.degree && item.school && (
+                          {item.degree && item.field && (
                             <View>
                               <View
                                 style={{
@@ -694,11 +800,11 @@ export function TwoColumnTemplatePdfRenderer({
                                 }}
                               >
                                 <Text style={styles.itemCompany}>
-                                  {item.school}
+                                  {item.field}
                                 </Text>
-                                {item.location && (
+                                {item.school && (
                                   <Text style={styles.itemLocation}>
-                                    {item.location}
+                                    {item.school}
                                   </Text>
                                 )}
                               </View>
@@ -707,11 +813,12 @@ export function TwoColumnTemplatePdfRenderer({
                                   GPA: {item.gpa}
                                 </Text>
                               )}
-                              {item.description && (
-                                <Text style={styles.itemDescription}>
-                                  {item.description.replace(/<[^>]*>/g, "")}
-                                </Text>
-                              )}
+                              {item.description ? (
+                                <RichPdf
+                                  html={item.description}
+                                  template={template}
+                                />
+                              ) : null}
                             </View>
                           )}
 
@@ -724,16 +831,12 @@ export function TwoColumnTemplatePdfRenderer({
                                 {item.name}
                                 {item.url && <Text> • {item.url}</Text>}
                               </Text>
-                              {item.description && (
-                                <Text
-                                  style={[
-                                    styles.itemDescription,
-                                    { fontSize: SZ.body - addPt(1) },
-                                  ]}
-                                >
-                                  {item.description.replace(/<[^>]*>/g, "")}
-                                </Text>
-                              )}
+                              {item.description ? (
+                                <RichPdf
+                                  html={item.description}
+                                  template={template}
+                                />
+                              ) : null}
                               {item.technologies?.length > 0 && (
                                 <Text
                                   style={[
@@ -798,16 +901,12 @@ export function TwoColumnTemplatePdfRenderer({
                                     {item.date}
                                   </Text>
                                 )}
-                                {item.description && (
-                                  <Text
-                                    style={[
-                                      styles.itemDescription,
-                                      { fontSize: SZ.body - addPt(1) },
-                                    ]}
-                                  >
-                                    {item.description.replace(/<[^>]*>/g, "")}
-                                  </Text>
-                                )}
+                                {item.description ? (
+                                  <RichPdf
+                                    html={item.description}
+                                    template={template}
+                                  />
+                                ) : null}
                               </View>
                             )}
                         </View>

@@ -187,6 +187,14 @@ export default function TemplateBuilderPage({
   const cvOperations = useCVSimplified();
   // const aiFeatures = useAIFeatures(cvId);
 
+  // Set cvId in cvOperations when in view/edit mode
+  useEffect(() => {
+    if (cvId && (mode === "view" || mode === "edit")) {
+      console.log("🔧 Setting cvId in cvOperations:", cvId);
+      cvOperations.setCvId(cvId);
+    }
+  }, [cvId, mode, cvOperations]);
+
   // Generate preview data
   const previewData = useMemo(() => {
     const dataForPreview =
@@ -298,7 +306,7 @@ export default function TemplateBuilderPage({
       // Show publish success notification
       setLastSaved(new Date());
       setShowSaveNotification(true);
-      setTimeout(() => setShowSaveNotification(false), 3000); // Show longer for publish
+      setTimeout(() => setShowSaveNotification(false), 2000); // Show longer for publish
     } catch (error) {
       console.error("❌ Error publishing CV:", error);
       // Could add error notification here
@@ -707,6 +715,7 @@ export default function TemplateBuilderPage({
         onChangeTemplate={templateBuilder.handleTemplateChange}
         showPreview={true}
         isExporting={isExporting}
+        mode={mode === "view" ? "view" : mode === "edit" ? "edit" : "create"}
         previewData={previewData}
         onPreviewClick={() => setShowPreviewModal(true)}
         builderMode={templateBuilder.builderMode}
@@ -1025,7 +1034,7 @@ export default function TemplateBuilderPage({
         }}
         // CV Management buttons - Only Save Draft and Publish CV
         onCreateCV={handleCreateCV}
-        // onUpdateCV={handleUpdateCV}
+        onUpdateCV={handleUpdateCV}
         onSaveDraft={handleSaveDraftWrapper}
         // onPublishDraft={handlePublishDraft}
         // onLoadCV={() => {}}

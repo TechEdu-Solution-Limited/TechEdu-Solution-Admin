@@ -100,7 +100,7 @@ export const dashboardSidebarConfig = {
         items: [
           { label: "My Resumes", icon: FileText, href: "/dashboard/cvs" },
           {
-            label: "CV Builder",
+            label: "Resume Builder",
             icon: FileText,
             href: "/dashboard/cv-builder",
           },

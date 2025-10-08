@@ -27,12 +27,12 @@ export default function SimplePreviewModal({
       className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="max-w-3xl w-full max-h-[100vh] overflow-auto hide-custom-scrollbar">
+      <div className="max-h-[100vh] overflow-y-auto hide-custom-scrollbar">
         {/* Header */}
 
         {/* Body */}
         <div className="p-6 hide-custom-scrollbar">
-          <div className="flex justify-center">
+          <div className="flex justify-center overflow-x-hidden hide-custom-scrollbar">
             <div className="transform scale-[1] origin-top">{previewData}</div>
           </div>
         </div>

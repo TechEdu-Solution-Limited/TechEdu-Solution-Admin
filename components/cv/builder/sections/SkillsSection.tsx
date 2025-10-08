@@ -5,7 +5,6 @@ import { Award, Trash2, Sparkles, Loader2, X, Check } from "lucide-react";
 import { Skill, PersonalInfo } from "@/types/cv";
 import { Button } from "@/components/ui/button";
 import { cvService } from "@/services/cv/cvServiceOptimized";
-import { useCVSimplified } from "@/hooks/cv/useCVSimplified"; // ✅ use the hook
 
 interface SkillsSectionProps {
   skills: Skill[];
@@ -43,8 +42,8 @@ export default function SkillsSection({
     null
   );
 
-  // ✅ use the hook for normalized AI endpoints
-  const { generateSkills } = useCVSimplified();
+  // Remove the hook usage since we have cvId as prop
+  // const { generateSkills } = useCVSimplified();
 
   // Optimistic row edits (so inputs update immediately)
   const [pending, setPending] = useState<Record<string, Partial<Skill>>>({});
@@ -125,11 +124,16 @@ export default function SkillsSection({
 
     setIsGeneratingAI(rowId);
     try {
-      // ✅ call the hook (normalized output: { skills, top })
-      const res = await generateSkills("all", undefined, {
-        targetRole: personalInfo.targetedJobTitle,
-        emphasize: [], // UI may add this later; hook/service can ignore
-      });
+      // ✅ call the service directly with cvId prop
+      const res = await cvService.generateSkills(
+        String(cvId),
+        "all",
+        undefined,
+        {
+          targetRole: personalInfo.targetedJobTitle,
+          industry: undefined,
+        }
+      );
 
       const suggestions: AISuggestion[] =
         (res?.skills ?? [])
@@ -153,6 +157,34 @@ export default function SkillsSection({
     } finally {
       setIsGeneratingAI(null);
     }
+  };
+
+  const addSuggestions = (
+    list: AISuggestion[],
+    opts: { replace?: boolean; top5?: boolean } = {}
+  ) => {
+    const base = opts.top5 ? list.slice(0, 5) : list;
+
+    // de-dupe against what’s already in the section
+    const toAdd = base.filter(
+      (s) => !existingNames.has((s.name || "").trim().toLowerCase())
+    );
+
+    if (opts.replace) {
+      // clear current skills first
+      skills.forEach((k) => onRemove(k.id));
+    }
+
+    if (toAdd.length === 0) {
+      alert("All suggested skills are already present.");
+      return;
+    }
+
+    // queue them; your useEffect will fill rows as they're added
+    addQueueRef.current.push(...toAdd);
+    for (let i = 0; i < toAdd.length; i++) onAdd();
+
+    setOpenForRow(null); // close the popover
   };
 
   return (
@@ -217,7 +249,7 @@ export default function SkillsSection({
                     />
 
                     {/* AI button + popover */}
-                    <div className="relative">
+                    {/* <div className="relative">
                       <Button
                         type="button"
                         variant="outline"
@@ -259,13 +291,42 @@ export default function SkillsSection({
                             <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
                               Select all the skills you want
                             </div>
-                            <button
-                              onClick={closePicker}
-                              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                              aria-label="Close suggestions"
-                            >
-                              <X className="h-4 w-4 text-gray-500" />
-                            </button>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                                onClick={() => addSuggestions(aiSuggestions!)}
+                              >
+                                Add all
+                              </button>
+                              <button
+                                className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                                onClick={() =>
+                                  addSuggestions(aiSuggestions!, { top5: true })
+                                }
+                              >
+                                Add top 5
+                              </button>
+                              <button
+                                className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                                onClick={() =>
+                                  addSuggestions(aiSuggestions!, {
+                                    replace: true,
+                                  })
+                                }
+                                title="Replace current skills with AI suggestions"
+                              >
+                                Replace
+                              </button>
+
+                              <button
+                                onClick={closePicker}
+                                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                                aria-label="Close suggestions"
+                              >
+                                <X className="h-4 w-4 text-gray-500" />
+                              </button>
+                            </div>
                           </div>
 
                           <ul className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -333,7 +394,7 @@ export default function SkillsSection({
                           </ul>
                         </div>
                       )}
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="w-32">

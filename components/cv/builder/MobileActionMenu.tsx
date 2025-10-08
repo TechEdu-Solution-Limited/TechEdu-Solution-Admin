@@ -110,7 +110,7 @@ export default function MobileActionMenu({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[900]"
             onClick={() => setIsOpen(false)}
           />
 

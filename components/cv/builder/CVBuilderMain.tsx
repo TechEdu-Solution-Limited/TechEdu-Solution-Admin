@@ -1,3 +1,5 @@
+// components/cv/builder/CVBuilderMain.tsx
+
 "use client";
 
 import React, { useEffect, useMemo, useCallback, useState } from "react";
@@ -170,6 +172,39 @@ export default function CVBuilderMain({
   const handleLeftColumnChange = (sections: string[]) => {
     setLeftColumnSections(sections);
   };
+
+  // CVBuilderMain.tsx
+  // CVBuilderMain.tsx
+
+  const handleUpdateSection = useCallback(
+    (sectionId: string, updates: Partial<ResumeSection>) => {
+      const next = state.resumeData.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        let newData = s.data;
+
+        if ("data" in updates) {
+          const incoming = updates.data as any;
+
+          if (Array.isArray(incoming)) {
+            // ✅ replace arrays outright (skills, languages, etc.)
+            newData = incoming;
+          } else if (Array.isArray(s.data)) {
+            // ✅ if existing is array but incoming isn't, also replace
+            newData = incoming as any;
+          } else {
+            // ✅ shallow-merge for object-shaped sections
+            newData = { ...(s.data as any), ...(incoming as any) };
+          }
+        }
+
+        return { ...s, ...updates, data: newData } as ResumeSection;
+      });
+
+      updateState({ resumeData: next });
+    },
+    [state.resumeData, updateState]
+  );
 
   // Load dummy data handler
   const handleLoadDummyData = () => {
@@ -659,6 +694,7 @@ export default function CVBuilderMain({
             console.log("Template config saved:", template);
             updateState({ templateConfig: template });
           }}
+          onUpdateSection={handleUpdateSection}
           onAddSection={() => {
             console.log("Add section clicked");
             updateState({ showAddSectionModal: true });

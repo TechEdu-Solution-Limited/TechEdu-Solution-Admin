@@ -20,6 +20,8 @@ import {
   SECTION_ORDER,
 } from "@/utils/cv/templateConstants";
 import Link from "next/link";
+import { sanitizeHtml } from "@/utils/cv/richText";
+import RichHtml from "../RichHtml";
 
 export function ClassicTemplateHtmlRenderer({
   data,
@@ -100,7 +102,7 @@ export function ClassicTemplateHtmlRenderer({
               </h1>
               {personalInfo.data.targetedJobTitle && (
                 <p
-                  className="text-xl text-gray-600 mb-4 font-medium"
+                  className="text-xl text-gray-600 mb-4 font-medium italic"
                   style={{
                     color: template.styles.colors.secondary,
                     fontFamily: mapFontFamily(
@@ -208,6 +210,12 @@ export function ClassicTemplateHtmlRenderer({
       <div className="py-8 px-8 space-y-6">
         {otherSections.map((section, sectionIndex) => {
           const items = formatSectionContent(section);
+          console.log(
+            "HTML/PDF skills items",
+            section.type,
+            Array.isArray(items),
+            items?.length
+          );
           const displayName = getSectionDisplayName(section.type, section);
 
           return (
@@ -236,7 +244,7 @@ export function ClassicTemplateHtmlRenderer({
 
               {/* Skills - Render once for the entire section */}
               {(section.type as string) === "skills" && (
-                <div className="flex flex-wrap gap-6">
+                <div className="flex flex-wrap gap-3">
                   {Array.isArray(items) &&
                     items.map((item: any, i: number) => (
                       <span
@@ -257,7 +265,7 @@ export function ClassicTemplateHtmlRenderer({
 
               {/* Languages - Render once for the entire section */}
               {(section.type as string) === "languages" && (
-                <div className="flex flex-wrap gap-6">
+                <div className="flex flex-wrap gap-3">
                   {Array.isArray(items) &&
                     items.map((item: any, i: number) => (
                       <span
@@ -336,6 +344,17 @@ export function ClassicTemplateHtmlRenderer({
                             {item.location}
                           </p>
                         )}
+
+                        {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                        {item.description && (
+                          <RichHtml
+                            html={item.description}
+                            template={template}
+                            sizeOffset={-1}
+                          />
+                        )}
+
+                        {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
                         {item.bullets?.length > 0 && (
                           <ul className="list-disc pl-6 mt-2">
                             {item.bullets.map((bullet: string, j: number) => {
@@ -350,6 +369,7 @@ export function ClassicTemplateHtmlRenderer({
                               return paragraphs.map((paragraph, k) => (
                                 <li
                                   key={`${j}-${k}`}
+                                  className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                                   style={{
                                     color: template.styles.colors.text,
                                     fontFamily: mapFontFamily(
@@ -360,7 +380,7 @@ export function ClassicTemplateHtmlRenderer({
                                     }px`,
                                   }}
                                   dangerouslySetInnerHTML={{
-                                    __html: paragraph,
+                                    __html: sanitizeHtml(paragraph),
                                   }}
                                 />
                               ));
@@ -371,7 +391,7 @@ export function ClassicTemplateHtmlRenderer({
                     )}
 
                     {/* Education */}
-                    {item.degree && item.school && (
+                    {item.degree && item.field && (
                       <div>
                         <div className="flex justify-between items-start">
                           <p
@@ -385,7 +405,7 @@ export function ClassicTemplateHtmlRenderer({
                             }}
                           >
                             {item.degree} —{" "}
-                            <span className="italic">{item.school}</span>
+                            <span className="italic">{item.field}</span>
                           </p>
                           {item.startDate && (
                             <p
@@ -401,7 +421,7 @@ export function ClassicTemplateHtmlRenderer({
                             </p>
                           )}
                         </div>
-                        {item.location && (
+                        {item.school && (
                           <p
                             className="text-xs text-gray-500"
                             style={{
@@ -411,7 +431,7 @@ export function ClassicTemplateHtmlRenderer({
                               ),
                             }}
                           >
-                            {item.location}
+                            {item.school}
                             {item.gpa && ` • GPA: ${item.gpa}`}
                           </p>
                         )}
@@ -446,6 +466,7 @@ export function ClassicTemplateHtmlRenderer({
                         </p>
                         {item.description && (
                           <div
+                            className="prose prose-sm max-w-none mt-2 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                             style={{
                               color: template.styles.colors.text,
                               fontFamily: mapFontFamily(
@@ -456,7 +477,7 @@ export function ClassicTemplateHtmlRenderer({
                               }px`,
                             }}
                             dangerouslySetInnerHTML={{
-                              __html: item.description,
+                              __html: sanitizeHtml(item.description),
                             }}
                           />
                         )}
@@ -578,6 +599,7 @@ export function ClassicTemplateHtmlRenderer({
                     {item.summary &&
                       section.type === "professional-summary" && (
                         <div
+                          className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
                           style={{
                             color: template.styles.colors.text,
                             fontFamily: mapFontFamily(
@@ -586,7 +608,9 @@ export function ClassicTemplateHtmlRenderer({
                             fontSize: `${template.styles.typography.bodySize}px`,
                             lineHeight: template.styles.typography.lineHeight,
                           }}
-                          dangerouslySetInnerHTML={{ __html: item.summary }}
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeHtml(item.summary),
+                          }}
                         />
                       )}
                   </div>

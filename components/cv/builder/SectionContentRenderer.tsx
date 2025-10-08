@@ -1,6 +1,7 @@
 // components/cv/builder/SectionContentRenderer.tsx
 "use client";
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+
+import React from "react";
 import { ResumeSection, Skill } from "@/types/cv";
 import PersonalInfoSection from "./sections/PersonalInfoSection";
 import ExperienceSection from "./sections/ExperienceSection";
@@ -17,7 +18,6 @@ interface SectionContentRendererProps {
   section: ResumeSection;
   onUpdate: (updates: any) => void;
 
-  // NEW: allow the renderer to push section-level updates up immediately
   onUpdateSection?: (
     sectionId: string,
     updates: Partial<ResumeSection>
@@ -81,7 +81,7 @@ interface SectionContentRendererProps {
 export function SectionContentRenderer({
   section,
   onUpdate,
-  onUpdateSection, // NEW
+  onUpdateSection,
   onShowAIConsent,
   aiConsent,
   cvId,
@@ -124,76 +124,6 @@ export function SectionContentRenderer({
   onImageUpload,
   onRemoveImage,
 }: SectionContentRendererProps) {
-  // ---------- local working copy for SKILLS (prevents "save clears inputs") ----------
-  const [localSkills, setLocalSkills] = useState(skills);
-
-  // Keep local copy in sync if the user switches to another section or external refresh happens
-  useEffect(() => {
-    if (section.type === "skills") {
-      setLocalSkills(skills);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section.id, section.type, JSON.stringify(skills)]);
-
-  // Push localSkills to parent immediately so Save won’t wipe them
-  const commitSkills = useCallback(
-    (next: Skill[]) => {
-      setLocalSkills(next);
-
-      // keep existing per-row flow if you rely on it
-      if (onUpdateSkill) {
-        next.forEach((s) => {
-          onUpdateSkill(s.id, "name", s.name ?? "");
-          onUpdateSkill(s.id, "level", (s.level ?? "Beginner") as string);
-        });
-      }
-
-      // update the whole section immediately (narrowed to 'skills' case)
-      if (onUpdateSection) {
-        const update = {
-          data: { ...(section.data as any), skills: next },
-        } as unknown as Partial<ResumeSection>;
-        onUpdateSection(section.id, update);
-      }
-    },
-    [onUpdateSkill, onUpdateSection, section.data, section.id]
-  );
-
-  // wrappers we pass to SkillsSection that update the local copy first
-  const handleAddSkillLocal = useCallback(() => {
-    if (!onAddSkill) return;
-    onAddSkill(); // let parent create id
-    // local add placeholder so UI doesn’t jump; real id arrives from parent shortly
-    commitSkills([
-      ...localSkills,
-      {
-        id: `temp-${Date.now()}`,
-        name: "",
-        level: "Beginner",
-      } as any,
-    ]);
-  }, [onAddSkill, localSkills, commitSkills]);
-
-  const handleRemoveSkillLocal = useCallback(
-    (id: string) => {
-      onRemoveSkill?.(id);
-      commitSkills(localSkills.filter((s) => s.id !== id));
-    },
-    [onRemoveSkill, localSkills, commitSkills]
-  );
-
-  const handleUpdateSkillLocal = useCallback(
-    (id: string, field: keyof Skill, value: string) => {
-      onUpdateSkill?.(id, field as any, value);
-      commitSkills(
-        localSkills.map((s) => (s.id === id ? { ...s, [field]: value } : s))
-      );
-    },
-    [onUpdateSkill, localSkills, commitSkills]
-  );
-
-  // -------------------------------------------------------------------------------
-
   switch (section.type) {
     case "personal-info":
       return (
@@ -231,13 +161,14 @@ export function SectionContentRenderer({
       );
 
     case "skills":
+      // ✅ Make Skills behave like Languages: pass through props directly
       return (
         <SkillsSection
-          skills={localSkills} // ← use local working copy
+          skills={skills}
           personalInfo={personalInfo}
-          onAdd={handleAddSkillLocal}
-          onRemove={handleRemoveSkillLocal}
-          onUpdate={handleUpdateSkillLocal}
+          onAdd={onAddSkill || (() => {})}
+          onRemove={onRemoveSkill || (() => {})}
+          onUpdate={onUpdateSkill || (() => {})}
           onShowAIConsent={onShowAIConsent}
           aiConsent={aiConsent}
           cvId={cvId}

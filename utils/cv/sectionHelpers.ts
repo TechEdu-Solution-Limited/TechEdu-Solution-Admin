@@ -6,6 +6,14 @@
 
 import { ResumeSection } from "@/types/cv";
 
+// utils/cv/sectionHelpers.ts
+function scoreToLevel(score: number): string {
+  if (score >= 85) return "Expert";
+  if (score >= 65) return "Advanced";
+  if (score >= 45) return "Intermediate";
+  return "Beginner";
+}
+
 export function formatSectionContent(section: ResumeSection) {
   switch (section.type) {
     case "work-experience":
@@ -16,7 +24,8 @@ export function formatSectionContent(section: ResumeSection) {
             startDate: exp.startDate,
             endDate: exp.endDate || "Present",
             location: exp.location,
-            bullets: exp.highlights || exp.description ? [exp.description] : [],
+            description: exp.description, // Pass through the raw description
+            bullets: exp.highlights || [], // Only use explicit highlights, not description
           }))
         : [];
 
@@ -25,6 +34,7 @@ export function formatSectionContent(section: ResumeSection) {
         ? section.data.map((edu: any) => ({
             degree: edu.degree,
             school: edu.institution,
+            field: edu.field,
             startDate: edu.startDate,
             endDate: edu.endDate || "Present",
             location: edu.location,
@@ -32,14 +42,24 @@ export function formatSectionContent(section: ResumeSection) {
           }))
         : [];
 
-    case "skills":
-      return Array.isArray(section.data)
-        ? section.data.map((skill: any) => ({
-            name: skill.name,
-            level: skill.level,
-            category: skill.category,
-          }))
+    case "skills": {
+      const raw = Array.isArray(section.data)
+        ? section.data
+        : Array.isArray((section as any)?.data?.skills)
+        ? (section as any).data.skills
         : [];
+
+      return raw
+        .map((skill: any) => ({
+          name:
+            typeof skill?.name === "string"
+              ? skill.name
+              : String(skill?.name ?? ""),
+          level: skill?.level,
+          category: skill?.category,
+        }))
+        .filter((s: any) => s.name && s.name.trim().length > 0); // ✅ drop empties
+    }
 
     case "languages":
       return Array.isArray(section.data)

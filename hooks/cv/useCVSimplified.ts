@@ -351,6 +351,7 @@ export function useCVSimplified() {
   return {
     cvId,
     draftId,
+    setCvId,
     isCreating,
     isUpdating,
     lastSaved,
