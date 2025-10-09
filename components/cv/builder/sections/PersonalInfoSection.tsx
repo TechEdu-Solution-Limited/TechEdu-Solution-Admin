@@ -183,6 +183,8 @@ export default function PersonalInfoSection({
             className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
           >
             <option value="">Select your industry</option>
+
+            {/* Existing */}
             <option value="Technology">Technology</option>
             <option value="Healthcare">Healthcare</option>
             <option value="Finance">Finance</option>
@@ -193,6 +195,47 @@ export default function PersonalInfoSection({
             <option value="Government">Government</option>
             <option value="Non-profit">Non-profit</option>
             <option value="Other">Other</option>
+
+            {/* Added */}
+            <option value="Agriculture">Agriculture</option>
+            <option value="Aerospace & Defense">Aerospace & Defense</option>
+            <option value="Automotive">Automotive</option>
+            <option value="Biotechnology & Pharmaceuticals">
+              Biotechnology & Pharmaceuticals
+            </option>
+            <option value="Chemicals">Chemicals</option>
+            <option value="Construction">Construction</option>
+            <option value="Consumer Goods (CPG)">Consumer Goods (CPG)</option>
+            <option value="Design & Creative">Design & Creative</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="Energy & Utilities">Energy & Utilities</option>
+            <option value="Entertainment & Media">Entertainment & Media</option>
+            <option value="Environmental Services">
+              Environmental Services
+            </option>
+            <option value="Fashion & Apparel">Fashion & Apparel</option>
+            <option value="Food & Beverage">Food & Beverage</option>
+            <option value="Gaming">Gaming</option>
+            <option value="Hospitality & Travel">Hospitality & Travel</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Legal Services">Legal Services</option>
+            <option value="Logistics & Supply Chain">
+              Logistics & Supply Chain
+            </option>
+            <option value="Marketing & Advertising">
+              Marketing & Advertising
+            </option>
+            <option value="Mining & Metals">Mining & Metals</option>
+            <option value="Real Estate">Real Estate</option>
+            <option value="Sports & Recreation">Sports & Recreation</option>
+            <option value="Telecommunications">Telecommunications</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Cybersecurity">Cybersecurity</option>
+            <option value="Human Resources">Human Resources</option>
+            <option value="Research & Development">
+              Research & Development
+            </option>
+            <option value="Information Services">Information Services</option>
           </select>
         </div>
       </div>

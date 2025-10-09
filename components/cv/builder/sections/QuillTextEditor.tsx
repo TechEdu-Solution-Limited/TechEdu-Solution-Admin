@@ -162,26 +162,23 @@ export default function QuillTextEditor({
     const q = quillRef.current;
     if (!q) return;
 
-    const incomingHtml = (value || "").trim();
-    // If parent is sending exactly what we last applied programmatically, skip
-    if (normalize(incomingHtml) === normalize(lastAppliedHtmlRef.current))
-      return;
+    const incomingHtml = normalize(value || "");
+    const currentHtml = normalize((q.root as HTMLElement).innerHTML || "");
 
-    const currentDelta = q.getContents();
-    const incomingDelta = q.clipboard.convert(incomingHtml);
+    // If what parent sends equals what's already in the editor, do nothing.
+    if (incomingHtml === currentHtml) return;
 
-    const same =
-      JSON.stringify((currentDelta as any).ops) ===
-      JSON.stringify((incomingDelta as any).ops);
-
-    if (same) return;
-
-    externalPasteRef.current = true;
+    const sel = q.getSelection(); // remember caret
     programmaticRef.current = true;
-    q.setContents(incomingDelta, "silent");
+    const delta = q.clipboard.convert(incomingHtml);
+    q.setContents(delta, "silent");
+    if (sel) {
+      const end = Math.max(0, Math.min(sel.index, q.getLength() - 1));
+      q.setSelection(end, 0, "silent"); // restore caret
+    }
     programmaticRef.current = false;
 
-    lastAppliedHtmlRef.current = incomingHtml;
+    lastAppliedHtmlRef.current = incomingHtml; // keep cache in sync
     setTextCount(Math.max(0, q.getLength() - 1));
   }, [value]);
 
