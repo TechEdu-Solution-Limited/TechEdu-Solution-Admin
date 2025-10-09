@@ -1,13 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import { XMarkIcon, PencilIcon, CheckIcon } from "@heroicons/react/24/outline";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 
 interface SectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   section: ResumeSection | null;
-  onSave: (section: ResumeSection) => void;
+  // allow async or sync saves
+  onSave: (section: ResumeSection) => void | Promise<void>;
   onUpdateSection?: (
     sectionId: string,
     updates: Partial<ResumeSection>
@@ -25,12 +26,10 @@ export function SectionModal({
 }: SectionModalProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(section?.heading || "");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Update edited title when section changes
   React.useEffect(() => {
-    if (section) {
-      setEditedTitle(section.heading || "");
-    }
+    if (section) setEditedTitle(section.heading || "");
   }, [section]);
 
   const handleSaveTitle = () => {
@@ -45,11 +44,20 @@ export function SectionModal({
     setIsEditingTitle(false);
   };
 
+  const handleSave = async () => {
+    if (!section || isLoading) return;
+    try {
+      setIsLoading(true);
+      await onSave(section);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isOpen || !section) return null;
 
   return (
     <div className="absolute inset-0 z-50 bg-white shadow-xl rounded-[10px]">
-      {/* Modal Content */}
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 flex-shrink-0">
@@ -63,17 +71,15 @@ export function SectionModal({
                   className="text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-blue-500 focus:outline-none focus:border-blue-600"
                   autoFocus
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSaveTitle();
-                    } else if (e.key === "Escape") {
-                      handleCancelEdit();
-                    }
+                    if (e.key === "Enter") handleSaveTitle();
+                    else if (e.key === "Escape") handleCancelEdit();
                   }}
                 />
                 <button
                   onClick={handleSaveTitle}
                   className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
                   title="Save title"
+                  disabled={isLoading}
                 >
                   <CheckIcon className="h-4 w-4" />
                 </button>
@@ -81,6 +87,7 @@ export function SectionModal({
                   onClick={handleCancelEdit}
                   className="p-1 text-gray-500 hover:bg-gray-100 rounded transition-colors"
                   title="Cancel edit"
+                  disabled={isLoading}
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </button>
@@ -94,6 +101,7 @@ export function SectionModal({
                   onClick={() => setIsEditingTitle(true)}
                   className="p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded transition-colors"
                   title="Edit section title"
+                  disabled={isLoading}
                 >
                   <PencilIcon className="h-4 w-4" />
                 </button>
@@ -104,9 +112,11 @@ export function SectionModal({
               information
             </p>
           </div>
+
           <button
             onClick={onClose}
-            className="rounded-[10px] p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-[10px] p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
+            disabled={isLoading}
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -122,15 +132,40 @@ export function SectionModal({
           <div className="flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-[10px] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-[10px] hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={isLoading}
             >
               Cancel
             </button>
+
             <button
-              onClick={() => onSave(section)}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-[10px] hover:bg-blue-700 transition-colors"
+              onClick={handleSave}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-[10px] hover:bg-blue-700 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              disabled={isLoading}
+              aria-busy={isLoading}
             >
-              Save Changes
+              {isLoading && (
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+              )}
+              {isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>
