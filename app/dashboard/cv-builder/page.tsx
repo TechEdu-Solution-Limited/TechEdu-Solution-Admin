@@ -342,7 +342,7 @@ export default function ResumeBuilder() {
             </div>
 
             {/* AI-Powered Builder */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            {/* <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="text-center">
                 <Sparkles className="h-12 w-12 text-purple-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -358,7 +358,7 @@ export default function ResumeBuilder() {
                   Start with AI
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Features */}
