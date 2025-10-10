@@ -55,50 +55,6 @@ function buildExperienceHtml(rationale?: string, topSkills?: string[]) {
 }
 /* ----------------------------------------- */
 
-/* ---------------- extra helpers ---------------- */
-
-// Parse "YYYY-MM" safely
-function parseYyyyMm(s?: string) {
-  if (!s) return null;
-  const [y, m] = s.split("-").map((v) => Number(v));
-  if (!Number.isFinite(y) || !Number.isFinite(m)) return null;
-  // month in JS Date is 0-based
-  return new Date(y, Math.max(0, Math.min(11, m - 1)), 1);
-}
-
-function yearsBetween(start?: string, end?: string, current?: boolean) {
-  const startDt = parseYyyyMm(start);
-  const endDt = current ? new Date() : parseYyyyMm(end) || new Date();
-  if (!startDt || !endDt) return 0;
-
-  const months =
-    (endDt.getFullYear() - startDt.getFullYear()) * 12 +
-    (endDt.getMonth() - startDt.getMonth());
-  if (!Number.isFinite(months) || months < 0) return 0;
-
-  // floor to integer years for minYears (API expects an int)
-  return Math.floor(months / 12);
-}
-
-function buildExperienceRationale(
-  targetRole: string,
-  industry: string,
-  years: number
-) {
-  return [
-    `Produce a crisp, impact-focused rationale and a prioritized skills list for a ${targetRole} in ${industry} with ${Math.max(
-      years,
-      0
-    )}+ years of relevant experience.`,
-    "Write in a professional, concise tone. Quantify outcomes (%, time, $) where reasonable.",
-    "Start bullets with strong verbs and keep one idea per bullet.",
-    "Return 5–9 precise, role-aligned skills (deduplicated, ATS-friendly; no soft-skill fluff).",
-    'Avoid meta phrases like "CV indicates", "based on the CV", "CV lacks", "role with no prior history" or "the candidate".',
-    "Return only content — no preamble or explanations.",
-  ].join(" ");
-}
-/* ---------------------------------------------- */
-
 export default function ExperienceSection({
   experiences,
   personalInfo,
@@ -166,27 +122,27 @@ export default function ExperienceSection({
     setIsGeneratingAI(expId);
 
     try {
-      const exp = experiences.find((e) => e.id === expId);
-      const years = yearsBetween(exp?.startDate, exp?.endDate, exp?.current);
+      // const exp = experiences.find((e) => e.id === expId);
+      // const years = yearsBetween(exp?.startDate, exp?.endDate, exp?.current);
 
       const targetRole = (jobTitle || personalInfo?.targetedJobTitle).trim();
       const industry = (personalInfo?.industry || "General").trim();
-      const rationale = buildExperienceRationale(targetRole, industry, years);
+      // const rationale = buildExperienceRationale(targetRole, industry, years);
 
       // Optional: pass a bit of seed context for sharper results
-      const seedExperience = {
-        title: jobTitle || undefined,
-        company: company || undefined,
-        // responsibilities: [], // you can populate from your UI if you collect them
-        // wins: [],             // same here
-      };
+      // const seedExperience = {
+      //   title: jobTitle || undefined,
+      //   company: company || undefined,
+      //   // responsibilities: [], // you can populate from your UI if you collect them
+      //   // wins: [],             // same here
+      // };
 
       const data = await cvService.generateExperience(String(cvId), {
         targetRole,
         industry,
-        rationale,
-        minYears: years, // ✅ real years derived from dates
-        seedExperience, // ✅ optional extra signal
+        // rationale,
+        // minYears: years, // ✅ real years derived from dates
+        // seedExperience, // ✅ optional extra signal
       });
 
       const html = buildExperienceHtml(data?.rationale, data?.topSkills);

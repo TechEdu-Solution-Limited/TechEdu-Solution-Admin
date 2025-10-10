@@ -601,15 +601,15 @@ class OptimizedCVService {
     context: {
       targetRole?: string;
       industry?: string;
-      rationale?: string; // ⬅️ optional, not a fixed ""
-      minYears?: number; // ⬅️ optional override
-      seedExperience?: {
-        // ⬅️ optional extra signal
-        title?: string;
-        company?: string;
-        responsibilities?: string[];
-        wins?: string[];
-      };
+      // rationale?: string; // ⬅️ optional, not a fixed ""
+      // minYears?: number; // ⬅️ optional override
+      // seedExperience?: {
+      //   // ⬅️ optional extra signal
+      //   title?: string;
+      //   company?: string;
+      //   responsibilities?: string[];
+      //   wins?: string[];
+      // };
     },
     extra?: Record<string, unknown>
   ) {
