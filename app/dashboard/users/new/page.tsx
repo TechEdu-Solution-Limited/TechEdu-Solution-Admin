@@ -634,7 +634,7 @@ export default function NewUserPage() {
             <TabsList className="relative grid w-full grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 h-auto sm:h-14 bg-white/70 backdrop-blur-sm border border-white/30 rounded-2xl p-2 shadow-xl">
               <TabsTrigger
                 value="instructor"
-                className="flex items-center gap-3 py-4 sm:py-3 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/50 group"
+                className="flex items-center gap-3 py-4 sm:py-3 text-sm sm:text-base font-semibold rounded-[12px] transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/50 group"
               >
                 <GraduationCap className="w-5 h-5 group-data-[state=active]:scale-110 transition-transform duration-300" />
                 <span className="hidden sm:inline">Instructor</span>
@@ -642,7 +642,7 @@ export default function NewUserPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="customerCare"
-                className="flex items-center gap-3 py-4 sm:py-3 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/50 group"
+                className="flex items-center gap-3 py-4 sm:py-3 text-sm sm:text-base font-semibold rounded-[12px] transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/50 group"
               >
                 <Users className="w-5 h-5 group-data-[state=active]:scale-110 transition-transform duration-300" />
                 <span className="hidden sm:inline">Customer Care</span>
@@ -650,7 +650,7 @@ export default function NewUserPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="admin"
-                className="flex items-center gap-3 py-4 sm:py-3 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/50 group"
+                className="flex items-center gap-3 py-4 sm:py-3 text-sm sm:text-base font-semibold rounded-[12px] transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/50 group"
               >
                 <UserPlus className="w-5 h-5 group-data-[state=active]:scale-110 transition-transform duration-300" />
                 <span className="hidden sm:inline">Admin</span>
@@ -667,7 +667,7 @@ export default function NewUserPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-indigo-50/30"></div>
                 <CardHeader className="relative bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 border-b border-white/20 p-8">
                   <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#011F72] via-blue-700 to-indigo-700 bg-clip-text text-transparent flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-lg">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[12px] shadow-lg">
                       <GraduationCap className="w-6 h-6 text-white" />
                     </div>
                     Create New Instructor
@@ -1174,7 +1174,7 @@ export default function NewUserPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/30"></div>
                 <CardHeader className="relative bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-rose-500/5 border-b border-white/20 p-8">
                   <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-700 via-pink-700 to-rose-700 bg-clip-text text-transparent flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-lg">
+                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-[12px] shadow-lg">
                       <Users className="w-6 h-6 text-white" />
                     </div>
                     Create New Customer Care Representative
@@ -1428,7 +1428,7 @@ export default function NewUserPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30"></div>
                 <CardHeader className="relative bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 border-b border-white/20 p-8">
                   <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 bg-clip-text text-transparent flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl shadow-lg">
+                    <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[12px] shadow-lg">
                       <UserPlus className="w-6 h-6 text-white" />
                     </div>
                     Create New Admin

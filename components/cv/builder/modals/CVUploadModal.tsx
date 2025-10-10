@@ -152,7 +152,7 @@ export default function CVUploadModal({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={`
-                border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300
+                border-2 border-dashed rounded-[12px] p-8 text-center transition-all duration-300
                 ${
                   isDragOver
                     ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"

@@ -367,7 +367,7 @@ export default function CVsPage() {
           {cvs.map((cv) => (
             <div
               key={cv._id}
-              className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+              className="bg-white rounded-[12px] shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
             >
               {/* CV Preview */}
               <div className="h-48 bg-gray-100 relative overflow-hidden">

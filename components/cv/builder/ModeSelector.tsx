@@ -109,7 +109,7 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="p-6 bg-white/60 dark:bg-gray-800/60 rounded-2xl backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-[12px] flex items-center justify-center mx-auto mb-4">
                 <Award className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -120,7 +120,7 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
               </p>
             </div>
             <div className="p-6 bg-white/60 dark:bg-gray-800/60 rounded-2xl backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-[12px] flex items-center justify-center mx-auto mb-4">
                 <Trophy className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -131,7 +131,7 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
               </p>
             </div>
             <div className="p-6 bg-white/60 dark:bg-gray-800/60 rounded-2xl backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/40 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/40 rounded-[12px] flex items-center justify-center mx-auto mb-4">
                 <Download className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">

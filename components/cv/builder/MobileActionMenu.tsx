@@ -115,7 +115,7 @@ export default function MobileActionMenu({
           />
 
           {/* Menu */}
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-2">
+          <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-[12px] shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-2">
             {actions.map((action) => {
               const Icon = action.icon;
               const loading =

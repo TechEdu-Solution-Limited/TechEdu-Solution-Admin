@@ -283,14 +283,14 @@ export default function InstructorProfile() {
                   <Button
                     onClick={handleCancel}
                     variant="outline"
-                    className="w-full sm:w-auto rounded-xl border-2 hover:bg-slate-50 transition-all duration-200"
+                    className="w-full sm:w-auto rounded-[12px] border-2 hover:bg-slate-50 transition-all duration-200"
                   >
                     <X className="w-4 h-4 mr-2" />
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSave}
-                    className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="w-full sm:w-auto rounded-[12px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Save Changes
@@ -299,7 +299,7 @@ export default function InstructorProfile() {
               ) : (
                 <Button
                   onClick={handleEdit}
-                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full sm:w-auto rounded-[12px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <Edit3 className="w-4 h-4 mr-2" />
                   Edit Profile
@@ -454,7 +454,7 @@ export default function InstructorProfile() {
                         Total Students
                       </p>
                     </div>
-                    <div className="p-3 bg-blue-500 rounded-xl shadow-lg">
+                    <div className="p-3 bg-blue-500 rounded-[12px] shadow-lg">
                       <Users className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -475,7 +475,7 @@ export default function InstructorProfile() {
                         Total Sessions
                       </p>
                     </div>
-                    <div className="p-3 bg-green-500 rounded-xl shadow-lg">
+                    <div className="p-3 bg-green-500 rounded-[12px] shadow-lg">
                       <BookOpen className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -496,7 +496,7 @@ export default function InstructorProfile() {
                         Avg Rating
                       </p>
                     </div>
-                    <div className="p-3 bg-yellow-500 rounded-xl shadow-lg">
+                    <div className="p-3 bg-yellow-500 rounded-[12px] shadow-lg">
                       <Star className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -517,7 +517,7 @@ export default function InstructorProfile() {
                         Years Experience
                       </p>
                     </div>
-                    <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
+                    <div className="p-3 bg-purple-500 rounded-[12px] shadow-lg">
                       <TrendingUp className="w-6 h-6 text-white" />
                     </div>
                   </div>

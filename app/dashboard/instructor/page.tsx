@@ -276,7 +276,7 @@ export default function InstructorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-[12px] flex items-center justify-center">
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -295,7 +295,7 @@ export default function InstructorDashboard() {
 
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 rounded-[12px] flex items-center justify-center">
                 <GraduationCap className="w-6 h-6 text-green-600" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -314,7 +314,7 @@ export default function InstructorDashboard() {
 
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-[12px] flex items-center justify-center">
                 <Briefcase className="w-6 h-6 text-purple-600" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -333,7 +333,7 @@ export default function InstructorDashboard() {
 
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-orange-100 rounded-[12px] flex items-center justify-center">
                 <BookOpen className="w-6 h-6 text-orange-600" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -372,10 +372,10 @@ export default function InstructorDashboard() {
                   recentActivity.map((activity) => (
                     <div
                       key={activity.id}
-                      className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                      className="flex items-start gap-4 p-4 bg-slate-50 rounded-[12px] hover:bg-slate-100 transition-colors"
                     >
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        className={`w-10 h-10 rounded-[12px] flex items-center justify-center ${
                           activity.type === "session"
                             ? "bg-blue-100"
                             : activity.type === "student"
@@ -439,28 +439,28 @@ export default function InstructorDashboard() {
               <div className="space-y-3">
                 <Link
                   href="/dashboard/instructor-availability"
-                  className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-blue-50 rounded-[12px] hover:bg-blue-100 transition-colors"
                 >
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <span className="text-slate-700">Manage Availability</span>
                 </Link>
                 <Link
                   href="/dashboard/sessions/instructor"
-                  className="flex items-center gap-3 p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-green-50 rounded-[12px] hover:bg-green-100 transition-colors"
                 >
                   <Clock className="w-5 h-5 text-green-600" />
                   <span className="text-slate-700">View Sessions</span>
                 </Link>
                 <Link
                   href="/dashboard/instructor/students"
-                  className="flex items-center gap-3 p-3 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-purple-50 rounded-[12px] hover:bg-purple-100 transition-colors"
                 >
                   <Users className="w-5 h-5 text-purple-600" />
                   <span className="text-slate-700">Manage Students</span>
                 </Link>
                 <Link
                   href="/dashboard/instructor/analytics"
-                  className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors"
+                  className="flex items-center gap-3 p-3 bg-orange-50 rounded-[12px] hover:bg-orange-100 transition-colors"
                 >
                   <BarChart3 className="w-5 h-5 text-orange-600" />
                   <span className="text-slate-700">View Analytics</span>

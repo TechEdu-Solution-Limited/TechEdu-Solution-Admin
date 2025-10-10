@@ -289,7 +289,7 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
 
       {/* Success toast */}
       {showSuccessMessage && onClearSuccess && (
-        <div className="fixed top-20 right-4 z-50 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-6 py-4 rounded-xl shadow-lg max-w-md animate-slide-in-right">
+        <div className="fixed top-20 right-4 z-50 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-6 py-4 rounded-[12px] shadow-lg max-w-md animate-slide-in-right">
           {/* ...unchanged content... */}
           <div className="flex justify-between items-start">
             {/* content omitted for brevity */}
@@ -312,7 +312,7 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
 
       {/* Error toast */}
       {(apiError || error) && onClearError && (
-        <div className="fixed top-20 right-4 z-50 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-6 py-4 rounded-xl shadow-lg max-w-md animate-slide-in-right">
+        <div className="fixed top-20 right-4 z-50 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-6 py-4 rounded-[12px] shadow-lg max-w-md animate-slide-in-right">
           {/* ...unchanged content... */}
           <div className="flex justify-between items-start">
             {/* content omitted for brevity */}

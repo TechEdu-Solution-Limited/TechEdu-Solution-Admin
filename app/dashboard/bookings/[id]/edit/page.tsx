@@ -270,7 +270,7 @@ export default function EditBookingPage({
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="p-2 hover:bg-white/50 rounded-xl"
+            className="p-2 hover:bg-white/50 rounded-[12px]"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>

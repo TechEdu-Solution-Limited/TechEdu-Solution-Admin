@@ -298,7 +298,7 @@ export default function CreateTrainingBookingPage() {
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="p-2 hover:bg-white/50 rounded-xl"
+            className="p-2 hover:bg-white/50 rounded-[12px]"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -719,7 +719,7 @@ export default function CreateTrainingBookingPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-green-400 transition-colors">
+              <div className="border-2 border-dashed border-slate-300 rounded-[12px] p-6 text-center hover:border-green-400 transition-colors">
                 <Upload className="w-8 h-8 mx-auto text-slate-400 mb-2" />
                 <Label htmlFor="file-upload" className="cursor-pointer">
                   <span className="text-sm font-medium text-slate-700">

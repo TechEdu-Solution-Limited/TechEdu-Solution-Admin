@@ -519,7 +519,7 @@ export default function InstructorSessionsPage() {
                   </div>
 
                   {/* Schedule */}
-                  <div className="mb-4 p-4 bg-slate-50/80 rounded-xl">
+                  <div className="mb-4 p-4 bg-slate-50/80 rounded-[12px]">
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="w-4 h-4 text-slate-600" />
                       <span className="text-sm font-medium text-slate-700">
@@ -538,7 +538,7 @@ export default function InstructorSessionsPage() {
                   </div>
 
                   {/* Participants */}
-                  <div className="mb-4 p-4 bg-slate-50/80 rounded-xl">
+                  <div className="mb-4 p-4 bg-slate-50/80 rounded-[12px]">
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-4 h-4 text-slate-600" />
                       <span className="text-sm font-medium text-slate-700">
@@ -586,14 +586,14 @@ export default function InstructorSessionsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 pt-4 border-t border-slate-200">
                     <Link href={`/dashboard/sessions/${session._id}`}>
-                      <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white/50 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all duration-300">
+                      <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white/50 border border-slate-200 rounded-[12px] hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all duration-300">
                         <Eye className="w-4 h-4" />
                         View
                       </button>
                     </Link>
                     {session.status === "upcoming" && (
                       <Link href={`/dashboard/sessions/${session._id}/edit`}>
-                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white/50 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-700 transition-all duration-300">
+                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white/50 border border-slate-200 rounded-[12px] hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-700 transition-all duration-300">
                           <Edit className="w-4 h-4" />
                           Edit
                         </button>
@@ -603,7 +603,7 @@ export default function InstructorSessionsPage() {
                       session.status === "upcoming") && (
                       <button
                         onClick={() => openCompleteModal(session)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-[12px] hover:from-green-700 hover:to-emerald-700 transition-all duration-300"
                       >
                         <CheckCircle className="w-4 h-4" />
                         Complete
@@ -613,7 +613,7 @@ export default function InstructorSessionsPage() {
                       session.status === "confirmed") && (
                       <button
                         onClick={() => openCancelModal(session)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-xl hover:from-red-700 hover:to-pink-700 transition-all duration-300"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-[12px] hover:from-red-700 hover:to-pink-700 transition-all duration-300"
                       >
                         <X className="w-4 h-4" />
                         Cancel
@@ -813,7 +813,7 @@ export default function InstructorSessionsPage() {
                   </p>
                 </div>
 
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-[12px]">
                   <div className="flex items-center gap-2 mb-2">
                     <XCircle className="w-5 h-5 text-red-600" />
                     <span className="text-sm font-medium text-red-800">

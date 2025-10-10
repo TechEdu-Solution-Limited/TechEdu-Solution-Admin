@@ -317,7 +317,7 @@ export default function AssignedStudentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-[12px] flex items-center justify-center">
                   <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
@@ -331,7 +331,7 @@ export default function AssignedStudentsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-green-100 rounded-[12px] flex items-center justify-center">
                   <UserCheck className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
@@ -345,7 +345,7 @@ export default function AssignedStudentsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-[12px] flex items-center justify-center">
                   <GraduationCap className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
@@ -359,7 +359,7 @@ export default function AssignedStudentsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-orange-100 rounded-[12px] flex items-center justify-center">
                   <Clock className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
@@ -384,7 +384,7 @@ export default function AssignedStudentsPage() {
                   placeholder="Search students by name, email, or field of study..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -392,7 +392,7 @@ export default function AssignedStudentsPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -403,7 +403,7 @@ export default function AssignedStudentsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="name">Sort by Name</option>
                 <option value="progress">Sort by Progress</option>
@@ -414,7 +414,7 @@ export default function AssignedStudentsPage() {
                 onClick={() =>
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                 }
-                className="px-4 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] hover:bg-slate-50 transition-colors"
               >
                 {sortOrder === "asc" ? (
                   <SortAsc className="w-5 h-5" />
@@ -535,16 +535,16 @@ export default function AssignedStudentsPage() {
                       <div className="flex items-center gap-3">
                         <Link
                           href={`/dashboard/instructor/students/${student._id}`}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-[12px] hover:bg-blue-700 transition-colors flex items-center gap-2"
                         >
                           <Eye className="w-4 h-4" />
                           View Details
                         </Link>
-                        <button className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2">
+                        <button className="px-4 py-2 bg-green-600 text-white rounded-[12px] hover:bg-green-700 transition-colors flex items-center gap-2">
                           <MessageCircle className="w-4 h-4" />
                           Message
                         </button>
-                        <button className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center gap-2">
+                        <button className="px-4 py-2 bg-purple-600 text-white rounded-[12px] hover:bg-purple-700 transition-colors flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
                           Schedule Session
                         </button>

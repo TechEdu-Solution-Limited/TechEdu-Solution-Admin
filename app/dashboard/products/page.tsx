@@ -602,7 +602,7 @@ export default function ProductsPage() {
                               <DropdownMenuItem asChild>
                                 <Link
                                   href={`/dashboard/products/${product._id}`}
-                                  className="cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-blue-50 rounded-xl transition-all duration-300"
+                                  className="cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-blue-50 rounded-[12px] transition-all duration-300"
                                 >
                                   <Eye className="w-4 h-4 text-blue-600" />
                                   <span className="font-medium">View</span>
@@ -611,7 +611,7 @@ export default function ProductsPage() {
                               <DropdownMenuItem asChild>
                                 <Link
                                   href={`/dashboard/products/${product._id}/edit`}
-                                  className="cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 rounded-xl transition-all duration-300"
+                                  className="cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 rounded-[12px] transition-all duration-300"
                                 >
                                   <Pencil className="w-4 h-4 text-yellow-600" />
                                   <span className="font-medium">Edit</span>
@@ -619,7 +619,7 @@ export default function ProductsPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setDeleteDialogOpen(product._id)}
-                                className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 rounded-xl transition-all duration-300 text-red-600 cursor-pointer"
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 rounded-[12px] transition-all duration-300 text-red-600 cursor-pointer"
                               >
                                 <Trash className="w-4 h-4" />
                                 <span className="font-medium">Delete</span>

@@ -797,7 +797,7 @@ export default function CreateProductPage() {
 
                         {/* Current Material Display */}
                         {form.materialUrl && (
-                          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -877,7 +877,7 @@ export default function CreateProductPage() {
                         />
 
                         {/* Info Box */}
-                        <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                        <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
                           <div className="flex items-start gap-3">
                             <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                               <svg
@@ -979,7 +979,7 @@ export default function CreateProductPage() {
                       )}
                     </select>
                     {categoryError && (
-                      <div className="text-red-600 text-sm bg-red-50 p-3 rounded-xl border border-red-200">
+                      <div className="text-red-600 text-sm bg-red-50 p-3 rounded-[12px] border border-red-200">
                         {categoryError}
                       </div>
                     )}
@@ -1076,24 +1076,24 @@ export default function CreateProductPage() {
                       )}
                     </select>
                     {subcategoryLoading && (
-                      <div className="text-blue-600 text-sm bg-blue-50 p-3 rounded-xl border border-blue-200">
+                      <div className="text-blue-600 text-sm bg-blue-50 p-3 rounded-[12px] border border-blue-200">
                         Loading subcategories...
                       </div>
                     )}
                     {!form.category && subcategoryOptions.length === 0 && (
-                      <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-[12px] border border-slate-200">
                         Select a category first to see available subcategories
                       </div>
                     )}
                     {form.category &&
                       subcategoryOptions.length === 0 &&
                       !subcategoryLoading && (
-                        <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-[12px] border border-slate-200">
                           No subcategories available for this category
                         </div>
                       )}
                     {subcategoryError && (
-                      <div className="text-red-600 text-sm bg-red-50 p-3 rounded-xl border border-red-200">
+                      <div className="text-red-600 text-sm bg-red-50 p-3 rounded-[12px] border border-red-200">
                         {subcategoryError}
                       </div>
                     )}
@@ -1135,12 +1135,12 @@ export default function CreateProductPage() {
                       ))}
                     </select>
                     {instructorsError && (
-                      <div className="text-red-600 text-sm bg-red-50 p-3 rounded-xl border border-red-200">
+                      <div className="text-red-600 text-sm bg-red-50 p-3 rounded-[12px] border border-red-200">
                         {instructorsError}
                       </div>
                     )}
                     {instructors.length === 0 && !instructorsLoading && (
-                      <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-[12px] border border-slate-200">
                         No instructors available. You can assign an instructor
                         later.
                       </div>
@@ -1337,7 +1337,7 @@ export default function CreateProductPage() {
                 </div>
                 {!isBookableServiceType(form.productType) &&
                   form.price === 0 && (
-                    <div className="text-green-600 text-sm bg-green-50 p-3 rounded-xl border border-green-200">
+                    <div className="text-green-600 text-sm bg-green-50 p-3 rounded-[12px] border border-green-200">
                       ✓ This will be marked as a free service
                     </div>
                   )}

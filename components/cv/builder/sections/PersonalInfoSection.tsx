@@ -70,7 +70,7 @@ export default function PersonalInfoSection({
                   <img
                     src={personalInfo.image}
                     alt="Profile"
-                    className="w-full h-full object-cover rounded-xl transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover rounded-[12px] transition-transform duration-300 group-hover:scale-110"
                   />
                 ) : (
                   <div className="text-center">
@@ -134,7 +134,7 @@ export default function PersonalInfoSection({
             onChange={(e) =>
               onUpdatePersonalInfo({ firstName: e.target.value })
             }
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
             placeholder="Enter your first name"
           />
         </div>
@@ -148,7 +148,7 @@ export default function PersonalInfoSection({
             type="text"
             value={personalInfo.lastName}
             onChange={(e) => onUpdatePersonalInfo({ lastName: e.target.value })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
             placeholder="Enter your last name"
           />
         </div>
@@ -164,7 +164,7 @@ export default function PersonalInfoSection({
             onChange={(e) =>
               onUpdatePersonalInfo({ targetedJobTitle: e.target.value })
             }
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
             placeholder="e.g., Senior Frontend Developer, Product Manager"
           />
         </div>
@@ -180,7 +180,7 @@ export default function PersonalInfoSection({
           <select
             value={personalInfo.industry || ""}
             onChange={(e) => onUpdatePersonalInfo({ industry: e.target.value })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
           >
             <option value="">Select your industry</option>
 
@@ -257,7 +257,7 @@ export default function PersonalInfoSection({
               type="email"
               value={personalInfo.email}
               onChange={(e) => onUpdatePersonalInfo({ email: e.target.value })}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="your.email@example.com"
             />
           </div>
@@ -271,7 +271,7 @@ export default function PersonalInfoSection({
               type="tel"
               value={personalInfo.phone || ""}
               onChange={(e) => onUpdatePersonalInfo({ phone: e.target.value })}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="+1 (555) 123-4567"
             />
           </div>
@@ -287,7 +287,7 @@ export default function PersonalInfoSection({
               onChange={(e) =>
                 onUpdatePersonalInfo({ location: e.target.value })
               }
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="City, State/Country"
             />
           </div>
@@ -313,7 +313,7 @@ export default function PersonalInfoSection({
               onChange={(e) =>
                 onUpdatePersonalInfo({ linkedin: e.target.value })
               }
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="yourusername"
             />
           </div>
@@ -327,7 +327,7 @@ export default function PersonalInfoSection({
               type="text"
               value={personalInfo.github || ""}
               onChange={(e) => onUpdatePersonalInfo({ github: e.target.value })}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="yourusername"
             />
           </div>
@@ -343,7 +343,7 @@ export default function PersonalInfoSection({
               onChange={(e) =>
                 onUpdatePersonalInfo({ twitter: e.target.value })
               }
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="yourusername"
             />
           </div>
@@ -359,7 +359,7 @@ export default function PersonalInfoSection({
               onChange={(e) =>
                 onUpdatePersonalInfo({ instagram: e.target.value })
               }
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="yourusername"
             />
           </div>
@@ -375,7 +375,7 @@ export default function PersonalInfoSection({
               onChange={(e) =>
                 onUpdatePersonalInfo({ website: e.target.value })
               }
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
               placeholder="yourwebsite.com"
             />
           </div>

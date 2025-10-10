@@ -220,7 +220,7 @@ export default function PaymentDetailsPage() {
                 access to it.
               </p>
               <Button
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-[12px] shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
                 onClick={() => router.push("/dashboard/payments")}
               >
                 View All Payments
@@ -364,7 +364,7 @@ export default function PaymentDetailsPage() {
                     <label className="text-sm font-semibold text-slate-700">
                       Transaction ID
                     </label>
-                    <p className="font-mono text-sm bg-slate-100 p-3 rounded-xl mt-1 border border-slate-200">
+                    <p className="font-mono text-sm bg-slate-100 p-3 rounded-[12px] mt-1 border border-slate-200">
                       {payment.transactionId}
                     </p>
                   </div>
@@ -782,7 +782,7 @@ export default function PaymentDetailsPage() {
                   <CardTitle className="text-slate-900">Raw Metadata</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <pre className="text-xs bg-slate-100 p-4 rounded-xl overflow-auto border border-slate-200 max-h-96">
+                  <pre className="text-xs bg-slate-100 p-4 rounded-[12px] overflow-auto border border-slate-200 max-h-96">
                     {JSON.stringify(payment.metadata, null, 2)}
                   </pre>
                 </CardContent>

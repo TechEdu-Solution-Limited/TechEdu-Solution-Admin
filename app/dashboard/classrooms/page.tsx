@@ -216,7 +216,7 @@ export default function ClassroomsPage() {
                   <button
                     key={role}
                     onClick={() => setUserRole(role as UserRole["role"])}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                    className={`px-4 py-2 rounded-[12px] text-sm font-semibold transition-all duration-300 ${
                       userRole === role
                         ? "bg-white text-slate-900 shadow-lg"
                         : "text-slate-600 hover:text-slate-900"

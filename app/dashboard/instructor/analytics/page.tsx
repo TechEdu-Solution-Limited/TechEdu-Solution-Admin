@@ -472,7 +472,7 @@ export default function InstructorAnalyticsPage() {
               <select
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value as any)}
-                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
@@ -482,14 +482,14 @@ export default function InstructorAnalyticsPage() {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-3 bg-blue-600 text-white rounded-[12px] hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
                 />
                 Refresh
               </button>
-              <button className="px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2">
+              <button className="px-4 py-3 bg-green-600 text-white rounded-[12px] hover:bg-green-700 transition-colors flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 Export
               </button>
@@ -502,7 +502,7 @@ export default function InstructorAnalyticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-[12px] flex items-center justify-center">
                   <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
@@ -516,7 +516,7 @@ export default function InstructorAnalyticsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-green-100 rounded-[12px] flex items-center justify-center">
                   <BookOpen className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
@@ -530,7 +530,7 @@ export default function InstructorAnalyticsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-[12px] flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
@@ -544,7 +544,7 @@ export default function InstructorAnalyticsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-orange-100 rounded-[12px] flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
@@ -558,7 +558,7 @@ export default function InstructorAnalyticsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-yellow-100 rounded-[12px] flex items-center justify-center">
                   <Star className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div>
@@ -572,7 +572,7 @@ export default function InstructorAnalyticsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-[12px] flex items-center justify-center">
                   <Target className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
@@ -714,7 +714,7 @@ export default function InstructorAnalyticsPage() {
               </h2>
               <div className="space-y-4">
                 {analytics.goals.monthly.map((goal, index) => (
-                  <div key={index} className="p-4 bg-slate-50 rounded-xl">
+                  <div key={index} className="p-4 bg-slate-50 rounded-[12px]">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-slate-900">
                         {goal.goal}
@@ -750,7 +750,7 @@ export default function InstructorAnalyticsPage() {
               </h2>
               <div className="space-y-4">
                 {analytics.goals.yearly.map((goal, index) => (
-                  <div key={index} className="p-4 bg-slate-50 rounded-xl">
+                  <div key={index} className="p-4 bg-slate-50 rounded-[12px]">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-slate-900">
                         {goal.goal}

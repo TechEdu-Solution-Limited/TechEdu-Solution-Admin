@@ -214,13 +214,13 @@ export default function DashboardOverview() {
     <TooltipProvider>
       <div>
         {/* Enhanced Branding Header */}
-        <header className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-xl mb-8 shadow-xl">
+        <header className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-[12px] mb-8 shadow-xl">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               {/* Enhanced Logo */}
               <div className="relative">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg border border-white/30">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-[12px] flex items-center justify-center text-white font-bold text-2xl shadow-lg border border-white/30">
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -250,7 +250,7 @@ export default function DashboardOverview() {
           </div>
         </header>
         {/* Enhanced Role Selector and Demo Mode */}
-        <div className="mb-8 flex items-center justify-between bg-white rounded-xl p-4 shadow-lg border border-gray-100">
+        <div className="mb-8 flex items-center justify-between bg-white rounded-[12px] p-4 shadow-lg border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <Target className="w-5 h-5 text-blue-600" />

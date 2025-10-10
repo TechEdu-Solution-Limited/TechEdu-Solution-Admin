@@ -587,7 +587,7 @@ export default function InstructorClassroomsPage() {
                         value={attendancePresent}
                         onChange={(e) => setAttendancePresent(e.target.value)}
                         placeholder="0"
-                        className="w-full px-3 py-2 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 bg-white/50 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                     <div>
@@ -601,7 +601,7 @@ export default function InstructorClassroomsPage() {
                         value={attendanceAbsent}
                         onChange={(e) => setAttendanceAbsent(e.target.value)}
                         placeholder="0"
-                        className="w-full px-3 py-2 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 bg-white/50 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                   </div>

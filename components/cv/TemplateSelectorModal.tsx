@@ -90,7 +90,7 @@ export default function TemplateSelectorModal({
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 transition-all cursor-pointer ${
+                  className={`bg-white dark:bg-gray-800 rounded-[12px] shadow-lg border-2 transition-all cursor-pointer ${
                     selectedTemplate === template.id
                       ? "border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
                       : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600"

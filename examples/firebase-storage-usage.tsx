@@ -64,7 +64,7 @@ export const MaterialUploadExample: React.FC = () => {
 
       {/* Current Material Display */}
       {materialUrl && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -129,7 +129,7 @@ export const MaterialUploadExample: React.FC = () => {
       )}
 
       {/* Info Box */}
-      <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+      <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
         <div className="flex items-start gap-3">
           <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
             <svg
@@ -218,7 +218,7 @@ export const ImageUploadExample: React.FC = () => {
 
       {/* Current Image Display */}
       {imageUrl && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
           <div className="flex items-center gap-4">
             <img
               src={imageUrl}

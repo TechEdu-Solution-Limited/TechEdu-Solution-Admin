@@ -432,7 +432,7 @@ export default function ProductEditPage() {
 
                       {/* Current Material Display */}
                       {form.materialUrl && (
-                        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -509,7 +509,7 @@ export default function ProductEditPage() {
                       />
 
                       {/* Info Box */}
-                      <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
                         <div className="flex items-start gap-3">
                           <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                             <svg
@@ -596,7 +596,7 @@ export default function ProductEditPage() {
 
                   {/* Current Icon Display */}
                   {form.iconUrl && (
-                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -657,7 +657,7 @@ export default function ProductEditPage() {
 
                   {/* Current Thumbnail Display */}
                   {form.thumbnailUrl && (
-                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>

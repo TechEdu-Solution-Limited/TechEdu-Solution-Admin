@@ -448,7 +448,7 @@ export default function TrainingProgramsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-[12px] flex items-center justify-center">
                   <BookOpen className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
@@ -462,7 +462,7 @@ export default function TrainingProgramsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-green-100 rounded-[12px] flex items-center justify-center">
                   <Users className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
@@ -476,7 +476,7 @@ export default function TrainingProgramsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-[12px] flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
@@ -490,7 +490,7 @@ export default function TrainingProgramsPage() {
 
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-orange-100 rounded-[12px] flex items-center justify-center">
                   <Award className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
@@ -514,7 +514,7 @@ export default function TrainingProgramsPage() {
               {stats.topCategories.map((category, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-xl"
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded-[12px]"
                 >
                   <span className="text-slate-700 font-medium">
                     {category.category}
@@ -539,7 +539,7 @@ export default function TrainingProgramsPage() {
                   placeholder="Search programs by title, description, or tags..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -547,7 +547,7 @@ export default function TrainingProgramsPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
                 <option value="published">Published</option>
@@ -558,7 +558,7 @@ export default function TrainingProgramsPage() {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Categories</option>
                 {stats?.topCategories?.map((category, index) => (
@@ -570,7 +570,7 @@ export default function TrainingProgramsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="title">Sort by Title</option>
                 <option value="enrollment">Sort by Enrollments</option>
@@ -582,7 +582,7 @@ export default function TrainingProgramsPage() {
                 onClick={() =>
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                 }
-                className="px-4 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                className="px-4 py-3 border border-slate-200 rounded-[12px] hover:bg-slate-50 transition-colors"
               >
                 {sortOrder === "asc" ? (
                   <SortAsc className="w-5 h-5" />
@@ -704,18 +704,18 @@ export default function TrainingProgramsPage() {
                   <div className="flex gap-2">
                     <Link
                       href={`/dashboard/products/${program._id}`}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-[12px] hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
                       View
                     </Link>
                     <Link
                       href={`/dashboard/products/${program._id}/edit`}
-                      className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors"
+                      className="px-4 py-2 bg-slate-100 text-slate-700 rounded-[12px] hover:bg-slate-200 transition-colors"
                     >
                       <Edit className="w-4 h-4" />
                     </Link>
-                    <button className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors">
+                    <button className="px-4 py-2 bg-slate-100 text-slate-700 rounded-[12px] hover:bg-slate-200 transition-colors">
                       <Settings className="w-4 h-4" />
                     </button>
                   </div>

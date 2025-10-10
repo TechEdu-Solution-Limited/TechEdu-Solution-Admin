@@ -465,7 +465,7 @@ export default function OnboardingStuckUsersPage() {
                                 <DropdownMenuItem asChild>
                                   <Link
                                     href={`/dashboard/users/${stuckUser.userId}`}
-                                    className="cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-blue-50 rounded-xl transition-all duration-300"
+                                    className="cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-blue-50 rounded-[12px] transition-all duration-300"
                                   >
                                     <Eye className="w-4 h-4 text-blue-600" />
                                     <span className="font-medium">
@@ -482,7 +482,7 @@ export default function OnboardingStuckUsersPage() {
                                     }
                                     setReminderDialogOpen(true);
                                   }}
-                                  className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 rounded-xl transition-all duration-300 text-green-600 cursor-pointer"
+                                  className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 rounded-[12px] transition-all duration-300 text-green-600 cursor-pointer"
                                 >
                                   <Mail className="w-4 h-4" />
                                   <span className="font-medium">
