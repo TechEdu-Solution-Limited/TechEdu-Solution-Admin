@@ -236,6 +236,9 @@ export function useCVSimplified() {
     async (context: {
       targetRole: string;
       industry: string;
+      // startDate: string;
+      // endDate: string;
+      // position: string;
     }): Promise<ExperienceAssessment | null> => {
       if (!cvId) {
         console.warn("⚠️ No cvId available for AI experience generation");

@@ -55,6 +55,50 @@ function buildExperienceHtml(rationale?: string, topSkills?: string[]) {
 }
 /* ----------------------------------------- */
 
+/* ---------------- extra helpers ---------------- */
+
+// Parse "YYYY-MM" safely
+function parseYyyyMm(s?: string) {
+  if (!s) return null;
+  const [y, m] = s.split("-").map((v) => Number(v));
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return null;
+  // month in JS Date is 0-based
+  return new Date(y, Math.max(0, Math.min(11, m - 1)), 1);
+}
+
+function yearsBetween(start?: string, end?: string, current?: boolean) {
+  const startDt = parseYyyyMm(start);
+  const endDt = current ? new Date() : parseYyyyMm(end) || new Date();
+  if (!startDt || !endDt) return 0;
+
+  const months =
+    (endDt.getFullYear() - startDt.getFullYear()) * 12 +
+    (endDt.getMonth() - startDt.getMonth());
+  if (!Number.isFinite(months) || months < 0) return 0;
+
+  // floor to integer years for minYears (API expects an int)
+  return Math.floor(months / 12);
+}
+
+function buildExperienceRationale(
+  targetRole: string,
+  industry: string,
+  years: number
+) {
+  return [
+    `Produce a crisp, impact-focused rationale and a prioritized skills list for a ${targetRole} in ${industry} with ${Math.max(
+      years,
+      0
+    )}+ years of relevant experience.`,
+    "Write in a professional, concise tone. Quantify outcomes (%, time, $) where reasonable.",
+    "Start bullets with strong verbs and keep one idea per bullet.",
+    "Return 5–9 precise, role-aligned skills (deduplicated, ATS-friendly; no soft-skill fluff).",
+    'Avoid meta phrases like "CV indicates", "based on the CV", "CV lacks", "role with no prior history" or "the candidate".',
+    "Return only content — no preamble or explanations.",
+  ].join(" ");
+}
+/* ---------------------------------------------- */
+
 export default function ExperienceSection({
   experiences,
   personalInfo,
@@ -122,28 +166,42 @@ export default function ExperienceSection({
     setIsGeneratingAI(expId);
 
     try {
-      // Expecting a normalized object: { seniority, minYears, topSkills, rationale }
-      const data: ExperienceAssessment = await cvService.generateExperience(
-        cvId!,
-        {
-        targetRole: jobTitle,
-        industry: personalInfo?.industry || "Technology",
-        }
-      );
+      const exp = experiences.find((e) => e.id === expId);
+      const years = yearsBetween(exp?.startDate, exp?.endDate, exp?.current);
 
-      // Build HTML: rationale -> paragraph, topSkills -> bullets
+      const targetRole = (jobTitle || personalInfo?.targetedJobTitle).trim();
+      const industry = (personalInfo?.industry || "General").trim();
+      const rationale = buildExperienceRationale(targetRole, industry, years);
+
+      // Optional: pass a bit of seed context for sharper results
+      const seedExperience = {
+        title: jobTitle || undefined,
+        company: company || undefined,
+        // responsibilities: [], // you can populate from your UI if you collect them
+        // wins: [],             // same here
+      };
+
+      const data = await cvService.generateExperience(String(cvId), {
+        targetRole,
+        industry,
+        rationale,
+        minYears: years, // ✅ real years derived from dates
+        seedExperience, // ✅ optional extra signal
+      });
+
       const html = buildExperienceHtml(data?.rationale, data?.topSkills);
-
       if (!html) {
         alert("AI did not return any content for this experience.");
         return;
       }
 
-      // Update the experience description (controlled by parent)
       onUpdate(expId, "description", html);
     } catch (error) {
       console.error("Error generating AI suggestions:", error);
-      alert("Failed to generate AI suggestions. Please try again.");
+      alert(
+        (error as Error)?.message ||
+          "Failed to generate AI suggestions. Please try again."
+      );
     } finally {
       setIsGeneratingAI(null);
     }

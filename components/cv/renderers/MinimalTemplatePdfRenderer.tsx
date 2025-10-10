@@ -135,7 +135,7 @@ export function MinimalTemplatePdfRenderer({
       borderRadius: 44,
       objectFit: "cover",
     },
-    nameTitle: { flexDirection: "column" },
+    nameTitle: { flexDirection: "column", gap: 4 },
     name: { fontSize: 18, fontWeight: "bold", marginBottom: 4 },
     title: {
       fontSize: 12,

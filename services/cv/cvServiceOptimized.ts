@@ -591,16 +591,54 @@ class OptimizedCVService {
   }
 
   // EXPERIENCE: returns ExperienceAssessment
+  // services/cv/cvServiceOptimized.ts
+
+  // … keep the rest …
+
+  // EXPERIENCE: returns ExperienceAssessment
   async generateExperience(
     cvId: string,
-    context: { targetRole: string; industry: string }
-  ): Promise<ExperienceAssessment> {
+    context: {
+      targetRole?: string;
+      industry?: string;
+      rationale?: string; // ⬅️ optional, not a fixed ""
+      minYears?: number; // ⬅️ optional override
+      seedExperience?: {
+        // ⬅️ optional extra signal
+        title?: string;
+        company?: string;
+        responsibilities?: string[];
+        wins?: string[];
+      };
+    },
+    extra?: Record<string, unknown>
+  ) {
+    if (!cvId) throw new Error("CV must be created first");
+
     const res = await this.apiRequest<any>(
       `/api/cv/ai/experience?cvId=${encodeURIComponent(cvId)}`,
       "POST",
-      { context }
+      {
+        cvId,
+        context, // { targetRole, industry, rationale, minYears, seedExperience? }
+        ...(extra || {}),
+      }
     );
+
     return normalizeExperience(res);
+  }
+
+  /**
+   * Call once if backend requires explicit AI processing consent
+   * POST /api/auth/ai/consent/accept  -> { ok: true }
+   */
+  async acceptAIProcessing() {
+    const json = await this.apiRequest<any>(
+      `/api/auth/ai/consent/accept`,
+      "POST"
+    );
+    if (!json?.ok) throw new Error("Failed to accept AI processing consent");
+    return true;
   }
 
   // SKILLS: returns SkillsAssessment
