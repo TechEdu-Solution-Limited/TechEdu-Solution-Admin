@@ -41,6 +41,7 @@ export interface Experience {
   endDate?: string; // ISO YYYY-MM
   current?: boolean;
   description?: string; // plain text or ATS-friendly bullet points
+  achievements?: string[];
 }
 
 // =====================

@@ -11,6 +11,7 @@ import {
   type ExperienceAssessment,
 } from "@/services/cv/cvServiceOptimized";
 
+// ---- 1) TYPE: allow string[] for achievements updates
 interface ExperienceSectionProps {
   experiences: Experience[];
   personalInfo: PersonalInfo;
@@ -18,8 +19,8 @@ interface ExperienceSectionProps {
   onRemove: (id: string) => void;
   onUpdate: (
     id: string,
-    field: keyof Experience,
-    value: string | boolean
+    field: string | keyof Experience,
+    value: string | boolean | string[] // ⬅️ widened to include string[]
   ) => void;
   onShowAIConsent?: () => void;
   aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
@@ -33,18 +34,77 @@ interface ExperienceSectionProps {
 function stripTags(s = "") {
   return s.replace(/<[^>]*>/g, "");
 }
-
 function normalizeHtml(s = "") {
   return s.replace(/\s+/g, " ").trim();
 }
+// Simple safe escape for non-HTML description
+function escapeHtml(s = "") {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function isHtml(s = "") {
+  return /<\/?[a-z][\s\S]*>/i.test(s);
+}
+function arraysShallowEqual(a: string[] = [], b: string[] = []) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
 
-/** Build Quill-friendly HTML: rationale as <p>, topSkills as <ul><li> */
-function buildExperienceHtml(rationale?: string, topSkills?: string[]) {
+/** Build Quill-friendly HTML from description + achievements */
+function toEditorHtml(desc?: string, achievements?: string[]) {
   const blocks: string[] = [];
-  const r = (rationale || "").trim();
-  if (r) blocks.push(`<p>${stripTags(r)}</p>`);
+  const d = (desc || "").trim();
 
-  const items = (topSkills || [])
+  if (d) {
+    // If desc already contains HTML, keep it; else wrap in <p>
+    blocks.push(isHtml(d) ? d : `<p>${escapeHtml(d)}</p>`);
+  }
+
+  const items = (achievements || [])
+    .map((t) => String(t || "").trim())
+    .filter(Boolean)
+    .map((t) => `<li>${escapeHtml(t)}</li>`)
+    .join("");
+
+  if (items) blocks.push(`<ul>${items}</ul>`);
+  return blocks.join("");
+}
+
+/** Parse Quill HTML back to { description(html), achievements[] } */
+function fromEditorHtml(html: string): {
+  description: string;
+  achievements: string[];
+} {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html || "", "text/html");
+
+    // Collect achievements from any lists
+    const liNodes = Array.from(doc.querySelectorAll("ul li, ol li"));
+    const achievements = liNodes
+      .map((li) => (li.textContent || "").trim())
+      .filter(Boolean);
+
+    // Remove lists to isolate description
+    doc.querySelectorAll("ul, ol").forEach((n) => n.remove());
+
+    // Remaining HTML is the description (can be multiple <p>, etc.)
+    const description = (doc.body.innerHTML || "").trim();
+
+    return { description, achievements };
+  } catch {
+    // Fallback: treat entire thing as description
+    return { description: html || "", achievements: [] };
+  }
+}
+
+/** Build Quill-friendly HTML: description as <p>, achievements as <ul><li> */
+function buildExperienceHtml(description?: string, achievements?: string[]) {
+  const blocks: string[] = [];
+  const d = (description || "").trim();
+  if (d) blocks.push(`<p>${stripTags(d)}</p>`);
+
+  const items = (achievements || [])
     .map((b) => String(b || "").trim())
     .filter(Boolean)
     .map((b) => `<li>${stripTags(b)}</li>`)
@@ -122,36 +182,32 @@ export default function ExperienceSection({
     setIsGeneratingAI(expId);
 
     try {
-      // const exp = experiences.find((e) => e.id === expId);
-      // const years = yearsBetween(exp?.startDate, exp?.endDate, exp?.current);
+      const exp = experiences.find((e) => e.id === expId);
+      const targetRole = (
+        jobTitle ||
+        personalInfo?.targetedJobTitle ||
+        ""
+      ).trim();
+      const industry = (personalInfo?.industry || "").trim();
 
-      const targetRole = (jobTitle || personalInfo?.targetedJobTitle).trim();
-      const industry = (personalInfo?.industry || "General").trim();
-      // const rationale = buildExperienceRationale(targetRole, industry, years);
+      const data = await cvService.generateExperience(
+        String(cvId),
+        { targetRole, industry },
+        { jobTitle, company, preferCurrent: !!exp?.current } // ⬅️ helps pick the right item
+      );
 
-      // Optional: pass a bit of seed context for sharper results
-      // const seedExperience = {
-      //   title: jobTitle || undefined,
-      //   company: company || undefined,
-      //   // responsibilities: [], // you can populate from your UI if you collect them
-      //   // wins: [],             // same here
-      // };
+      const hasDesc = !!data?.description && data.description.trim().length > 0;
+      const hasAch =
+        Array.isArray(data?.achievements) && data.achievements.length > 0;
 
-      const data = await cvService.generateExperience(String(cvId), {
-        targetRole,
-        industry,
-        // rationale,
-        // minYears: years, // ✅ real years derived from dates
-        // seedExperience, // ✅ optional extra signal
-      });
-
-      const html = buildExperienceHtml(data?.rationale, data?.topSkills);
-      if (!html) {
+      if (!hasDesc && !hasAch) {
         alert("AI did not return any content for this experience.");
         return;
       }
 
-      onUpdate(expId, "description", html);
+      // ✅ Save both fields
+      if (hasDesc) onUpdate(expId, "description", data!.description!);
+      if (hasAch) onUpdate(expId, "achievements", data!.achievements!);
     } catch (error) {
       console.error("Error generating AI suggestions:", error);
       alert(
@@ -297,17 +353,28 @@ export default function ExperienceSection({
 
               {/* 🔄 Quill Text Editor (controlled) */}
               <QuillTextEditor
-                value={exp.description || ""}
+                value={toEditorHtml(exp.description, exp.achievements)}
                 onChange={(value) => {
-                  // avoid noisy updates if identical
-                  if (
-                    normalizeHtml(value) ===
-                    normalizeHtml(exp.description || "")
-                  )
-                    return;
-                  onUpdate(exp.id, "description", value);
+                  const next = fromEditorHtml(value);
+
+                  // Avoid noisy updates
+                  const descChanged =
+                    normalizeHtml(next.description) !==
+                    normalizeHtml(exp.description || "");
+
+                  const achChanged = !arraysShallowEqual(
+                    (exp.achievements || []).map((s) => s.trim()),
+                    (next.achievements || []).map((s) => s.trim())
+                  );
+
+                  if (!descChanged && !achChanged) return;
+
+                  if (descChanged)
+                    onUpdate(exp.id, "description", next.description);
+                  if (achChanged)
+                    onUpdate(exp.id, "achievements", next.achievements);
                 }}
-                placeholder="Describe your key responsibilities and achievements..."
+                placeholder="Describe your key responsibilities and achievements…"
               />
             </div>
           </>
