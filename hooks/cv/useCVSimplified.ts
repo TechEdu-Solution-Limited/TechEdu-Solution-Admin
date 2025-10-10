@@ -132,15 +132,16 @@ export function useCVSimplified() {
       sections: any[],
       providedCvId?: string,
       template?: string
-    ): Promise<void> => {
+    ): Promise<string> => {
       const currentCvId = providedCvId || cvId;
+
       try {
         console.log("🔄 saveDraft called with:", {
           cvId: currentCvId,
           draftId,
           hasSections: sections.length,
           providedCvId: !!providedCvId,
-          template: template,
+          template,
         });
 
         // Ensure we have a cvId before saving draft
@@ -153,27 +154,36 @@ export function useCVSimplified() {
           cvId: currentCvId,
           working: sections,
           isDirty: true,
-          template: template,
-          draftId: draftId, // Include existing draftId to update instead of create
+          template,
+          draftId, // Include existing draftId to update instead of create
         };
 
         console.log("📤 Sending draft data:", draftData);
         console.log("🔧 Will use PATCH endpoint:", !!draftId);
+
+        // cvService.createOrUpdateDraft returns the draft id
         const newDraftId = await cvService.createOrUpdateDraft(draftData);
         console.log("📥 Received draft ID:", newDraftId);
 
-        // Store the draftId for future updates
-        if (!draftId) {
-          console.log("💾 Setting new draftId:", newDraftId);
+        // Keep state/storage in sync every time
+        if (newDraftId !== draftId) {
+          console.log("💾 Setting draftId:", newDraftId);
           setDraftId(newDraftId);
-          // Save to localStorage for persistence across page reloads
-          localStorage.setItem("cvDraftId", newDraftId);
-        } else {
-          console.log("🔄 Updating existing draft:", draftId);
         }
+
+        // Persist for refresh/restore
+        try {
+          sessionStorage.setItem(`cvDraftId:${currentCvId}`, newDraftId);
+        } catch {}
+        try {
+          localStorage.setItem("cvDraftId", newDraftId);
+        } catch {}
 
         setLastSaved(new Date());
         console.log("✅ Draft saved/updated successfully:", newDraftId);
+
+        // 🔁 return the id so callers can use it
+        return newDraftId;
       } catch (error) {
         console.error("❌ Failed to save draft:", error);
         throw error; // Re-throw to handle in calling component

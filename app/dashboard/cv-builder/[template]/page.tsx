@@ -1,3 +1,5 @@
+// app/dashboard/cv-builder/[template]/page.tsx
+
 "use client";
 
 import { useState, useMemo, use, useEffect } from "react";
@@ -27,6 +29,30 @@ import { pdf } from "@react-pdf/renderer";
 
 // Initialize dynamic sections
 import "@/lib/cv/sections/initializeSections";
+import { cvService } from "@/services/cv/cvServiceOptimized";
+
+// draft id helpers
+const draftKey = (cv: string) => `cvDraftId:${cv}`;
+
+const storeDraftId = (cv: string, draftId: string) => {
+  try {
+    sessionStorage.setItem(draftKey(cv), draftId);
+  } catch {}
+  try {
+    localStorage.setItem("cvDraftId", draftId);
+  } catch {}
+};
+
+const readDraftId = (cv: string | undefined | null) => {
+  if (!cv) return null;
+  try {
+    return (
+      sessionStorage.getItem(draftKey(cv)) || localStorage.getItem("cvDraftId")
+    );
+  } catch {
+    return localStorage.getItem("cvDraftId");
+  }
+};
 
 interface TemplateBuilderPageProps {
   params: Promise<{
@@ -236,7 +262,9 @@ export default function TemplateBuilderPage({
     if (newCvId) {
       setCurrentCvId(newCvId);
       // Also save to localStorage for persistence
-      localStorage.setItem("cvId", newCvId);
+      try {
+        localStorage.setItem("cvId", newCvId);
+      } catch {}
       console.log("setCurrentCvId called with:", newCvId);
     }
     return newCvId;
@@ -250,31 +278,26 @@ export default function TemplateBuilderPage({
   };
 
   const handleSaveDraft = async (providedCvId?: string, template?: string) => {
-    // Use provided cvId or current cvId from page state
-    const currentCvId = providedCvId || cvId;
+    const idToUse = providedCvId || currentCvId || cvId;
+    if (!idToUse) throw new Error("CV must be created before saving draft");
 
-    if (!currentCvId) {
-      console.warn("⚠️ No cvId available for draft save");
-      throw new Error("CV must be created before saving draft");
-    }
-
-    // Check if we have an existing draftId for PATCH update
-    const currentDraftId = cvOperations.draftId;
-    console.log(
-      "💾 Manual Save Draft - cvId:",
-      currentCvId,
-      "draftId:",
-      currentDraftId
-    );
-
-    // Call saveDraft directly with current cvId
-    await cvOperations.saveDraft(
+    // Expect saveDraft to return a draftId
+    const returnedDraftId = await cvOperations.saveDraft(
       templateBuilder.personalInfo,
       templateBuilder.resumeData,
-      currentCvId, // Pass the current cvId
-      template || templateId // Pass template name
+      idToUse, // ensure server associates the draft with the CV
+      template || templateId
     );
-    // Show save notification
+
+    // Fallback (if your saveDraft didn’t return an id)
+    const effectiveDraftId =
+      returnedDraftId ||
+      (await cvService.getDraftIdForCv(idToUse).catch(() => null));
+
+    if (effectiveDraftId) {
+      storeDraftId(idToUse, effectiveDraftId);
+    }
+
     setLastSaved(new Date());
     setShowSaveNotification(true);
     setTimeout(() => setShowSaveNotification(false), 2000);
@@ -346,17 +369,8 @@ export default function TemplateBuilderPage({
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      // First, create a final draft and publish it
-      console.log("Creating final draft before PDF export...");
-      await cvOperations.handleSaveDraft(
-        templateBuilder.personalInfo,
-        templateBuilder.resumeData,
-        undefined, // cvId
-        templateId // template
-      );
-
-      // Note: In a real implementation, you'd get the draft ID and publish it
-      // For now, we'll proceed with PDF generation
+      // Create/update draft FIRST (and persist draft id)
+      await handleSaveDraft(currentCvId, templateId);
 
       // Register fonts before PDF generation
       const { registerPDFFonts } = await import("@/utils/cv/fontUtils");
@@ -576,16 +590,19 @@ export default function TemplateBuilderPage({
         }
       });
 
-      // Persist cvId/draftId for refresh
+      // ✅ Persist cvId/draftId for refresh
+      if (draft.cvId && draft._id) {
+        storeDraftId(draft.cvId, draft._id);
+      }
       if (draft.cvId) {
         setCurrentCvId(draft.cvId);
-        if (typeof window !== "undefined") {
+        try {
           localStorage.setItem("cvId", draft.cvId);
-        }
+        } catch {}
       }
-      if (typeof window !== "undefined") {
+      try {
         localStorage.setItem("cvDraftId", draft._id);
-      }
+      } catch {}
     } catch (err) {
       console.error("Error loading existing Draft:", err);
     } finally {
@@ -595,43 +612,65 @@ export default function TemplateBuilderPage({
 
   // Persist ids from URL and hydrate from server (CV or Draft)
   useEffect(() => {
-    // Clear any previously loaded preview to avoid stale flashes
-    setLoadedSections(null);
+    (async () => {
+      setLoadedSections(null);
 
-    // Start clean for brand new CV/Draft
-    if (isNew) {
-      resetBuilderState();
-      return;
-    }
+      if (isNew) {
+        resetBuilderState();
+        return;
+      }
 
-    // If URL has explicit draftId or cvId, prefer those over stored values
-    if (draftId) {
-      if (typeof window !== "undefined")
-        localStorage.setItem("cvDraftId", draftId);
-      loadExistingDraft(draftId);
-      return;
-    }
-    if (cvId) {
-      setCurrentCvId(cvId);
-      if (typeof window !== "undefined") localStorage.setItem("cvId", cvId);
-      loadExistingCV(cvId);
-      return;
-    }
+      // If URL has explicit draftId or cvId, prefer those
+      if (draftId) {
+        try {
+          localStorage.setItem("cvDraftId", draftId);
+        } catch {}
+        await loadExistingDraft(draftId);
+        return;
+      }
 
-    // Fallback to stored values when URL params are absent
-    if (typeof window !== "undefined") {
+      if (cvId) {
+        setCurrentCvId(cvId);
+        try {
+          localStorage.setItem("cvId", cvId);
+        } catch {}
+
+        // 1) Prefer a stored draft for THIS cv
+        const stored = readDraftId(cvId);
+        if (stored) {
+          await loadExistingDraft(stored);
+          return;
+        }
+
+        // 2) Ask server for latest draft for this cv
+        const discovered = await cvService
+          .getDraftIdForCv(cvId)
+          .catch(() => null);
+        if (discovered) {
+          storeDraftId(cvId, discovered);
+          await loadExistingDraft(discovered);
+          return;
+        }
+
+        // 3) Fallback: published CV
+        await loadExistingCV(cvId);
+        return;
+      }
+
+      // No ids in URL — try storage
       const storedDraftId = localStorage.getItem("cvDraftId");
       const storedCvId = localStorage.getItem("cvId");
+
       if (storedDraftId) {
-        loadExistingDraft(storedDraftId);
+        await loadExistingDraft(storedDraftId);
         return;
       }
       if (storedCvId) {
         setCurrentCvId(storedCvId);
-        loadExistingCV(storedCvId);
+        await loadExistingCV(storedCvId);
         return;
       }
-    }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvId, draftId, templateId, isNew]);
 
@@ -652,12 +691,8 @@ export default function TemplateBuilderPage({
           !cvOperations.isUpdating
         ) {
           console.log("🤖 Auto-saving draft for cvId:", currentCvId);
-          cvOperations.handleSaveDraft(
-            templateBuilder.personalInfo,
-            templateBuilder.resumeData,
-            undefined, // cvId
-            templateId // template
-          );
+          // ✅ route through handleSaveDraft so draftId is persisted
+          void handleSaveDraft(currentCvId, templateId);
           // Show auto-save notification
           setLastSaved(new Date());
           setShowSaveNotification(true);
@@ -678,6 +713,7 @@ export default function TemplateBuilderPage({
     cvOperations.isCreating,
     cvOperations.isUpdating,
     isViewMode,
+    templateId,
   ]);
 
   // Function to check existing consent from CV
