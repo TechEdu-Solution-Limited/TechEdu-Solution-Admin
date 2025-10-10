@@ -671,7 +671,7 @@ export default function UserDetailPage({
 
                     {/* Profile Status */}
                     {!user.profile && (
-                      <div className="text-center p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <div className="text-center p-6 bg-gray-50 rounded-[10px] border-2 border-dashed border-gray-300">
                         <User className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                         <h4 className="font-semibold text-gray-700 mb-2">
                           Profile Not Created

@@ -96,7 +96,7 @@ export default function MobileActionMenu({
       {/* Menu Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200"
+        className="flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-[10px] transition-colors duration-200"
       >
         {isOpen ? (
           <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />

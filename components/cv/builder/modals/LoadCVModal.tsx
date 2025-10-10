@@ -30,7 +30,7 @@ export default function LoadCVModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-[10px] max-w-md w-full p-6">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           Load CV
         </h2>

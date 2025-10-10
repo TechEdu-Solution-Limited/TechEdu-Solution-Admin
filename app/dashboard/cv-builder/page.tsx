@@ -171,7 +171,7 @@ export default function ResumeBuilder() {
         <div className="max-w-4xl mx-auto">
           {/* Drag and Drop Area */}
           <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center mb-8 transition-colors ${
+            className={`border-2 border-dashed rounded-[10px] p-12 text-center mb-8 transition-colors ${
               uploadStatus === "uploading"
                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                 : uploadStatus === "success"
@@ -235,7 +235,7 @@ export default function ResumeBuilder() {
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={() => setUploadStatus("idle")}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 bg-gray-600 text-white rounded-[10px] hover:bg-gray-700 transition-colors"
                   >
                     Upload Another
                   </button>
@@ -245,7 +245,7 @@ export default function ResumeBuilder() {
                       console.log("Process CV with URL:", uploadedFile.url);
                       router.push(`/dashboard/cv-builder/template-selection`);
                     }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700 transition-colors"
                   >
                     Continue to Template Selection
                   </button>
@@ -276,7 +276,7 @@ export default function ResumeBuilder() {
                 </p>
                 <button
                   onClick={() => setUploadStatus("idle")}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="px-6 py-2 bg-red-600 text-white rounded-[10px] hover:bg-red-700 transition-colors"
                 >
                   Try Again
                 </button>
@@ -292,7 +292,7 @@ export default function ResumeBuilder() {
                 </p>
                 <button
                   onClick={() => document.getElementById("cv-upload")?.click()}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors"
                 >
                   Browse Files
                 </button>
@@ -323,7 +323,7 @@ export default function ResumeBuilder() {
           {/* Action Buttons */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Start from Scratch */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-[10px] p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="text-center">
                 <FileText className="h-12 w-12 text-blue-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -334,7 +334,7 @@ export default function ResumeBuilder() {
                 </p>
                 <button
                   onClick={handleStartFromScratch}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors"
                 >
                   Choose Template
                 </button>
@@ -342,7 +342,7 @@ export default function ResumeBuilder() {
             </div>
 
             {/* AI-Powered Builder */}
-            {/* <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            {/* <div className="bg-white dark:bg-gray-800 rounded-[10px] p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="text-center">
                 <Sparkles className="h-12 w-12 text-purple-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -353,7 +353,7 @@ export default function ResumeBuilder() {
                 </p>
                 <button
                   onClick={() => setShowBuilder(true)}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-[10px] hover:bg-purple-700 transition-colors"
                 >
                   Start with AI
                 </button>

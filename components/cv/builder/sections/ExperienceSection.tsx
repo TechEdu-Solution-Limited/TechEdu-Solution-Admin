@@ -231,7 +231,7 @@ export default function ExperienceSection({
                   type="text"
                   value={exp.company}
                   onChange={(e) => onUpdate(exp.id, "company", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Company name"
                 />
               </div>
@@ -243,7 +243,7 @@ export default function ExperienceSection({
                   type="text"
                   value={exp.position}
                   onChange={(e) => onUpdate(exp.id, "position", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Job title"
                 />
               </div>
@@ -255,7 +255,7 @@ export default function ExperienceSection({
                   type="text"
                   value={exp.location || ""}
                   onChange={(e) => onUpdate(exp.id, "location", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="City, State"
                 />
               </div>
@@ -269,7 +269,7 @@ export default function ExperienceSection({
                   onChange={(e) =>
                     onUpdate(exp.id, "startDate", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
               <div>
@@ -281,7 +281,7 @@ export default function ExperienceSection({
                   value={exp.endDate || ""}
                   onChange={(e) => onUpdate(exp.id, "endDate", e.target.value)}
                   disabled={exp.current}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
                 />
               </div>
               <div className="flex items-center">

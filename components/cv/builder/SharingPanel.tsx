@@ -102,12 +102,12 @@ export default function SharingPanel({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-sm border border-gray-200 dark:border-gray-700">
       {/* Header */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-[10px] flex items-center justify-center">
               <Share2 className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
@@ -121,7 +121,7 @@ export default function SharingPanel({
           </div>
           <button
             onClick={() => setIsCreating(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700 transition-colors"
           >
             <Share2 className="h-4 w-4" />
             <span>Create Share</span>
@@ -147,7 +147,7 @@ export default function SharingPanel({
                       customSlug: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="my-resume"
                 />
               </div>
@@ -164,7 +164,7 @@ export default function SharingPanel({
                       password: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter password"
                 />
               </div>
@@ -190,7 +190,7 @@ export default function SharingPanel({
                         : undefined,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
               <div className="flex items-center space-x-4">
@@ -232,7 +232,7 @@ export default function SharingPanel({
             <div className="flex items-center space-x-3">
               <button
                 type="submit"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700 transition-colors"
               >
                 Create Share
               </button>
@@ -365,7 +365,7 @@ export default function SharingPanel({
                 </div>
 
                 {/* Share URL */}
-                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-[10px]">
                   <div className="flex items-center space-x-2">
                     <Link className="h-4 w-4 text-gray-400" />
                     <code className="flex-1 text-sm text-gray-600 dark:text-gray-300 font-mono">
@@ -384,20 +384,20 @@ export default function SharingPanel({
                 <div className="mt-3 flex items-center space-x-2">
                   <button
                     onClick={() => onCopyUrl(share.url)}
-                    className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-[10px] transition-colors"
                   >
                     <Copy className="h-3 w-3" />
                     <span>Copy Link</span>
                   </button>
                   <button
                     onClick={() => window.open(share.url, "_blank")}
-                    className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-[10px] transition-colors"
                   >
                     <ExternalLink className="h-3 w-3" />
                     <span>Preview</span>
                   </button>
                   {share.settings.analytics && (
-                    <button className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                    <button className="flex items-center space-x-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-[10px] transition-colors">
                       <BarChart3 className="h-3 w-3" />
                       <span>Analytics</span>
                     </button>

@@ -455,7 +455,7 @@ export default function EditInstructorAvailabilityPage() {
                             parseInt(e.target.value)
                           )
                         }
-                        className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="px-3 py-1 bg-white border border-slate-200 rounded-[10px] text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         {DAYS_OF_WEEK.map((day, dayIndex) => (
                           <option key={dayIndex} value={dayIndex}>

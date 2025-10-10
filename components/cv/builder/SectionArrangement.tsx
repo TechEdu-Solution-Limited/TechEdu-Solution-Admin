@@ -64,7 +64,7 @@ export function SectionArrangement({
   };
 
   return (
-    <div className="bg-white border rounded-lg p-4 shadow-sm">
+    <div className="bg-white border rounded-[10px] p-4 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Section Arrangement</h3>
         <button
@@ -100,7 +100,7 @@ export function SectionArrangement({
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`p-3 border rounded-lg bg-white shadow-sm ${
+                            className={`p-3 border rounded-[10px] bg-white shadow-sm ${
                               snapshot.isDragging ? "shadow-lg" : ""
                             }`}
                           >
@@ -146,7 +146,7 @@ export function SectionArrangement({
             </DragDropContext>
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-gray-50 p-3 rounded-[10px]">
             <h4 className="text-sm font-medium text-gray-700 mb-2">
               Column Distribution:
             </h4>

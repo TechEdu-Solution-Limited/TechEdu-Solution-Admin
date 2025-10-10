@@ -169,7 +169,7 @@ export function ModernTemplatePlaceholder({
             {/* Professional Summary Placeholder */}
             <div className="space-y-4">
               <h2
-                className="text-base font-bold py-2 px-4 rounded-lg"
+                className="text-base font-bold py-2 px-4 rounded-[10px]"
                 style={{
                   backgroundColor: template.styles.colors.primary || "#1e40af",
                   color: "#ffffff",
@@ -192,7 +192,7 @@ export function ModernTemplatePlaceholder({
             {/* Skills Placeholder */}
             <div className="space-y-4">
               <h2
-                className="text-base font-bold py-2 px-4 rounded-lg"
+                className="text-base font-bold py-2 px-4 rounded-[10px]"
                 style={{
                   backgroundColor: template.styles.colors.primary || "#1e40af",
                   color: "#ffffff",
@@ -226,7 +226,7 @@ export function ModernTemplatePlaceholder({
             {/* Languages Placeholder */}
             <div className="space-y-4">
               <h2
-                className="text-base font-bold py-2 px-4 rounded-lg"
+                className="text-base font-bold py-2 px-4 rounded-[10px]"
                 style={{
                   backgroundColor: template.styles.colors.primary || "#1e40af",
                   color: "#ffffff",
@@ -265,7 +265,7 @@ export function ModernTemplatePlaceholder({
             {/* Work Experience Placeholder */}
             <div className="space-y-4">
               <h2
-                className="text-lg font-bold py-2 px-4 rounded-lg"
+                className="text-lg font-bold py-2 px-4 rounded-[10px]"
                 style={{
                   backgroundColor: template.styles.colors.primary || "#1e40af",
                   color: "#ffffff",
@@ -337,7 +337,7 @@ export function ModernTemplatePlaceholder({
             {/* Education Placeholder */}
             <div className="space-y-4">
               <h2
-                className="text-lg font-bold py-2 px-4 rounded-lg"
+                className="text-lg font-bold py-2 px-4 rounded-[10px]"
                 style={{
                   backgroundColor: template.styles.colors.primary || "#1e40af",
                   color: "#ffffff",

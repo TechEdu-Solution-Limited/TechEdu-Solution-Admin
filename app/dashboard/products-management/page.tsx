@@ -608,7 +608,7 @@ export default function ProductCategoriesManagement() {
                                     {showDeleted ? (
                                       <button
                                         onClick={() => handleRestore(cat._id)}
-                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                                        className="p-2 text-green-600 hover:bg-green-50 rounded-[10px] transition-colors duration-200"
                                         title="Restore"
                                       >
                                         <RotateCcw className="w-4 h-4" />
@@ -617,14 +617,14 @@ export default function ProductCategoriesManagement() {
                                       <>
                                         <button
                                           onClick={() => handleView(cat._id)}
-                                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-[10px] transition-colors duration-200"
                                           title="View"
                                         >
                                           <Eye className="w-4 h-4" />
                                         </button>
                                         <button
                                           onClick={() => handleEdit(cat)}
-                                          className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
+                                          className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-[10px] transition-colors duration-200"
                                           title="Edit"
                                         >
                                           <Edit className="w-4 h-4" />
@@ -633,7 +633,7 @@ export default function ProductCategoriesManagement() {
                                           onClick={() =>
                                             handleDelete(cat._id, cat.title)
                                           }
-                                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                          className="p-2 text-red-600 hover:bg-red-50 rounded-[10px] transition-colors duration-200"
                                           title="Delete"
                                         >
                                           <Trash2 className="w-4 h-4" />
@@ -667,7 +667,7 @@ export default function ProductCategoriesManagement() {
                                               title: e.target.value,
                                             }))
                                           }
-                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                           required
                                         />
                                       </div>
@@ -683,7 +683,7 @@ export default function ProductCategoriesManagement() {
                                               productType: e.target.value,
                                             }))
                                           }
-                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                           required
                                         >
                                           <option value="">
@@ -701,7 +701,7 @@ export default function ProductCategoriesManagement() {
                                       <button
                                         type="submit"
                                         disabled={loading}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
                                       >
                                         {loading ? (
                                           <>
@@ -721,7 +721,7 @@ export default function ProductCategoriesManagement() {
                                           setEditingId(null);
                                           setEditForm(initialForm);
                                         }}
-                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center gap-2"
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-[10px] hover:bg-gray-200 transition-colors duration-200 flex items-center gap-2"
                                       >
                                         <X className="w-4 h-4" />
                                         Cancel
@@ -891,7 +891,7 @@ export default function ProductCategoriesManagement() {
                                       onClick={() =>
                                         handleRestoreSubcategory(subcat._id)
                                       }
-                                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                                      className="p-2 text-green-600 hover:bg-green-50 rounded-[10px] transition-colors duration-200"
                                       title="Restore"
                                     >
                                       <RotateCcw className="w-4 h-4" />
@@ -902,7 +902,7 @@ export default function ProductCategoriesManagement() {
                                         onClick={() =>
                                           handleViewSubcategory(subcat._id)
                                         }
-                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-[10px] transition-colors duration-200"
                                         title="View"
                                       >
                                         <Eye className="w-4 h-4" />
@@ -911,7 +911,7 @@ export default function ProductCategoriesManagement() {
                                         onClick={() =>
                                           handleEditSubcategory(subcat)
                                         }
-                                        className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
+                                        className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-[10px] transition-colors duration-200"
                                         title="Edit"
                                       >
                                         <Edit className="w-4 h-4" />
@@ -923,7 +923,7 @@ export default function ProductCategoriesManagement() {
                                             subcat.name
                                           )
                                         }
-                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-[10px] transition-colors duration-200"
                                         title="Delete"
                                       >
                                         <Trash2 className="w-4 h-4" />
@@ -958,7 +958,7 @@ export default function ProductCategoriesManagement() {
                                               name: e.target.value,
                                             }))
                                           }
-                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                           required
                                         />
                                       </div>
@@ -966,7 +966,7 @@ export default function ProductCategoriesManagement() {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                           Category
                                         </label>
-                                        <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
+                                        <div className="px-3 py-2 bg-gray-100 rounded-[10px] text-sm text-gray-600">
                                           {editSubcategoryForm.categoryTitle}
                                         </div>
                                       </div>
@@ -975,7 +975,7 @@ export default function ProductCategoriesManagement() {
                                       <button
                                         type="submit"
                                         disabled={subcategoryLoading}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
                                       >
                                         {subcategoryLoading ? (
                                           <>
@@ -997,7 +997,7 @@ export default function ProductCategoriesManagement() {
                                             initialSubcategoryForm
                                           );
                                         }}
-                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center gap-2"
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-[10px] hover:bg-gray-200 transition-colors duration-200 flex items-center gap-2"
                                       >
                                         <X className="w-4 h-4" />
                                         Cancel

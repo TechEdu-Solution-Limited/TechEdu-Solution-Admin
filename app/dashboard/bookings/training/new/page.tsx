@@ -749,7 +749,7 @@ export default function CreateTrainingBookingPage() {
                     {uploadedFiles.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between bg-slate-50 p-3 rounded-lg"
+                        className="flex items-center justify-between bg-slate-50 p-3 rounded-[10px]"
                       >
                         <div className="flex items-center gap-2">
                           <Paperclip className="w-4 h-4 text-slate-500" />

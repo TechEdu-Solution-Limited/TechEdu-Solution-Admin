@@ -76,7 +76,7 @@ export function StatusBar({
 
   return (
     <div
-      className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-between ${getStatusColor()}`}
+      className={`px-3 py-2 border rounded-[10px] text-sm flex items-center justify-between ${getStatusColor()}`}
     >
       <div className="flex items-center space-x-2">
         {getStatusIcon()}

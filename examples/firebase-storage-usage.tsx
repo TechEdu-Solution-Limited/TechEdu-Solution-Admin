@@ -76,7 +76,7 @@ export const MaterialUploadExample: React.FC = () => {
               type="button"
               onClick={handleDeleteMaterial}
               disabled={loading}
-              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
             >
               {loading ? "Deleting..." : "Delete"}
             </button>
@@ -123,7 +123,7 @@ export const MaterialUploadExample: React.FC = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-[10px]">
           <p className="text-red-700 text-sm">{error}</p>
         </div>
       )}
@@ -223,7 +223,7 @@ export const ImageUploadExample: React.FC = () => {
             <img
               src={imageUrl}
               alt="Product icon"
-              className="w-16 h-16 object-cover rounded-lg"
+              className="w-16 h-16 object-cover rounded-[10px]"
             />
             <div className="flex-1">
               <p className="text-green-700 text-sm font-medium mb-1">
@@ -244,7 +244,7 @@ export const ImageUploadExample: React.FC = () => {
                 deleteFile(imageUrl).then(() => setImageUrl(""));
               }}
               disabled={loading}
-              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
             >
               {loading ? "Deleting..." : "Delete"}
             </button>
@@ -279,7 +279,7 @@ export const ImageUploadExample: React.FC = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-[10px]">
           <p className="text-red-700 text-sm">{error}</p>
         </div>
       )}
@@ -330,12 +330,12 @@ export const DirectAPIExample: React.FC = () => {
       <h3 className="text-lg font-semibold">Direct API Usage</h3>
       <button
         onClick={handleDirectUpload}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700"
       >
         Test Direct Upload
       </button>
       {result && (
-        <pre className="p-4 bg-gray-100 rounded-lg text-sm overflow-auto">
+        <pre className="p-4 bg-gray-100 rounded-[10px] text-sm overflow-auto">
           {result}
         </pre>
       )}

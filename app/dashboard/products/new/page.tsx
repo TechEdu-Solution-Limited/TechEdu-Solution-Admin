@@ -809,7 +809,7 @@ export default function CreateProductPage() {
                                 type="button"
                                 onClick={handleDeleteMaterial}
                                 disabled={loading}
-                                className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                                className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
                               >
                                 {loading ? "Deleting..." : "Delete"}
                               </button>
@@ -1622,7 +1622,7 @@ export default function CreateProductPage() {
             {step === 4 && (
               <div className="bg-gray-50 p-4 rounded-[10px]">
                 <h2 className="text-lg font-semibold mb-4">Review & Submit</h2>
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-[10px]">
                   <p className="text-blue-700 text-sm">
                     <strong>Ready to create your product?</strong> Review all
                     the information above and click the "Create Product" button

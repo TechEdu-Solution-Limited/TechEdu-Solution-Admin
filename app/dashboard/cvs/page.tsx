@@ -310,7 +310,7 @@ export default function CVsPage() {
         </div>
         <button
           onClick={fetchCVs}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700"
         >
           Try Again
         </button>
@@ -484,7 +484,7 @@ export default function CVsPage() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => handleViewCV(cv)}
-                    className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                    className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-[10px] hover:bg-blue-200 transition-colors"
                   >
                     <Eye className="h-4 w-4" />
                     <span>View</span>
@@ -492,7 +492,7 @@ export default function CVsPage() {
                   <button
                     onClick={() => handleDownloadPDF(cv)}
                     disabled={downloadingPdf === cv._id}
-                    className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-[10px] hover:bg-purple-200 transition-colors disabled:opacity-50"
                     title="Download PDF"
                   >
                     {downloadingPdf === cv._id ? (

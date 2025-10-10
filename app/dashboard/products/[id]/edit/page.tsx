@@ -444,7 +444,7 @@ export default function ProductEditPage() {
                               type="button"
                               onClick={handleDeleteMaterial}
                               disabled={saving}
-                              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
                             >
                               {saving ? "Deleting..." : "Delete"}
                             </button>
@@ -608,7 +608,7 @@ export default function ProductEditPage() {
                           type="button"
                           onClick={() => handleDeleteImage("icon")}
                           disabled={saving}
-                          className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
                         >
                           {saving ? "Deleting..." : "Delete"}
                         </button>
@@ -617,7 +617,7 @@ export default function ProductEditPage() {
                         <img
                           src={form.iconUrl}
                           alt="Product icon"
-                          className="w-12 h-12 rounded-lg object-cover border border-blue-200"
+                          className="w-12 h-12 rounded-[10px] object-cover border border-blue-200"
                         />
                         <a
                           href={form.iconUrl}
@@ -669,7 +669,7 @@ export default function ProductEditPage() {
                           type="button"
                           onClick={() => handleDeleteImage("thumbnail")}
                           disabled={saving}
-                          className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
                         >
                           {saving ? "Deleting..." : "Delete"}
                         </button>
@@ -678,7 +678,7 @@ export default function ProductEditPage() {
                         <img
                           src={form.thumbnailUrl}
                           alt="Product thumbnail"
-                          className="w-16 h-16 rounded-lg object-cover border border-green-200"
+                          className="w-16 h-16 rounded-[10px] object-cover border border-green-200"
                         />
                         <a
                           href={form.thumbnailUrl}

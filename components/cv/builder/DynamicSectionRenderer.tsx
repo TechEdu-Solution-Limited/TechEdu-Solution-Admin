@@ -33,7 +33,7 @@ export default function DynamicSectionRenderer({
   if (!sectionInfo) {
     console.warn(`Section component not found for type: ${sectionType}`);
     return (
-      <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+      <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-[10px]">
         <div className="text-center text-gray-500 dark:text-gray-400">
           <p className="text-sm">Section "{sectionType}" not available</p>
           <p className="text-xs mt-1">
@@ -123,7 +123,7 @@ export default function DynamicSectionRenderer({
   } catch (error) {
     console.error(`Error rendering section ${sectionType}:`, error);
     return (
-      <div className="p-4 border border-red-200 dark:border-red-700 rounded-lg bg-red-50 dark:bg-red-900/20">
+      <div className="p-4 border border-red-200 dark:border-red-700 rounded-[10px] bg-red-50 dark:bg-red-900/20">
         <div className="text-center text-red-600 dark:text-red-400">
           <p className="text-sm font-medium">Error rendering section</p>
           <p className="text-xs mt-1">

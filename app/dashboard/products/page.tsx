@@ -557,7 +557,7 @@ export default function ProductsPage() {
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="text-sm text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded-lg">
+                          <div className="text-sm text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded-[10px]">
                             {product.slug}
                           </div>
                         </td>

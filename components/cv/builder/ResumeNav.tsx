@@ -77,14 +77,14 @@ export default function ResumeNav({
           {/* Template Button */}
           <button
             onClick={onChangeTemplate}
-            className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 group"
+            className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-[10px] transition-all duration-200 group"
           >
             <IoFileTrayStacked className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
             <span className="hidden sm:inline">Change Template</span>
           </button>
 
           {/* Builder Mode Toggle */}
-          <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+          <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-[10px] p-1">
             <button
               onClick={onToggleBuilderMode}
               className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-all duration-200 group ${
@@ -115,7 +115,7 @@ export default function ResumeNav({
               <button
                 onClick={onSaveDraft}
                 disabled={isSaving || isLoading}
-                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-200 group"
+                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-[10px] transition-all duration-200 group"
               >
                 <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                 <span className="text-sm">
@@ -128,7 +128,7 @@ export default function ResumeNav({
               <button
                 onClick={onLoadCV}
                 disabled={isLoading}
-                className="flex items-center space-x-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 disabled:bg-indigo-50 dark:disabled:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300 rounded-lg transition-all duration-200 group"
+                className="flex items-center space-x-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 disabled:bg-indigo-50 dark:disabled:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300 rounded-[10px] transition-all duration-200 group"
               >
                 <Upload className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                 <span className="text-sm">
@@ -141,7 +141,7 @@ export default function ResumeNav({
               <button
                 onClick={onPublishCV}
                 disabled={isSaving || isLoading}
-                className="flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 disabled:bg-green-50 dark:disabled:bg-green-900/10 text-green-700 dark:text-green-300 rounded-lg transition-all duration-200 group"
+                className="flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 disabled:bg-green-50 dark:disabled:bg-green-900/10 text-green-700 dark:text-green-300 rounded-[10px] transition-all duration-200 group"
               >
                 <Send className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                 <span className="text-sm">
@@ -154,7 +154,7 @@ export default function ResumeNav({
             {onPreview && (
               <button
                 onClick={onPreview}
-                className="flex items-center space-x-2 px-3 py-2 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-all duration-200 group"
+                className="flex items-center space-x-2 px-3 py-2 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-[10px] transition-all duration-200 group"
               >
                 <File className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                 <span className="text-sm">Preview</span>
@@ -166,7 +166,7 @@ export default function ResumeNav({
           {onShowJobMatch && (
             <button
               onClick={onShowJobMatch}
-              className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg group"
+              className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-[10px] transition-all duration-200 shadow-md hover:shadow-lg group"
             >
               <Target className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
               <span>Job Match</span>
@@ -177,7 +177,7 @@ export default function ResumeNav({
           <button
             onClick={onExportPDF}
             disabled={isExporting}
-            className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-500 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg group"
+            className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-500 text-white rounded-[10px] transition-all duration-200 shadow-md hover:shadow-lg group"
           >
             <Download className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
             <span>{isExporting ? "Exporting..." : "Export PDF"}</span>
@@ -188,7 +188,7 @@ export default function ResumeNav({
             <button
               onClick={onExportHTML2PDF}
               disabled={isExporting}
-              className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-green-400 disabled:to-green-500 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg group"
+              className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-green-400 disabled:to-green-500 text-white rounded-[10px] transition-all duration-200 shadow-md hover:shadow-lg group"
             >
               <Download className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
               <span>{isExporting ? "Exporting..." : "HTML2PDF"}</span>

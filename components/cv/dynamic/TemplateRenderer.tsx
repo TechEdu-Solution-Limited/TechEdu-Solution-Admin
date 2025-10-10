@@ -95,7 +95,7 @@ export function ConfigurableTemplateRenderer({
       {isDynamic && showConfigButton && onConfigClick && (
         <button
           onClick={onConfigClick}
-          className="absolute top-2 right-2 z-10 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+          className="absolute top-2 right-2 z-10 bg-blue-600 text-white px-3 py-1 rounded-[10px] text-sm hover:bg-blue-700 transition-colors"
         >
           Configure Template
         </button>

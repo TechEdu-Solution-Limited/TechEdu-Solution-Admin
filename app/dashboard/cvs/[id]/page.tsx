@@ -490,7 +490,7 @@ export default function CVPage({ params }: { params: { id: string } }) {
         </div>
         <Link
           href="/dashboard/cvs"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700"
         >
           Back to CVs
         </Link>
@@ -525,7 +525,7 @@ export default function CVPage({ params }: { params: { id: string } }) {
               <button
                 onClick={handleSaveDraft}
                 disabled={draftSaving || !draftId}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
                 <span>{draftSaving ? "Saving Draft..." : "Save Draft"}</span>
@@ -542,13 +542,13 @@ export default function CVPage({ params }: { params: { id: string } }) {
                   }
                 }}
                 disabled={!draftId}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                className="px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700 disabled:opacity-50"
               >
                 Publish
               </button>
               <button
                 onClick={() => setShowAddSection(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700"
               >
                 Add Section
               </button>
@@ -556,14 +556,14 @@ export default function CVPage({ params }: { params: { id: string } }) {
           )}
           <button
             onClick={() => setShowPreview(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-[10px] hover:bg-gray-700"
           >
             <Eye className="h-4 w-4" />
             <span>Preview</span>
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-[10px] hover:bg-purple-700"
           >
             <Download className="h-4 w-4" />
             <span>Export PDF</span>
@@ -571,7 +571,7 @@ export default function CVPage({ params }: { params: { id: string } }) {
           {!isViewMode && (
             <button
               onClick={handleDeleteCV}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-[10px] hover:bg-red-700"
             >
               <Trash2 className="h-4 w-4" />
               <span>Delete</span>

@@ -131,13 +131,13 @@ export const FirebaseStorageExample: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-white rounded-[10px] shadow-lg p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
           Firebase Storage Manager
         </h1>
 
         {/* CORS Test */}
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+        <div className="mb-6 p-4 bg-blue-50 rounded-[10px]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TestTube className="w-5 h-5 text-blue-600" />
@@ -148,7 +148,7 @@ export const FirebaseStorageExample: React.FC = () => {
             <button
               onClick={handleTestCORS}
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 disabled:opacity-50"
             >
               {loading ? "Testing..." : "Test CORS"}
             </button>
@@ -167,7 +167,7 @@ export const FirebaseStorageExample: React.FC = () => {
         </div>
 
         {/* Upload Section */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mb-6 p-4 bg-gray-50 rounded-[10px]">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Upload File
           </h2>
@@ -184,7 +184,7 @@ export const FirebaseStorageExample: React.FC = () => {
                     e.target.value as keyof typeof STORAGE_FOLDERS
                   )
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="ASSETS">Assets (Images only)</option>
                 <option value="ATTACHMENTS">Attachments (All files)</option>
@@ -201,7 +201,7 @@ export const FirebaseStorageExample: React.FC = () => {
                 value={subfolder}
                 onChange={(e) => setSubfolder(e.target.value)}
                 placeholder="e.g., product-icons"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -209,7 +209,7 @@ export const FirebaseStorageExample: React.FC = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={loading}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Upload className="w-4 h-4" />
                 {loading ? "Uploading..." : "Select File"}
@@ -249,7 +249,7 @@ export const FirebaseStorageExample: React.FC = () => {
 
           {/* Error Display */}
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-[10px]">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
@@ -264,7 +264,7 @@ export const FirebaseStorageExample: React.FC = () => {
               <button
                 onClick={loadFiles}
                 disabled={loading}
-                className="px-3 py-1 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
+                className="px-3 py-1 text-sm bg-gray-600 text-white rounded-[10px] hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
               >
                 <FolderOpen className="w-4 h-4" />
                 Refresh
@@ -281,7 +281,7 @@ export const FirebaseStorageExample: React.FC = () => {
                 files.map((file, index) => (
                   <div
                     key={index}
-                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="p-3 border border-gray-200 rounded-[10px] hover:bg-gray-50"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -336,7 +336,7 @@ export const FirebaseStorageExample: React.FC = () => {
             </h2>
 
             {selectedFile && fileInfo ? (
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 rounded-[10px]">
                 <h3 className="font-medium text-gray-900 mb-2">
                   {selectedFile.name}
                 </h3>

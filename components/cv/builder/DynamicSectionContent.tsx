@@ -346,7 +346,7 @@ export default function DynamicSectionContent({
         return (
           <div
             key={sectionType}
-            className={`border rounded-lg overflow-hidden transition-all duration-200 ${
+            className={`border rounded-[10px] overflow-hidden transition-all duration-200 ${
               isActive
                 ? "border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20"
                 : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
@@ -473,7 +473,7 @@ export default function DynamicSectionContent({
         <div className="mt-4">
           <button
             onClick={onAddSection}
-            className="w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 flex items-center justify-center space-x-2"
+            className="w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-[10px] text-gray-600 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 flex items-center justify-center space-x-2"
           >
             <PlusIcon className="h-5 w-5" />
             <span>Add New Section</span>

@@ -642,7 +642,7 @@ export default function BookingDetailPage({
                       (participant: any, index: number) => (
                         <div
                           key={index}
-                          className="bg-slate-50 p-3 rounded-lg border"
+                          className="bg-slate-50 p-3 rounded-[10px] border"
                         >
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -706,7 +706,7 @@ export default function BookingDetailPage({
                         (schedule: any, index: number) => (
                           <div
                             key={index}
-                            className="bg-slate-50 p-3 rounded-lg border"
+                            className="bg-slate-50 p-3 rounded-[10px] border"
                           >
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div>
@@ -749,7 +749,7 @@ export default function BookingDetailPage({
                       <Label className="text-sm font-semibold text-slate-700">
                         User Notes
                       </Label>
-                      <p className="mt-1 text-slate-900 bg-slate-50 p-3 rounded-lg">
+                      <p className="mt-1 text-slate-900 bg-slate-50 p-3 rounded-[10px]">
                         {booking.userNotes}
                       </p>
                     </div>
@@ -759,7 +759,7 @@ export default function BookingDetailPage({
                       <Label className="text-sm font-semibold text-slate-700">
                         Internal Notes
                       </Label>
-                      <p className="mt-1 text-slate-900 bg-slate-50 p-3 rounded-lg">
+                      <p className="mt-1 text-slate-900 bg-slate-50 p-3 rounded-[10px]">
                         {booking.internalNotes}
                       </p>
                     </div>

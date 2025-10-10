@@ -244,7 +244,7 @@ export default function AdminProfile() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+                  <div className="p-2 bg-blue-100 rounded-[10px]">
                     <Users className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
@@ -257,7 +257,7 @@ export default function AdminProfile() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
+                  <div className="p-2 bg-green-100 rounded-[10px]">
                     <BookOpen className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
@@ -270,7 +270,7 @@ export default function AdminProfile() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
+                  <div className="p-2 bg-yellow-100 rounded-[10px]">
                     <TrendingUp className="w-5 h-5 text-yellow-600" />
                   </div>
                   <div>
@@ -283,7 +283,7 @@ export default function AdminProfile() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
+                  <div className="p-2 bg-purple-100 rounded-[10px]">
                     <BarChart3 className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
@@ -308,7 +308,7 @@ export default function AdminProfile() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-[10px]">
                     <div>
                       <h3 className="font-medium">User Management</h3>
                       <p className="text-sm text-slate-600">
@@ -317,7 +317,7 @@ export default function AdminProfile() {
                     </div>
                     <Badge variant="default">Enabled</Badge>
                   </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-[10px]">
                     <div>
                       <h3 className="font-medium">Content Management</h3>
                       <p className="text-sm text-slate-600">
@@ -326,7 +326,7 @@ export default function AdminProfile() {
                     </div>
                     <Badge variant="default">Enabled</Badge>
                   </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-[10px]">
                     <div>
                       <h3 className="font-medium">Analytics Access</h3>
                       <p className="text-sm text-slate-600">
@@ -335,7 +335,7 @@ export default function AdminProfile() {
                     </div>
                     <Badge variant="default">Enabled</Badge>
                   </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border rounded-[10px]">
                     <div>
                       <h3 className="font-medium">System Settings</h3>
                       <p className="text-sm text-slate-600">

@@ -481,7 +481,7 @@ export default function InstructorAttendancePage() {
                                     true
                                   )
                                 }
-                                className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                                className="p-2 text-green-600 hover:bg-green-100 rounded-[10px] transition-colors"
                                 title="Mark Present"
                               >
                                 <CheckCircle className="w-4 h-4" />
@@ -496,7 +496,7 @@ export default function InstructorAttendancePage() {
                                   participant.email
                                 )
                               }
-                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-[10px] transition-colors"
                               title="Add Feedback"
                             >
                               <MessageSquare className="w-4 h-4" />

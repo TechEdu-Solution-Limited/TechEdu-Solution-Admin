@@ -593,7 +593,7 @@ export default function TechProfessionalsPage() {
                             .map((skill, index) => (
                               <span
                                 key={index}
-                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg"
+                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-[10px]"
                               >
                                 {skill}
                               </span>
@@ -603,13 +603,13 @@ export default function TechProfessionalsPage() {
                             .map((tool, index) => (
                               <span
                                 key={index}
-                                className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-lg"
+                                className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-[10px]"
                               >
                                 {tool}
                               </span>
                             ))}
                           {professional.programmingLanguages.length > 5 && (
-                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg">
+                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-[10px]">
                               +{professional.programmingLanguages.length - 5}{" "}
                               more
                             </span>

@@ -266,7 +266,7 @@ export default function InstructorProfile() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-[10px]">
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
@@ -349,7 +349,7 @@ export default function InstructorProfile() {
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
+                  <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-[10px]">
                     <User className="w-5 h-5 text-white" />
                   </div>
                   Basic Information
@@ -534,7 +534,7 @@ export default function InstructorProfile() {
               <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3 text-lg">
-                    <div className="p-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg">
+                    <div className="p-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-[10px]">
                       <Award className="w-5 h-5 text-white" />
                     </div>
                     Specialization Areas
@@ -617,7 +617,7 @@ export default function InstructorProfile() {
               <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3 text-lg">
-                    <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg">
+                    <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-[10px]">
                       <Award className="w-5 h-5 text-white" />
                     </div>
                     Certifications
@@ -702,7 +702,7 @@ export default function InstructorProfile() {
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
+                  <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-[10px]">
                     <Globe className="w-5 h-5 text-white" />
                   </div>
                   Languages Spoken
@@ -784,7 +784,7 @@ export default function InstructorProfile() {
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-6">
                 <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
+                  <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-[10px]">
                     <Calendar className="w-5 h-5 text-white" />
                   </div>
                   Working Hours & Availability
@@ -985,7 +985,7 @@ export default function InstructorProfile() {
                 {profile?.availability?.calendly && (
                   <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 bg-green-500 rounded-lg">
+                      <div className="p-2 bg-green-500 rounded-[10px]">
                         <Calendar className="w-5 h-5 text-white" />
                       </div>
                       <h4 className="font-semibold text-green-900 text-lg">
@@ -1012,7 +1012,7 @@ export default function InstructorProfile() {
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-6">
                 <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg">
+                  <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[10px]">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   Professional Experience
@@ -1042,7 +1042,7 @@ export default function InstructorProfile() {
                     />
                   ) : (
                     <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200">
-                      <div className="p-2 bg-indigo-500 rounded-lg">
+                      <div className="p-2 bg-indigo-500 rounded-[10px]">
                         <TrendingUp className="w-5 h-5 text-white" />
                       </div>
                       <p className="text-2xl font-bold text-indigo-700">
@@ -1130,7 +1130,7 @@ export default function InstructorProfile() {
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-6">
                 <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-gradient-to-r from-slate-500 to-gray-600 rounded-lg">
+                  <div className="p-2 bg-gradient-to-r from-slate-500 to-gray-600 rounded-[10px]">
                     <Shield className="w-5 h-5 text-white" />
                   </div>
                   Account Settings
@@ -1141,7 +1141,7 @@ export default function InstructorProfile() {
                   <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-500 rounded-lg">
+                        <div className="p-2 bg-green-500 rounded-[10px]">
                           <CheckCircle className="w-5 h-5 text-white" />
                         </div>
                         <h3 className="font-semibold text-green-900">
@@ -1167,7 +1167,7 @@ export default function InstructorProfile() {
                   <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500 rounded-lg">
+                        <div className="p-2 bg-blue-500 rounded-[10px]">
                           <User className="w-5 h-5 text-white" />
                         </div>
                         <h3 className="font-semibold text-blue-900">

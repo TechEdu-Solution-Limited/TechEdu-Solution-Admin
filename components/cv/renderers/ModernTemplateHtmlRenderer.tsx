@@ -300,7 +300,7 @@ export function ModernTemplateHtmlRenderer({
                     }
                   >
                     <h2
-                      className="text-base font-bold py-2 px-4 rounded-lg"
+                      className="text-base font-bold py-2 px-4 rounded-[10px]"
                       style={{
                         backgroundColor:
                           template.styles.colors.primary || "#1e40af",
@@ -526,7 +526,7 @@ export function ModernTemplateHtmlRenderer({
                     }
                   >
                     <h2
-                      className="text-lg font-bold py-2 px-4 rounded-lg"
+                      className="text-lg font-bold py-2 px-4 rounded-[10px]"
                       style={{
                         backgroundColor:
                           template.styles.colors.primary || "#1e40af",

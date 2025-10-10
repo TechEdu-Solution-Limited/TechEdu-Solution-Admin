@@ -206,7 +206,7 @@ export default function RichTextEditor({
   };
 
   return (
-    <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+    <div className="border border-gray-300 dark:border-gray-600 rounded-[10px] overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-50 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
         {/* Headings */}

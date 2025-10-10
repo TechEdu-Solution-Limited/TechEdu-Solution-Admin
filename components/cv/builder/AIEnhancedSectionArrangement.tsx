@@ -258,7 +258,7 @@ export function AIEnhancedSectionArrangement({
   };
 
   return (
-    <div className="bg-white border rounded-lg p-4 shadow-sm">
+    <div className="bg-white border rounded-[10px] p-4 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <h3 className="text-lg font-semibold">Section Arrangement</h3>
@@ -284,7 +284,7 @@ export function AIEnhancedSectionArrangement({
         <div className="space-y-4">
           {/* AI Panel */}
           {showAIPanel && cvId && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+            <div className="bg-purple-50 border border-purple-200 rounded-[10px] p-4 mb-4">
               <h4 className="text-sm font-medium text-purple-900 mb-3 flex items-center">
                 <Brain className="h-4 w-4 mr-2" />
                 AI-Powered Enhancements
@@ -351,7 +351,7 @@ export function AIEnhancedSectionArrangement({
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`bg-gray-50 border rounded-lg p-3 transition-all ${
+                              className={`bg-gray-50 border rounded-[10px] p-3 transition-all ${
                                 snapshot.isDragging
                                   ? "shadow-lg bg-blue-50 border-blue-300"
                                   : "hover:bg-gray-100"

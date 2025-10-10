@@ -29,12 +29,12 @@ export default function MainContent({
 
   return (
     <div className="w-full">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         {/* Section Header */}
         {currentSection && (
           <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-2">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-[10px] flex items-center justify-center">
                 <currentSection.icon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>

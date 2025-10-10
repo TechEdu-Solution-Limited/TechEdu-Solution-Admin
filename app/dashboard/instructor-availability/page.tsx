@@ -768,7 +768,7 @@ export default function InstructorAvailabilityPage() {
                     <button
                       onClick={handleConnectCalendly}
                       disabled={loading}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-[10px] hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       <Calendar className="w-4 h-4" />
                       Reconnect
@@ -776,7 +776,7 @@ export default function InstructorAvailabilityPage() {
                     <button
                       onClick={handleRevokeCalendly}
                       disabled={loading}
-                      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-[10px] hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       <XCircle className="w-4 h-4" />
                       Disconnect
@@ -836,7 +836,7 @@ export default function InstructorAvailabilityPage() {
                     )}
 
                   {profileSettings?.availability?.emergencyBlock?.isBlocked && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="bg-red-50 border border-red-200 rounded-[10px] p-3">
                       <span className="text-sm font-medium text-red-800">
                         Emergency Blocked
                       </span>

@@ -90,7 +90,7 @@ export function SectionList({
             className="w-full flex items-center space-x-4 p-4 bg-white rounded-[20px] border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
           >
             {/* Icon */}
-            <div className="w-10 h-10 rounded-lg bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+            <div className="w-10 h-10 rounded-[10px] bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
               <IconComponent className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
             </div>
 

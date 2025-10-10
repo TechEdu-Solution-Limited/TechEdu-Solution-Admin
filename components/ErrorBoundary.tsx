@@ -12,7 +12,7 @@ interface ErrorFallbackProps {
 function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
+      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-[10px] shadow-lg p-6 text-center">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
         </div>
@@ -37,7 +37,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
         <div className="flex space-x-3">
           <button
             onClick={resetError}
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             <span>Try Again</span>
@@ -45,7 +45,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
 
           <button
             onClick={() => (window.location.href = "/dashboard")}
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-[10px] hover:bg-gray-700 transition-colors"
           >
             <Home className="h-4 w-4" />
             <span>Go Home</span>

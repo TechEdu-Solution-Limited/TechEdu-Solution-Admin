@@ -582,7 +582,7 @@ export default function AdminBookingsPage() {
                   )}
 
                   {booking.userNotes && (
-                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-[10px]">
                       <p className="font-medium mb-1">Notes:</p>
                       <p className="line-clamp-2">{booking.userNotes}</p>
                     </div>

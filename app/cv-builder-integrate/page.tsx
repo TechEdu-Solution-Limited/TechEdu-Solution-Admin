@@ -6,7 +6,7 @@ const Template3 = () => {
     <div className="w-full bg-white">
       <div className="max-w-5xl mx-auto p-4">
         {/* PERSONAL DETAILS */}
-        <div className="bg-[#693300] rounded-lg p-6 mb-6 text-white">
+        <div className="bg-[#693300] rounded-[10px] p-6 mb-6 text-white">
           <div className="flex flex-col md:flex-row justify-around items-center gap-6">
             <div className="flex flex-col items-center">
               <div className="bg-blue-100 w-24 h-24 md:w-28 md:h-28 rounded-full mb-3" />

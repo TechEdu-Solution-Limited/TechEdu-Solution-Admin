@@ -88,7 +88,7 @@ export default function TemplateBuilderPage({
           </p>
           <Link
             href="/dashboard/cv-builder/template-selection"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Template Selection
@@ -1234,7 +1234,7 @@ export default function TemplateBuilderPage({
 
       {/* Save Notification */}
       {showSaveNotification && (
-        <div className="fixed bottom-4 right-4 z-50 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 animate-slide-in-right">
+        <div className="fixed bottom-4 right-4 z-50 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-4 py-2 rounded-[10px] shadow-lg flex items-center space-x-2 animate-slide-in-right">
           <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
           <span className="text-md font-medium">
             {lastSaved ? `Auto-saved` : "Saved"}

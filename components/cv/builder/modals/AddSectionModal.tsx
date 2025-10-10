@@ -49,7 +49,7 @@ export default function AddSectionModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -95,7 +95,7 @@ export default function AddSectionModal({
                   <button
                     key={sectionType}
                     onClick={() => handleAddSection(sectionType)}
-                    className="flex items-center space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 text-left group"
+                    className="flex items-center space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-[10px] hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 text-left group"
                   >
                     <span className="text-2xl">{sectionInfo.icon}</span>
                     <div className="flex-1">

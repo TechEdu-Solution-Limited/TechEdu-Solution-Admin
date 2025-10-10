@@ -137,7 +137,7 @@ export default function CVUploadModal({
           </h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[10px] transition-colors"
           >
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -176,7 +176,7 @@ export default function CVUploadModal({
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] font-medium transition-colors"
                 >
                   Choose File
                 </button>
@@ -246,13 +246,13 @@ export default function CVUploadModal({
                 <div className="flex justify-center space-x-3">
                   <button
                     onClick={resetUpload}
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-[10px] transition-colors"
                   >
                     Try Again
                   </button>
                   <button
                     onClick={handleClose}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] transition-colors"
                   >
                     Cancel
                   </button>
@@ -262,7 +262,7 @@ export default function CVUploadModal({
           )}
 
           {/* Info Section */}
-          <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]">
             <div className="flex items-start space-x-3">
               <FileText className="h-5 w-5 text-gray-500 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-gray-600 dark:text-gray-400">

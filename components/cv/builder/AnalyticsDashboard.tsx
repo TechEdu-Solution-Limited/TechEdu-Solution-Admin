@@ -87,11 +87,11 @@ export default function AnalyticsDashboard({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-[10px] flex items-center justify-center">
             <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
@@ -106,7 +106,9 @@ export default function AnalyticsDashboard({
 
         {/* Overall Score */}
         <div
-          className={`px-4 py-2 rounded-lg ${getScoreBgColor(analytics.score)}`}
+          className={`px-4 py-2 rounded-[10px] ${getScoreBgColor(
+            analytics.score
+          )}`}
         >
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -122,7 +124,7 @@ export default function AnalyticsDashboard({
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+      <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-[10px] p-1">
         {[
           { id: "overview", label: "Overview", icon: Target },
           { id: "suggestions", label: "Suggestions", icon: Lightbulb },
@@ -149,9 +151,9 @@ export default function AnalyticsDashboard({
         <div className="space-y-6">
           {/* Score Breakdown */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-[10px] p-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-[10px] flex items-center justify-center">
                   <Award className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
@@ -169,9 +171,9 @@ export default function AnalyticsDashboard({
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-[10px] p-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-[10px] flex items-center justify-center">
                   <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -189,9 +191,9 @@ export default function AnalyticsDashboard({
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-[10px] p-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-[10px] flex items-center justify-center">
                   <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
@@ -263,11 +265,11 @@ export default function AnalyticsDashboard({
             analytics.suggestions.map((suggestion) => (
               <div
                 key={suggestion.id}
-                className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="border border-gray-200 dark:border-gray-600 rounded-[10px] p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="flex items-start space-x-3">
                   <div
-                    className={`p-2 rounded-lg ${getImpactColor(
+                    className={`p-2 rounded-[10px] ${getImpactColor(
                       suggestion.impact
                     )}`}
                   >
@@ -318,7 +320,7 @@ export default function AnalyticsDashboard({
               ([keyword, count]) => (
                 <div
                   key={keyword}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-[10px]"
                 >
                   <span className="font-medium text-gray-900 dark:text-white capitalize">
                     {keyword}

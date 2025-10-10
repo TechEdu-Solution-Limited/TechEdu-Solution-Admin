@@ -143,11 +143,11 @@ export default function JobBoardIntegration({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-sm border border-gray-200 dark:border-gray-700">
       {/* Header */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-[10px] flex items-center justify-center">
             <Briefcase className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
@@ -161,7 +161,7 @@ export default function JobBoardIntegration({
         </div>
 
         {/* Tabs */}
-        <div className="mt-4 flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+        <div className="mt-4 flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-[10px] p-1">
           {[
             { id: "job-boards", label: "Job Boards", icon: Briefcase },
             { id: "ats", label: "ATS Compatibility", icon: Target },
@@ -195,7 +195,7 @@ export default function JobBoardIntegration({
               return (
                 <div
                   key={jobBoard.id}
-                  className={`border rounded-lg p-4 transition-colors ${
+                  className={`border rounded-[10px] p-4 transition-colors ${
                     validation.isValid
                       ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
                       : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
@@ -248,14 +248,14 @@ export default function JobBoardIntegration({
                   <div className="mt-4 flex space-x-2">
                     <button
                       onClick={() => setSelectedJobBoard(jobBoard.id)}
-                      className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors"
                       disabled={!validation.isValid || isSubmitting}
                     >
                       {isSubmitting ? "Submitting..." : "Apply"}
                     </button>
                     <button
                       onClick={() => window.open(jobBoard.url, "_blank")}
-                      className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                      className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-[10px] transition-colors"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </button>
@@ -277,7 +277,7 @@ export default function JobBoardIntegration({
               return (
                 <div
                   key={ats.id}
-                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                  className="border border-gray-200 dark:border-gray-600 rounded-[10px] p-4"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -289,7 +289,7 @@ export default function JobBoardIntegration({
                       </p>
                     </div>
                     <div
-                      className={`px-3 py-1 rounded-lg ${getCompatibilityBgColor(
+                      className={`px-3 py-1 rounded-[10px] ${getCompatibilityBgColor(
                         compatibility
                       )}`}
                     >
@@ -346,12 +346,12 @@ export default function JobBoardIntegration({
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => setSelectedATS(ats.id)}
-                      className="flex items-center space-x-1 px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="flex items-center space-x-1 px-3 py-2 text-sm bg-purple-600 text-white rounded-[10px] hover:bg-purple-700 transition-colors"
                     >
                       <Zap className="h-4 w-4" />
                       <span>Optimize for {ats.name}</span>
                     </button>
-                    <button className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                    <button className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-[10px] transition-colors">
                       <BarChart3 className="h-4 w-4" />
                       <span>View Details</span>
                     </button>
@@ -380,7 +380,7 @@ export default function JobBoardIntegration({
               {applications.map((application) => (
                 <div
                   key={application.id}
-                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  className="border border-gray-200 dark:border-gray-600 rounded-[10px] p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

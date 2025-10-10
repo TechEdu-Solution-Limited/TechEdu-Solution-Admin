@@ -99,7 +99,7 @@ export default function TemplateSelection() {
 
               <div className="p-6">
                 {/* Template Preview */}
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg h-48 mb-4 flex items-center justify-center">
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-[10px] h-48 mb-4 flex items-center justify-center">
                   <Image
                     src={template.preview}
                     alt={template.name}
@@ -124,7 +124,7 @@ export default function TemplateSelection() {
         <div className="text-center">
           <button
             onClick={handleContinue}
-            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors text-lg"
+            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-[10px] transition-colors text-lg"
           >
             Continue with{" "}
             {templates.find((t) => t.id === selectedTemplate)?.name}

@@ -98,8 +98,8 @@ export default function TemplateSelectorModal({
                   onClick={() => handleTemplateClick(template.id)}
                 >
                   <div className="p-4">
-                    <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-700 rounded-lg mb-3 flex items-center justify-center">
-                      <div className="bg-gray-100 dark:bg-gray-700 rounded-lg h-48 mb-4 flex items-center justify-center">
+                    <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-700 rounded-[10px] mb-3 flex items-center justify-center">
+                      <div className="bg-gray-100 dark:bg-gray-700 rounded-[10px] h-48 mb-4 flex items-center justify-center">
                         <Image
                           src={template.preview}
                           alt={template.name}

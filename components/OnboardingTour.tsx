@@ -58,7 +58,7 @@ export default function OnboardingTour({
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 max-w-sm p-6 pointer-events-auto"
+        className="fixed z-50 bg-white dark:bg-gray-800 rounded-[10px] shadow-2xl border border-gray-200 dark:border-gray-700 max-w-sm p-6 pointer-events-auto"
         style={
           {
             // Position will be set by the hook
@@ -127,14 +127,14 @@ export default function OnboardingTour({
             {currentStep === totalSteps - 1 ? (
               <button
                 onClick={onComplete}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors font-medium"
               >
                 Get Started!
               </button>
             ) : (
               <button
                 onClick={onNext}
-                className="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white rounded-[10px] hover:bg-blue-700 transition-colors font-medium"
               >
                 <span>Next</span>
                 <ChevronRight className="h-4 w-4" />

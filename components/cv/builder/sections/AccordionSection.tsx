@@ -138,7 +138,7 @@ export default function AccordionSection<T extends { id: string }>({
                     <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <button
                         onClick={onAdd}
-                        className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                        className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-[10px] transition-colors"
                       >
                         <Plus className="h-4 w-4" />
                         <span>Add Another {title.slice(0, -1)}</span>

@@ -660,7 +660,7 @@ export default function PaymentDetailsPage() {
                             <label className="text-sm font-semibold text-slate-700">
                               User Notes
                             </label>
-                            <p className="text-slate-900 mt-1 bg-slate-50 p-3 rounded-lg">
+                            <p className="text-slate-900 mt-1 bg-slate-50 p-3 rounded-[10px]">
                               {bookingData.userNotes}
                             </p>
                           </div>

@@ -685,7 +685,7 @@ export default function NewUserPage() {
                         htmlFor="instructor-email"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                       >
-                        <div className="p-1 bg-blue-100 rounded-lg">
+                        <div className="p-1 bg-blue-100 rounded-[10px]">
                           <Mail className="w-4 h-4 text-blue-600" />
                         </div>
                         Email Address *
@@ -706,7 +706,7 @@ export default function NewUserPage() {
                         htmlFor="instructor-password"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                       >
-                        <div className="p-1 bg-red-100 rounded-lg">
+                        <div className="p-1 bg-red-100 rounded-[10px]">
                           <Lock className="w-4 h-4 text-red-600" />
                         </div>
                         Password *
@@ -725,7 +725,7 @@ export default function NewUserPage() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none p-1 rounded-[10px] hover:bg-gray-100 transition-all duration-200"
                         >
                           {showPassword ? (
                             <EyeOff className="w-4 h-4" />
@@ -740,7 +740,7 @@ export default function NewUserPage() {
                         htmlFor="instructor-fullName"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                       >
-                        <div className="p-1 bg-green-100 rounded-lg">
+                        <div className="p-1 bg-green-100 rounded-[10px]">
                           <User className="w-4 h-4 text-green-600" />
                         </div>
                         Full Name *
@@ -891,7 +891,7 @@ export default function NewUserPage() {
                       htmlFor="instructor-bio"
                       className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                     >
-                      <div className="p-1 bg-indigo-100 rounded-lg">
+                      <div className="p-1 bg-indigo-100 rounded-[10px]">
                         <User className="w-4 h-4 text-indigo-600" />
                       </div>
                       Bio
@@ -914,7 +914,7 @@ export default function NewUserPage() {
                       htmlFor="instructor-experienceDetails"
                       className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                     >
-                      <div className="p-1 bg-amber-100 rounded-lg">
+                      <div className="p-1 bg-amber-100 rounded-[10px]">
                         <Award className="w-4 h-4 text-amber-600" />
                       </div>
                       Experience Details
@@ -937,7 +937,7 @@ export default function NewUserPage() {
                   {/* Specialization Areas */}
                   <div className="group">
                     <Label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                      <div className="p-1 bg-blue-100 rounded-lg">
+                      <div className="p-1 bg-blue-100 rounded-[10px]">
                         <Globe className="w-4 h-4 text-blue-600" />
                       </div>
                       Specialization Areas
@@ -988,7 +988,7 @@ export default function NewUserPage() {
                   {/* Certifications */}
                   <div className="group">
                     <Label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                      <div className="p-1 bg-yellow-100 rounded-lg">
+                      <div className="p-1 bg-yellow-100 rounded-[10px]">
                         <Award className="w-4 h-4 text-yellow-600" />
                       </div>
                       Certifications
@@ -1039,7 +1039,7 @@ export default function NewUserPage() {
                   {/* Languages */}
                   <div className="group">
                     <Label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                      <div className="p-1 bg-purple-100 rounded-lg">
+                      <div className="p-1 bg-purple-100 rounded-[10px]">
                         <Languages className="w-4 h-4 text-purple-600" />
                       </div>
                       Languages Spoken
@@ -1092,7 +1092,7 @@ export default function NewUserPage() {
                         htmlFor="instructor-linkedin"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                       >
-                        <div className="p-1 bg-blue-100 rounded-lg">
+                        <div className="p-1 bg-blue-100 rounded-[10px]">
                           <Linkedin className="w-4 h-4 text-blue-600" />
                         </div>
                         LinkedIn Profile URL
@@ -1115,7 +1115,7 @@ export default function NewUserPage() {
                         htmlFor="instructor-linkedin-alt"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
                       >
-                        <div className="p-1 bg-blue-100 rounded-lg">
+                        <div className="p-1 bg-blue-100 rounded-[10px]">
                           <Linkedin className="w-4 h-4 text-blue-600" />
                         </div>
                         LinkedIn (Alternative)

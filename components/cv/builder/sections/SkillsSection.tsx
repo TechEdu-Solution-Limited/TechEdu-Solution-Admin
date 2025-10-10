@@ -283,7 +283,7 @@ export default function SkillsSection({
 
                       {isOpen && (
                         <div
-                          className="absolute left-full top-0 ml-2 z-30 w-[420px] max-h-80 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl"
+                          className="absolute left-full top-0 ml-2 z-30 w-[420px] max-h-80 overflow-auto rounded-[10px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl"
                           role="dialog"
                           aria-label="AI skill suggestions"
                         >
