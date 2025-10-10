@@ -176,13 +176,13 @@ export default function ProfessionalSummarySection({
       const ok = !!cv?.consent?.aiProcessing && !!cv?.consent?.aiTraining;
       if (!ok && !(aiConsent?.aiProcessing && aiConsent?.aiTraining)) {
         onShowAIConsent ? onShowAIConsent() : alert("AI consent is required.");
-      return;
-    }
+        return;
+      }
     } catch {
       if (!aiConsent?.aiProcessing || !aiConsent?.aiTraining) {
         onShowAIConsent ? onShowAIConsent() : alert("AI consent is required.");
-      return;
-    }
+        return;
+      }
     }
 
     setIsGeneratingAI(true);
@@ -200,8 +200,8 @@ export default function ProfessionalSummarySection({
       const hasBullets = Array.isArray(bullets) && bullets.length > 0;
       if (!hasContent && !hasBullets) {
         alert("AI returned empty result.");
-      return;
-    }
+        return;
+      }
 
       // Build HTML for Quill
       const html = buildHtml({
@@ -285,40 +285,40 @@ export default function ProfessionalSummarySection({
               </button>
             </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={generateAISuggestion}
-            disabled={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={generateAISuggestion}
+              disabled={
                 isGeneratingAI ||
                 !cvId ||
                 !personalInfo?.targetedJobTitle?.trim()
-            }
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50"
-            title={
-              !personalInfo?.targetedJobTitle?.trim()
-                ? "Please fill in your targeted job title first"
-                : !cvId
-                ? "CV must be created first"
+              }
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50 rounded-[10px]"
+              title={
+                !personalInfo?.targetedJobTitle?.trim()
+                  ? "Please fill in your targeted job title first"
+                  : !cvId
+                  ? "CV must be created first"
                   : !aiConsent?.aiProcessing || !aiConsent?.aiTraining
                   ? "AI consent required - clicking will prompt for consent"
                   : "Generate AI suggestions"
-            }
-          >
-            {isGeneratingAI ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                AI Suggestions
-              </>
-            )}
-          </Button>
-        </div>
+              }
+            >
+              {isGeneratingAI ? (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-8 w-8" />
+                  AI Suggestions
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Quill editor */}
