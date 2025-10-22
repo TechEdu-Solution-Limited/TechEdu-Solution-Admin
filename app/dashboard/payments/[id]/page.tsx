@@ -38,6 +38,7 @@ import {
 import { toast } from "react-toastify";
 import { Payment } from "@/types/payments";
 import { getCurrencySymbol } from "@/lib/constants/currencies";
+import safeConsole from "@/lib/console";
 
 export default function PaymentDetailsPage() {
   const params = useParams();
@@ -61,7 +62,7 @@ export default function PaymentDetailsPage() {
         router.push("/dashboard/payments");
       }
     } catch (error) {
-      console.error("Error fetching payment:", error);
+      safeConsole.error("Error fetching payment:", error);
       toast.error("Failed to fetch payment details");
       router.push("/dashboard/payments");
     } finally {

@@ -23,6 +23,7 @@ import { deleteApiRequest } from "@/lib/apiFetch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrencySymbol } from "@/lib/constants/currencies";
 import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/products";
+import { getDiscountPercent, getPriceLabel } from "@/utils/pricingDisplay";
 
 // Using centralized constants from lib/constants/products.ts
 
@@ -530,15 +531,15 @@ export default function ProductsPage() {
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="text-sm font-bold text-green-600">
-                            {getCurrencySymbol(product.currency)}
-                            {product.price}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 whitespace-nowrap">
                           <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 border border-yellow-200">
-                            {product.discountPercentage}%
+                            {getDiscountPercent(product)}%
                           </span>
+                        </td>
+
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="text-sm font-bold text-green-600">
+                            {getPriceLabel(product)}
+                          </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
                           <span

@@ -1,34 +1,36 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { getApiRequest, postApiRequest } from "@/lib/apiFetch";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   uploadAssetImage,
   uploadMaterial,
   deleteFileFromFirebase,
 } from "@/lib/firebase";
-import { CURRENCY_OPTIONS } from "@/lib/constants/currencies";
 import {
   PRODUCT_TYPE_OPTIONS,
   DELIVERY_MODE_OPTIONS,
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
+import { normalizePricingForApi, Pricing } from "@/lib/constants/pricing";
+import PricingForm, {
+  computePrice,
+  formatMoney,
+} from "@/components/PricingForms";
 
 const initialForm = {
   productType: "",
@@ -49,21 +51,18 @@ const initialForm = {
   mode: "",
   durationInMinutes: 0,
   minutesPerSession: 0,
-  price: 0,
-  currency: "gbp",
-  discountPercentage: 0,
   maxParticipants: 1,
   description: "",
   tags: [] as string[],
   slug: "",
   iconUrl: "",
   thumbnailUrl: "",
-  materialUrl: "", // Add material URL field
-  isAttachmentRequired: false, // Add attachment requirement field
-  publicSchedulingUrl: "", // Add scheduling URL field
+  materialUrl: "",
+  isAttachmentRequired: false,
+  publicSchedulingUrl: "",
   enabled: true,
-  instructorId: "", // Add instructor field
-  // API required fields
+  instructorId: "",
+  // API mirror fields
   productSubcategoryName: "",
   productSubCategoryId: "",
   productCategoryTitle: "",
@@ -78,8 +77,6 @@ const steps = [
   "Review & Submit",
 ];
 
-// Remove static SERVICE_OPTIONS since we'll fetch dynamically
-
 export default function CreateProductPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<any>(initialForm);
@@ -87,9 +84,6 @@ export default function CreateProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
-  const [customService, setCustomService] = useState("");
-  const [customSubcategory, setCustomSubcategory] = useState("");
-  const [serviceOptions, setServiceOptions] = useState<string[]>([]);
   const [subcategoryOptions, setSubcategoryOptions] = useState<
     { _id: string; name: string }[]
   >([]);
@@ -117,7 +111,31 @@ export default function CreateProductPage() {
   // Tag input state
   const [tagInput, setTagInput] = useState("");
 
-  // Add tag function
+  // 🧮 Pricing state (controlled by PricingForm)
+  const [pricing, setPricing] = useState<Pricing>({
+    model: "one_time",
+    currency: "gbp",
+    taxInclusive: true,
+    vatPercentage: 0,
+    discountPercent: 0,
+    basePrice: 0,
+    unitName: "participant",
+    allowQuantity: false,
+    minQty: 1,
+    maxQty: 1000,
+    tierType: "none",
+    tiers: [],
+    subscriptionPrice: undefined,
+    interval: "month",
+    intervalCount: 1,
+    trialDays: 0,
+    setupFee: 0,
+    autoRenew: true,
+    minTermMonths: 0,
+    proration: true,
+    installments: undefined,
+  });
+
   const addTag = () => {
     const trimmedTag = tagInput.trim();
     if (trimmedTag && !form.tags.includes(trimmedTag)) {
@@ -129,12 +147,9 @@ export default function CreateProductPage() {
     }
   };
 
-  // Helper function to determine if service is bookable based on product type
-  const isBookableServiceType = (productType: string) => {
-    return PRODUCT_TYPE_OPTIONS.includes(productType);
-  };
+  const isBookableServiceType = (productType: string) =>
+    PRODUCT_TYPE_OPTIONS.includes(productType);
 
-  // Helper function to check if product type requires training materials
   const requiresTrainingMaterials = (productType: string) => {
     return [
       "Training & Certification",
@@ -143,10 +158,8 @@ export default function CreateProductPage() {
     ].includes(productType);
   };
 
-  // Helper function to get service type description
   const getServiceTypeDescription = () => {
     if (!form.productType) return "";
-
     if (isBookableServiceType(form.productType)) {
       return "This is a bookable service that requires an instructor. Users can book sessions with specific instructors.";
     } else {
@@ -154,7 +167,7 @@ export default function CreateProductPage() {
     }
   };
 
-  // Fetch categories and services when productType changes
+  // Fetch categories + instructors on mount
   React.useEffect(() => {
     const fetchCategoriesAndServices = async () => {
       const token = getTokenFromCookies();
@@ -167,7 +180,7 @@ export default function CreateProductPage() {
         setCategoryLoading(true);
         setCategoryError(null);
 
-        // Fetch categories
+        // Categories
         const categoriesResponse = await getApiRequest(
           `/api/product-categories`,
           token
@@ -175,19 +188,16 @@ export default function CreateProductPage() {
         const categoriesData = categoriesResponse?.data || [];
         setCategoryOptions(categoriesData.data || []);
 
-        // Fetch instructors
+        // Instructors
         setInstructorsLoading(true);
         const instructorsResponse = await getApiRequest(
           `/api/users/admin/instructors`,
           token
         );
-        // console.log("Instructor Data", instructorsResponse);
-
         if (instructorsResponse?.data?.success) {
           const instructorData =
             instructorsResponse.data.data?.instructors || [];
           setInstructors(instructorData);
-          // console.log("Instructor Data", instructorData);
         } else {
           throw new Error("Failed to fetch instructors");
         }
@@ -233,7 +243,6 @@ export default function CreateProductPage() {
         const activeSubcategories = data.filter((sub: any) => !sub.isDeleted);
         setSubcategoryOptions(activeSubcategories);
 
-        // Reset subcategory if current one is not in new options
         setForm((prev: any) => ({
           ...prev,
           subcategory: activeSubcategories.some(
@@ -278,7 +287,6 @@ export default function CreateProductPage() {
       if (response.status === 201 || response.status === 200) {
         toast.success("Category created successfully!");
 
-        // Refresh categories from API
         const apiFetch = await import("@/lib/apiFetch");
         const res = await apiFetch.getApiRequest(
           `/api/product-categories/type/${encodeURIComponent(
@@ -290,18 +298,16 @@ export default function CreateProductPage() {
         const activeCategories = data.filter((cat: any) => !cat.isDeleted);
         setCategoryOptions(activeCategories);
 
-        // Extract service titles from categories
-        const services = activeCategories.map((cat: any) => cat.title);
-        setServiceOptions(services);
-
-        // Set the new category as selected
         setForm((prev: any) => ({ ...prev, category: response.data.title }));
 
-        // Reset and close dialog
         setNewCategoryTitle("");
         setShowCategoryDialog(false);
       } else {
-        toast.error(response.message || "Failed to create category");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to create category"
+            : response.message || "Failed to create category"
+        );
       }
     } catch (error: any) {
       toast.error("Failed to create category");
@@ -327,7 +333,6 @@ export default function CreateProductPage() {
         return;
       }
 
-      // Find the selected category to get its ID
       const selectedCategory = categoryOptions.find(
         (cat) => cat.title === form.category
       );
@@ -350,7 +355,6 @@ export default function CreateProductPage() {
       if (response.status === 201 || response.status === 200) {
         toast.success("Subcategory created successfully!");
 
-        // Refresh subcategories from API
         const apiFetch = await import("@/lib/apiFetch");
         const res = await apiFetch.getApiRequest(
           `/api/product-subcategories/category/${selectedCategory._id}`,
@@ -360,14 +364,16 @@ export default function CreateProductPage() {
         const activeSubcategories = data.filter((sub: any) => !sub.isDeleted);
         setSubcategoryOptions(activeSubcategories);
 
-        // Set the new subcategory as selected
         setForm((prev: any) => ({ ...prev, subcategory: response.data.name }));
 
-        // Reset and close dialog
         setNewSubcategoryName("");
         setShowSubcategoryDialog(false);
       } else {
-        toast.error(response.message || "Failed to create subcategory");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to create subcategory"
+            : response.message || "Failed to create subcategory"
+        );
       }
     } catch (error: any) {
       toast.error("Failed to create subcategory");
@@ -383,12 +389,10 @@ export default function CreateProductPage() {
   ) => {
     const { name, value, type } = e.target;
 
-    // Handle "Create New" selections
     if (name === "category" && value === "__create_new__") {
       setShowCategoryDialog(true);
       return;
     }
-
     if (name === "subcategory" && value === "__create_new__") {
       setShowSubcategoryDialog(true);
       return;
@@ -409,35 +413,52 @@ export default function CreateProductPage() {
 
   const handleDeleteMaterial = async () => {
     if (!form.materialUrl) return;
-
     setLoading(true);
     try {
-      // Delete the file from Firebase Storage
       await deleteFileFromFirebase(form.materialUrl);
-
-      // Clear the material URL from the form
-      setForm((prev: any) => ({
-        ...prev,
-        materialUrl: "",
-      }));
-
+      setForm((prev: any) => ({ ...prev, materialUrl: "" }));
       toast.success("Material deleted successfully!");
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete material. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔒 Validate pricing before submit
+  const validatePricing = (): string | null => {
+    if (pricing.model === "one_time") {
+      if ((pricing.basePrice ?? 0) < 0)
+        return "One-time price cannot be negative.";
+    }
+    if (pricing.model === "subscription") {
+      if (!pricing.subscriptionPrice || pricing.subscriptionPrice < 0)
+        return "Subscription price is required.";
+      if (!pricing.interval) return "Subscription interval is required.";
+      if ((pricing.intervalCount ?? 1) < 1)
+        return "Subscription interval count must be at least 1.";
+    }
+    if (pricing.model === "per_unit") {
+      if (pricing.tierType === "none") {
+        if ((pricing.basePrice ?? 0) < 0)
+          return "Unit price cannot be negative.";
+      } else {
+        if (!pricing.tiers || pricing.tiers.length === 0)
+          return "Please add at least one tier.";
+      }
+      if ((pricing.minQty ?? 1) < 1)
+        return "Minimum quantity must be at least 1.";
+      if ((pricing.maxQty ?? 1) < (pricing.minQty ?? 1))
+        return "Max quantity must be >= min quantity.";
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step !== steps.length - 1) return;
 
-    // Only proceed if we're on the last step (Create Product button was clicked)
-    if (step !== steps.length - 1) {
-      return;
-    }
-
-    // Enhanced validation for all required fields
+    // Required fields
     const requiredFields = [
       { field: "productType", label: "Product Type" },
       { field: "category", label: "Product Category" },
@@ -460,41 +481,25 @@ export default function CreateProductPage() {
         label: "Training Materials",
       });
     }
-    // Add instructor validation for bookable services
     if (isBookableServiceType(form.productType) && !form.instructorId) {
       requiredFields.push({ field: "instructorId", label: "Instructor" });
     }
 
-    // Validate duration in minutes (1-120 minutes)
     if (form.durationInMinutes < 1 || form.durationInMinutes > 120) {
       setError("Duration must be between 1 and 120 minutes.");
       return;
     }
-
-    // Validate minutes per session (1-120 minutes)
     if (form.minutesPerSession < 1 || form.minutesPerSession > 120) {
       setError("Minutes per session must be between 1 and 120 minutes.");
       return;
     }
 
-    const missingFields = requiredFields.filter(({ field, label }) => {
+    const missingFields = requiredFields.filter(({ field }) => {
       const value = form[field];
-      let isMissing;
-
-      // Special handling for price - can be 0 (free) or greater
-      if (field === "price") {
-        isMissing =
-          value === null ||
-          value === undefined ||
-          (typeof value === "number" && value < 0);
-      } else {
-        isMissing =
-          !value ||
-          (typeof value === "string" && value.trim() === "") ||
-          (typeof value === "number" && value <= 0);
-      }
-
-      return isMissing;
+      if (value === null || value === undefined) return true;
+      if (typeof value === "string") return value.trim() === "";
+      if (typeof value === "number") return value <= 0; // programLength may be 0 allowed; but it's marked required above
+      return false;
     });
 
     if (missingFields.length > 0) {
@@ -503,9 +508,10 @@ export default function CreateProductPage() {
       return;
     }
 
-    // Additional validation for bookable services
-    if (isBookableServiceType(form.productType) && !form.instructorId) {
-      setError("Bookable services require an instructor to be assigned.");
+    // Pricing validation
+    const pErr = validatePricing();
+    if (pErr) {
+      setError(pErr);
       return;
     }
 
@@ -521,55 +527,65 @@ export default function CreateProductPage() {
     }
 
     try {
-      // Find the selected category and subcategory objects
       const selectedCategory = categoryOptions.find(
         (cat) => cat.title === form.category
       );
-
-      // Find the selected subcategory object by name
       const selectedSubcategory = subcategoryOptions.find(
         (sub) => sub.name === form.subcategory
       );
 
-      // Prepare the API payload with all required fields
+      // Map Pricing -> API schema (adds defaults for installments provider)
+      const normalizedPricing = normalizePricingForApi(pricing);
+
+      const rootDiscountPercentage = Math.max(
+        0,
+        Math.min(100, Number(pricing.discountPercent ?? 0))
+      );
+
       const payload = {
-        ...form,
-        // Map form fields to API required fields
+        // --- Basic & meta ---
+        productType: form.productType,
+        service: form.service,
         productCategoryId: selectedCategory?._id || "",
         productCategoryTitle: form.category || "",
         productSubCategoryId: selectedSubcategory?._id || "",
         productSubcategoryName: form.subcategory || "",
         publicSchedulingUrl: form.publicSchedulingUrl || "",
-        durationInMinutes: Number(form.durationInMinutes) || 0,
-        minutesPerSession: Number(form.minutesPerSession) || 0,
-        // Ensure mode is a valid value - use one of the valid enum values
-        mode: form.mode || "weeks",
-        // Sanitize number fields
-        price: Number(form.price) || 0,
-        currency: form.currency || "gbp",
-        discountPercentage: Number(form.discountPercentage) || 0,
-        maxParticipants: Number(form.maxParticipants) || 1,
-        programLength: Number(form.programLength) || 0,
-        // Convert arrays to strings if needed
+        deliveryMode: form.deliveryMode,
+        sessionType: form.sessionType,
+        description: form.description,
+        slug: form.slug,
         tags: Array.isArray(form.tags) ? form.tags : [],
-        // Ensure all required fields are present
-        deliveryMode: form.deliveryMode || "",
-        sessionType: form.sessionType || "",
-        description: form.description || "",
-        slug: form.slug || "",
-        // Boolean fields with defaults
-        hasClassroom: form.hasClassroom || false,
-        hasSession: form.hasSession || false,
-        hasAssessment: form.hasAssessment || false,
+        enabled: !!form.enabled,
+
+        // --- Training & bookable flags ---
+        hasClassroom: !!form.hasClassroom,
+        hasSession: !!form.hasSession,
+        hasAssessment: !!form.hasAssessment,
+        requiresBooking: !!form.requiresBooking,
+        requiresEnrollment: !!form.requiresEnrollment,
+        hasCertificate: !!form.hasCertificate,
         isBookableService: isBookableServiceType(form.productType),
-        requiresBooking: form.requiresBooking || false,
-        requiresEnrollment: form.requiresEnrollment || false,
-        hasCertificate: form.hasCertificate || false,
-        isRecurring: form.isRecurring || false,
-        enabled: form.enabled !== undefined ? form.enabled : true,
         instructorId: isBookableServiceType(form.productType)
           ? form.instructorId || null
           : null,
+
+        // --- Scheduling & duration ---
+        programLength: Number(form.programLength) || 0,
+        mode: form.mode || "weeks",
+        durationInMinutes: Number(form.durationInMinutes) || 0,
+        minutesPerSession: Number(form.minutesPerSession) || 0,
+        maxParticipants: Number(form.maxParticipants) || 1,
+
+        // --- Media ---
+        iconUrl: form.iconUrl || "",
+        thumbnailUrl: form.thumbnailUrl || "",
+        materialUrl: form.materialUrl || "",
+        isAttachmentRequired: !!form.isAttachmentRequired,
+
+        // --- Pricing ---
+        pricing: normalizedPricing,
+        discountPercentage: rootDiscountPercentage,
       };
 
       const response = await postApiRequest("/api/products", token, payload);
@@ -578,7 +594,7 @@ export default function CreateProductPage() {
         setSuccess("Product created successfully!");
         setTimeout(() => {
           router.push("/dashboard/products");
-        }, 2000);
+        }, 1200);
       } else {
         setError(response?.data?.message || "Failed to create product");
       }
@@ -589,10 +605,19 @@ export default function CreateProductPage() {
     }
   };
 
+  // 🧾 Pricing review summary (uses minQty for per-unit)
+  const reviewQty =
+    pricing.model === "per_unit" ? Math.max(pricing.minQty ?? 1, 1) : 1;
+  const breakdown = useMemo(
+    () => computePrice(pricing, reviewQty),
+    [pricing, reviewQty]
+  );
+  const money = (n: number) => formatMoney(n, pricing.currency);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Header Section */}
+        {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 mb-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
@@ -604,7 +629,7 @@ export default function CreateProductPage() {
           </div>
         </div>
 
-        {/* Enhanced Stepper */}
+        {/* Stepper */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6 mb-8">
           <div className="flex items-center justify-between">
             {steps.map((label, idx) => (
@@ -612,7 +637,6 @@ export default function CreateProductPage() {
                 key={label}
                 className="flex-1 flex flex-col items-center relative"
               >
-                {/* Connection Line */}
                 {idx < steps.length - 1 && (
                   <div className="absolute top-4 left-1/2 w-full h-0.5 bg-slate-200 -z-10"></div>
                 )}
@@ -659,7 +683,7 @@ export default function CreateProductPage() {
           </div>
         </div>
 
-        {/* Form Container */}
+        {/* Form */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-8">
             {step === 0 && (
@@ -671,32 +695,6 @@ export default function CreateProductPage() {
                   <p className="text-slate-600 mb-4">
                     Let's start with the fundamental details of your product
                   </p>
-                  {/* <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    <h3 className="font-semibold text-slate-800 mb-2">
-                      Service Types:
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <span className="text-blue-700 font-medium">
-                          Bookable Services:
-                        </span>
-                        <span className="text-slate-600">
-                          Training, Academic Support, Career Development,
-                          Institutional Services
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                        <span className="text-green-700 font-medium">
-                          Non-Bookable Services:
-                        </span>
-                        <span className="text-slate-600">
-                          AI Services, Career Connect, Marketing & Free Services
-                        </span>
-                      </div>
-                    </div>
-                  </div> */}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -723,7 +721,6 @@ export default function CreateProductPage() {
                       ))}
                     </select>
 
-                    {/* Service Type Indicator */}
                     {form.productType && (
                       <div
                         className={`p-4 rounded-2xl border-2 ${
@@ -788,14 +785,13 @@ export default function CreateProductPage() {
                       required
                     />
 
-                    {/* Material Upload field for Training Programs */}
+                    {/* Training materials */}
                     {requiresTrainingMaterials(form.productType) && (
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">
                           Training Materials *
                         </label>
 
-                        {/* Current Material Display */}
                         {form.materialUrl && (
                           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
                             <div className="flex items-center justify-between mb-2">
@@ -829,7 +825,6 @@ export default function CreateProductPage() {
                           </div>
                         )}
 
-                        {/* File Upload Input */}
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
@@ -839,7 +834,6 @@ export default function CreateProductPage() {
                             if (file) {
                               setLoading(true);
                               try {
-                                // If there's an existing material, delete it first
                                 if (form.materialUrl) {
                                   try {
                                     await deleteFileFromFirebase(
@@ -850,11 +844,8 @@ export default function CreateProductPage() {
                                       "Failed to delete old material:",
                                       deleteErr
                                     );
-                                    // Continue with upload even if deletion fails
                                   }
                                 }
-
-                                // Upload new material
                                 const url = await uploadMaterial(
                                   file,
                                   "course-materials"
@@ -866,7 +857,7 @@ export default function CreateProductPage() {
                                 toast.success(
                                   "Material uploaded successfully!"
                                 );
-                              } catch (err) {
+                              } catch {
                                 setError("Material upload failed");
                               } finally {
                                 setLoading(false);
@@ -876,7 +867,6 @@ export default function CreateProductPage() {
                           required
                         />
 
-                        {/* Info Box */}
                         <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
                           <div className="flex items-start gap-3">
                             <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -920,7 +910,7 @@ export default function CreateProductPage() {
                       </div>
                     )}
 
-                    {/* Attachment Required Checkbox for Academic Support Services */}
+                    {/* Attachment Required */}
                     {form.productType && (
                       <div className="mt-4">
                         <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
@@ -984,7 +974,7 @@ export default function CreateProductPage() {
                       </div>
                     )}
 
-                    {/* Category Creation Dialog */}
+                    {/* Category Dialog */}
                     <Dialog
                       open={showCategoryDialog}
                       onOpenChange={setShowCategoryDialog}
@@ -1122,7 +1112,7 @@ export default function CreateProductPage() {
                           ? "Loading instructors..."
                           : isBookableServiceType(form.productType)
                           ? "Select Instructor (Required)"
-                          : "Select Instructor (Required)"}
+                          : "Select Instructor (Optional)"}
                       </option>
                       {instructors.map((instructor) => (
                         <option
@@ -1139,14 +1129,8 @@ export default function CreateProductPage() {
                         {instructorsError}
                       </div>
                     )}
-                    {instructors.length === 0 && !instructorsLoading && (
-                      <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-[12px] border border-slate-200">
-                        No instructors available. You can assign an instructor
-                        later.
-                      </div>
-                    )}
 
-                    {/* Subcategory Creation Dialog */}
+                    {/* Subcategory Dialog */}
                     <Dialog
                       open={showSubcategoryDialog}
                       onOpenChange={setShowSubcategoryDialog}
@@ -1220,6 +1204,7 @@ export default function CreateProductPage() {
                 </div>
               </div>
             )}
+
             {step === 1 && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold mb-2">
@@ -1261,9 +1246,7 @@ export default function CreateProductPage() {
                 </select>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   {[
-                    // { key: "isRecurring", label: "Recurring" },
                     { key: "requiresBooking", label: "Requires Booking" },
-                    // { key: "requiresEnrollment", label: "Requires Enrollment" },
                     { key: "hasCertificate", label: "Has Certificate" },
                     { key: "hasClassroom", label: "Has Classroom" },
                     { key: "hasSession", label: "Has Session" },
@@ -1287,154 +1270,122 @@ export default function CreateProductPage() {
                 </div>
               </div>
             )}
+
             {step === 2 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold mb-2">
-                  Pricing & Duration
-                </h2>
+              <div className="space-y-8">
+                <h2 className="text-lg font-semibold">Pricing & Duration</h2>
+
+                {/* PricingForm (controls the pricing state) */}
+                <PricingForm value={pricing} onChange={setPricing} />
+
+                {/* Duration & misc */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Price{" "}
-                      {!isBookableServiceType(form.productType) && (
-                        <span className="text-slate-500 text-xs">
-                          (Can be 0 for free services)
-                        </span>
-                      )}
+                      Max Participants
                     </label>
                     <Input
-                      name="price"
-                      value={form.price}
+                      name="maxParticipants"
+                      value={form.maxParticipants}
                       onChange={handleChange}
-                      placeholder={
-                        isBookableServiceType(form.productType)
-                          ? "Enter price (e.g., 99.99)"
-                          : "Enter price (0 for free services)"
-                      }
+                      placeholder="Enter maximum number of participants (e.g., 10)"
                       type="number"
-                      min={0}
-                      step="0.01"
+                      min={1}
                       className="rounded-[10px]"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Currency
+                      Duration (minutes)
+                    </label>
+                    <Input
+                      name="durationInMinutes"
+                      value={form.durationInMinutes}
+                      onChange={handleChange}
+                      placeholder="Enter total duration in minutes (1-120)"
+                      type="number"
+                      min={1}
+                      max={120}
+                      className="rounded-[10px]"
+                    />
+                    {form.durationInMinutes &&
+                      (form.durationInMinutes < 1 ||
+                        form.durationInMinutes > 120) && (
+                        <p className="text-red-500 text-sm mt-1">
+                          Duration must be between 1 and 120 minutes.
+                        </p>
+                      )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Minutes Per Session
+                    </label>
+                    <Input
+                      name="minutesPerSession"
+                      value={form.minutesPerSession}
+                      onChange={handleChange}
+                      placeholder="Enter minutes per individual session (1-120)"
+                      type="number"
+                      min={1}
+                      max={120}
+                      className="rounded-[10px]"
+                    />
+                    {form.minutesPerSession &&
+                      (form.minutesPerSession < 1 ||
+                        form.minutesPerSession > 120) && (
+                        <p className="text-red-500 text-sm mt-1">
+                          Minutes per session must be between 1 and 120 minutes.
+                        </p>
+                      )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Program Length
+                    </label>
+                    <Input
+                      name="programLength"
+                      value={form.programLength}
+                      onChange={handleChange}
+                      placeholder="Enter program length (e.g., 8 for 8 weeks)"
+                      type="number"
+                      min={0}
+                      className="rounded-[10px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Mode
                     </label>
                     <select
-                      name="currency"
-                      value={form.currency}
+                      name="mode"
+                      value={form.mode}
                       onChange={handleChange}
                       className="w-full border rounded-[10px] p-2"
                     >
-                      {CURRENCY_OPTIONS.map((currency) => (
-                        <option key={currency.value} value={currency.value}>
-                          {currency.label}
+                      <option value="">Select Mode</option>
+                      {MODE_OPTIONS.map((opt) => (
+                        <option
+                          key={opt}
+                          value={opt}
+                          className="rounded-[10px]"
+                        >
+                          {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
-                {!isBookableServiceType(form.productType) &&
-                  form.price === 0 && (
-                    <div className="text-green-600 text-sm bg-green-50 p-3 rounded-[12px] border border-green-200">
-                      ✓ This will be marked as a free service
-                    </div>
-                  )}
-                <label className="block text-sm font-medium mb-1">
-                  Max Participants
-                </label>
-                <Input
-                  name="maxParticipants"
-                  value={form.maxParticipants}
-                  onChange={handleChange}
-                  placeholder="Enter maximum number of participants (e.g., 10)"
-                  type="number"
-                  min={1}
-                  className="rounded-[10px]"
-                />
-                <label className="block text-sm font-medium mb-1">
-                  Discount Percentage
-                </label>
-                <Input
-                  name="discountPercentage"
-                  value={form.discountPercentage}
-                  onChange={handleChange}
-                  placeholder="Enter discount percentage (e.g., 10 for 10%)"
-                  type="number"
-                  className="rounded-[10px]"
-                />
-                <label className="block text-sm font-medium mb-1">
-                  Duration (minutes)
-                </label>
-                <Input
-                  name="durationInMinutes"
-                  value={form.durationInMinutes}
-                  onChange={handleChange}
-                  placeholder="Enter total duration in minutes (1-120)"
-                  type="number"
-                  min={1}
-                  max={120}
-                  className="rounded-[10px]"
-                />
-                {form.durationInMinutes &&
-                  (form.durationInMinutes < 1 ||
-                    form.durationInMinutes > 120) && (
-                    <p className="text-red-500 text-sm mt-1">
-                      Duration must be between 1 and 120 minutes.
-                    </p>
-                  )}
-                <label className="block text-sm font-medium mb-1">
-                  Minutes Per Session
-                </label>
-                <Input
-                  name="minutesPerSession"
-                  value={form.minutesPerSession}
-                  onChange={handleChange}
-                  placeholder="Enter minutes per individual session (1-120)"
-                  type="number"
-                  min={1}
-                  max={120}
-                  className="rounded-[10px]"
-                />
-                {form.minutesPerSession &&
-                  (form.minutesPerSession < 1 ||
-                    form.minutesPerSession > 120) && (
-                    <p className="text-red-500 text-sm mt-1">
-                      Minutes per session must be between 1 and 120 minutes.
-                    </p>
-                  )}
-                <label className="block text-sm font-medium mb-1">
-                  Program Length
-                </label>
-                <Input
-                  name="programLength"
-                  value={form.programLength}
-                  onChange={handleChange}
-                  placeholder="Enter program length (e.g., 8 for 8 weeks)"
-                  type="number"
-                  min={0}
-                  className="rounded-[10px]"
-                />
-                <label className="block text-sm font-medium mb-1">Mode</label>
-                <select
-                  name="mode"
-                  value={form.mode}
-                  onChange={handleChange}
-                  className="w-full border rounded-[10px] p-2"
-                >
-                  <option value="">Select Mode</option>
-                  {MODE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt} className="rounded-[10px]">
-                      {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                    </option>
-                  ))}
-                </select>
               </div>
             )}
+
             {step === 3 && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold mb-2">Media & SEO</h2>
+
                 <label className="block text-sm font-medium mb-1">
                   Description
                 </label>
@@ -1446,9 +1397,10 @@ export default function CreateProductPage() {
                   className="w-full border rounded-[10px] p-2"
                   rows={4}
                 />
+
+                {/* Tags */}
                 <label className="block text-sm font-medium mb-1">Tags</label>
                 <div className="space-y-2">
-                  {/* Tags Display */}
                   <div className="flex flex-wrap gap-2 min-h-[40px] p-2 border rounded-[10px] bg-white">
                     {form.tags.map((tag: string, index: number) => (
                       <span
@@ -1479,7 +1431,6 @@ export default function CreateProductPage() {
                     )}
                   </div>
 
-                  {/* Tag Input */}
                   <div className="flex gap-2">
                     <Input
                       placeholder="Enter a tag and press Enter or click Add"
@@ -1503,7 +1454,6 @@ export default function CreateProductPage() {
                     </Button>
                   </div>
 
-                  {/* Quick Add Buttons */}
                   <div className="flex flex-wrap gap-2">
                     {[
                       "Soft Skills",
@@ -1532,6 +1482,8 @@ export default function CreateProductPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Images */}
                 <label className="block text-sm font-medium mb-1">
                   Icon Image
                 </label>
@@ -1549,7 +1501,7 @@ export default function CreateProductPage() {
                           "product-icons"
                         );
                         setForm((prev: any) => ({ ...prev, iconUrl: url }));
-                      } catch (err) {
+                      } catch {
                         setError("Icon upload failed");
                       } finally {
                         setLoading(false);
@@ -1564,6 +1516,7 @@ export default function CreateProductPage() {
                     className="mt-2 rounded-[10px] w-16 h-16 object-cover"
                   />
                 )}
+
                 <label className="block text-sm font-medium mb-1">
                   Thumbnail Image
                 </label>
@@ -1584,7 +1537,7 @@ export default function CreateProductPage() {
                           ...prev,
                           thumbnailUrl: url,
                         }));
-                      } catch (err) {
+                      } catch {
                         setError("Image upload failed");
                       } finally {
                         setLoading(false);
@@ -1599,6 +1552,7 @@ export default function CreateProductPage() {
                     className="mt-2 rounded-[10px] w-32 h-32 object-cover"
                   />
                 )}
+
                 <label className="block text-sm font-medium mb-1">
                   Enabled
                 </label>
@@ -1609,6 +1563,7 @@ export default function CreateProductPage() {
                   onChange={handleChange}
                   className="accent-blue-600 rounded-[10px]"
                 />
+
                 <label className="block text-sm font-medium mb-1">Slug</label>
                 <Input
                   name="slug"
@@ -1619,18 +1574,20 @@ export default function CreateProductPage() {
                 />
               </div>
             )}
+
             {step === 4 && (
-              <div className="bg-gray-50 p-4 rounded-[10px]">
-                <h2 className="text-lg font-semibold mb-4">Review & Submit</h2>
+              <div className="bg-gray-50 p-4 rounded-[10px] space-y-6">
+                <h2 className="text-lg font-semibold">Review & Submit</h2>
+
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-[10px]">
                   <p className="text-blue-700 text-sm">
                     <strong>Ready to create your product?</strong> Review all
-                    the information above and click the "Create Product" button
-                    below when you're satisfied with all the details.
+                    the information and click <em>Create Product</em>.
                   </p>
                 </div>
+
                 {/* Basic Info */}
-                <div className="mb-4">
+                <div>
                   <h3 className="font-semibold text-blue-700 mb-2">
                     Basic Info
                   </h3>
@@ -1704,8 +1661,9 @@ export default function CreateProductPage() {
                     )}
                   </div>
                 </div>
+
                 {/* Delivery & Session */}
-                <div className="mb-4">
+                <div>
                   <h3 className="font-semibold text-blue-700 mb-2">
                     Delivery & Session
                   </h3>
@@ -1718,19 +1676,10 @@ export default function CreateProductPage() {
                       <span className="font-medium">Session Type:</span>{" "}
                       {form.sessionType}
                     </div>
-                    {/* <div>
-                      <span className="font-medium">Recurring:</span>{" "}
-                      {form.isRecurring ? "Yes" : "No"}
-                    </div> */}
                     <div>
                       <span className="font-medium">Requires Booking:</span>{" "}
                       {form.requiresBooking ? "Yes" : "No"}
                     </div>
-                    {/* <div>
-                      <span className="font-medium">Requires Enrollment:</span>{" "}
-                      {form.requiresEnrollment ? "Yes" : "No"}
-                    </div> */}
-
                     <div>
                       <span className="font-medium">Has Certificate:</span>{" "}
                       {form.hasCertificate ? "Yes" : "No"}
@@ -1749,27 +1698,113 @@ export default function CreateProductPage() {
                     </div>
                   </div>
                 </div>
-                {/* Pricing & Duration */}
-                <div className="mb-4">
+
+                {/* Pricing & Duration (summary) */}
+                <div>
                   <h3 className="font-semibold text-blue-700 mb-2">
                     Pricing & Duration
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <span className="font-medium">Price:</span> {form.price}{" "}
-                      {form.currency.toUpperCase()}
+                      <span className="font-medium">Pricing model:</span>{" "}
+                      {pricing.model}
                     </div>
                     <div>
                       <span className="font-medium">Currency:</span>{" "}
-                      {form.currency.toUpperCase()}
+                      {pricing.currency.toUpperCase()}
                     </div>
+                    {pricing.model === "subscription" ? (
+                      <>
+                        <div>
+                          <span className="font-medium">Recurring:</span>{" "}
+                          {money(pricing.subscriptionPrice || 0)} /{" "}
+                          {pricing.intervalCount || 1} {pricing.interval}
+                        </div>
+                        {pricing.setupFee ? (
+                          <div>
+                            <span className="font-medium">Setup fee:</span>{" "}
+                            {money(pricing.setupFee)}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : pricing.model === "one_time" ? (
+                      <div>
+                        <span className="font-medium">One-time price:</span>{" "}
+                        {money(pricing.basePrice || 0)}
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <span className="font-medium">Unit label:</span>{" "}
+                          {pricing.unitName || "participant"}
+                        </div>
+                        {pricing.tierType === "none" ? (
+                          <div>
+                            <span className="font-medium">Unit price:</span>{" "}
+                            {money(pricing.basePrice || 0)}
+                          </div>
+                        ) : (
+                          <div>
+                            <span className="font-medium">Tier type:</span>{" "}
+                            {pricing.tierType}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Totals preview */}
+                    <div className="sm:col-span-2 mt-2 rounded-xl border p-3 bg-white">
+                      <div className="flex items-center justify-between">
+                        <span>
+                          Subtotal
+                          {pricing.model === "per_unit"
+                            ? ` (${reviewQty} ${
+                                pricing.unitName || "participant"
+                              }${reviewQty > 1 ? "s" : ""})`
+                            : ""}
+                        </span>
+                        <span>{money(breakdown.subtotal)}</span>
+                      </div>
+                      {typeof breakdown.discount === "number" &&
+                        breakdown.discount > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span>Discount</span>
+                            <span>-{money(breakdown.discount)}</span>
+                          </div>
+                        )}
+                      {typeof breakdown.net === "number" && (
+                        <div className="flex items-center justify-between">
+                          <span>Net</span>
+                          <span>{money(breakdown.net)}</span>
+                        </div>
+                      )}
+                      {!pricing.taxInclusive && (
+                        <div className="flex items-center justify-between">
+                          <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
+                          <span>{money(breakdown.vat || 0)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between font-semibold border-t pt-2 mt-1">
+                        <span>Total</span>
+                        <span>{money(breakdown.total)}</span>
+                      </div>
+
+                      {/* Installments preview */}
+                      {pricing.installments?.enabled &&
+                        (pricing.model === "one_time" ||
+                          pricing.model === "per_unit") && (
+                          <div className="mt-3 text-sm text-slate-700">
+                            <span className="font-medium">
+                              Installments enabled
+                            </span>{" "}
+                            — preview shown on pricing card.
+                          </div>
+                        )}
+                    </div>
+
                     <div>
                       <span className="font-medium">Max Participants:</span>{" "}
                       {form.maxParticipants}
-                    </div>
-                    <div>
-                      <span className="font-medium">Discount %:</span>{" "}
-                      {form.discountPercentage}%
                     </div>
                     <div>
                       <span className="font-medium">Duration (minutes):</span>{" "}
@@ -1784,8 +1819,9 @@ export default function CreateProductPage() {
                     </div>
                   </div>
                 </div>
+
                 {/* Media & SEO */}
-                <div className="mb-4">
+                <div>
                   <h3 className="font-semibold text-blue-700 mb-2">
                     Media & SEO
                   </h3>
@@ -1801,7 +1837,6 @@ export default function CreateProductPage() {
                     <div>
                       <span className="font-medium">Slug:</span> {form.slug}
                     </div>
-
                     <div>
                       <span className="font-medium">Enabled:</span>{" "}
                       {form.enabled ? "Yes" : "No"}
@@ -1828,6 +1863,7 @@ export default function CreateProductPage() {
                     )}
                   </div>
                 </div>
+
                 {error && (
                   <div className="text-red-600 text-sm mt-2">{error}</div>
                 )}
@@ -1841,7 +1877,8 @@ export default function CreateProductPage() {
                 )}
               </div>
             )}
-            {/* Form Footer */}
+
+            {/* Footer */}
             <div className="mt-8 pt-6 border-t border-slate-200">
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <button

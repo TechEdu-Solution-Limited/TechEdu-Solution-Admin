@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { cleanAttachmentUrl } from "@/lib/utils";
 import { Booking } from "@/types/booking";
+import safeConsole from "@/lib/console";
 
 interface Instructor {
   _id: string;
@@ -108,11 +109,19 @@ export default function BookingDetailPage({
           setProduct(bookingData.productId);
         }
       } else {
-        toast.error(response?.data?.message || "Failed to fetch booking");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Something went wrong"
+            : response?.data?.message || "Failed to fetch booking"
+        );
       }
     } catch (error: any) {
-      console.error("Error fetching booking:", error);
-      toast.error("Error fetching booking");
+      safeConsole.error("Error fetching booking:", error);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Error fetching booking"
+      );
     } finally {
       setLoading(false);
     }
@@ -160,11 +169,19 @@ export default function BookingDetailPage({
         fetchBooking(); // Refresh the booking data
         setCancelDialogOpen(false);
       } else {
-        toast.error(response?.data?.message || "Failed to cancel booking");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Something went wrong"
+            : response?.data?.message || "Failed to cancel booking"
+        );
       }
     } catch (error: any) {
-      console.error("Error cancelling booking:", error);
-      toast.error("Error cancelling booking");
+      safeConsole.error("Error cancelling booking:", error);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Error cancelling booking"
+      );
     } finally {
       setCancelling(false);
     }

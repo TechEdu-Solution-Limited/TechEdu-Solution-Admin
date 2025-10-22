@@ -19,6 +19,9 @@ import {
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
+import { Pricing } from "@/lib/constants/pricing";
+import PricingForm from "@/components/PricingForms"; // same component you used on create
+import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
 
 // Helper function to check if product type requires training materials
 const requiresTrainingMaterials = (productType: string) => {
@@ -40,6 +43,29 @@ export default function ProductEditPage() {
   const [form, setForm] = useState<Partial<Product>>({});
   const [instructors, setInstructors] = useState<any[]>([]);
   const [instructorsLoading, setInstructorsLoading] = useState(false);
+  const [pricing, setPricing] = useState<Pricing>({
+    model: "one_time",
+    currency: "gbp",
+    taxInclusive: true,
+    vatPercentage: 0,
+    discountPercent: 0,
+    basePrice: 0,
+    unitName: "participant",
+    allowQuantity: false,
+    minQty: 1,
+    maxQty: 1000,
+    tierType: "none",
+    tiers: [],
+    subscriptionPrice: undefined,
+    interval: "month",
+    intervalCount: 1,
+    trialDays: 0,
+    setupFee: 0,
+    autoRenew: true,
+    minTermMonths: 0,
+    proration: true,
+    installments: undefined,
+  });
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -54,54 +80,71 @@ export default function ProductEditPage() {
       }
 
       try {
-        const [productResponse, instructorsResponse] = await Promise.all([
+        const [productRes, instructorsRes] = await Promise.all([
           getApiRequest(`/api/products/public/${params.id}`, token),
           getApiRequest("/api/users/admin/instructors", token),
         ]);
 
-        // console.log("Instructor Data", instructorsResponse);
-
-        if (productResponse?.data?.success) {
-          const product = productResponse.data.data;
-          setForm({
-            productType: product.productType,
-            service: product.service,
-            deliveryMode: product.deliveryMode,
-            sessionType: product.sessionType,
-            isRecurring: product.isRecurring,
-            programLength: product.programLength,
-            mode: product.mode,
-            durationInMinutes: product.durationInMinutes,
-            minutesPerSession: product.minutesPerSession,
-            hasClassroom: product.hasClassroom,
-            hasSession: product.hasSession,
-            hasAssessment: product.hasAssessment,
-            hasCertificate: product.hasCertificate,
-            requiresBooking: product.requiresBooking,
-            requiresEnrollment: product.requiresEnrollment,
-            isBookableService: product.isBookableService,
-            price: product.price,
-            currency: product.currency || "gbp",
-            discountPercentage: product.discountPercentage,
-            maxParticipants: product.maxParticipants || 1,
-            description: product.description,
-            tags: product.tags || [],
-            slug: product.slug,
-            iconUrl: product.iconUrl,
-            thumbnailUrl: product.thumbnailUrl,
-            materialUrl: product.materialUrl, // Add materialUrl to form
-            isAttachmentRequired: product.isAttachmentRequired, // Add isAttachmentRequired to form
-            publicSchedulingUrl: product.publicSchedulingUrl, // Add publicSchedulingUrl to form
-            enabled: product.enabled,
-            instructorId: product.instructorId, // Add instructorId to form
-          });
-        } else {
-          setError("Failed to load product");
+        if (!productRes?.data?.success) {
+          throw new Error(
+            productRes?.data?.message || "Failed to load product"
+          );
         }
 
-        // Set instructors data
-        if (instructorsResponse?.data?.success) {
-          setInstructors(instructorsResponse.data.data.instructors || []);
+        const product = productRes.data.data;
+
+        // 1) Form — set ONCE
+        setForm({
+          productType: product.productType,
+          service: product.service,
+          deliveryMode: product.deliveryMode,
+          sessionType: product.sessionType,
+          isRecurring: product.isRecurring,
+          programLength: product.programLength,
+          mode: product.mode,
+          durationInMinutes: product.durationInMinutes,
+          minutesPerSession: product.minutesPerSession,
+          hasClassroom: product.hasClassroom,
+          hasSession: product.hasSession,
+          hasAssessment: product.hasAssessment,
+          hasCertificate: product.hasCertificate,
+          requiresBooking: product.requiresBooking,
+          requiresEnrollment: product.requiresEnrollment,
+          isBookableService: product.isBookableService,
+          price: product.price,
+          currency: product.currency || "gbp",
+          discountPercentage: product.discountPercentage,
+          maxParticipants: product.maxParticipants || 1,
+          description: product.description,
+          tags: product.tags || [],
+          slug: product.slug,
+          iconUrl: product.iconUrl,
+          thumbnailUrl: product.thumbnailUrl,
+          materialUrl: product.materialUrl,
+          isAttachmentRequired: product.isAttachmentRequired,
+          publicSchedulingUrl: product.publicSchedulingUrl,
+          enabled: product.enabled,
+          instructorId: product.instructorId,
+        });
+
+        // 2) Pricing — hydrate using functional update
+        if (product.pricing) {
+          setPricing((prev) => ({ ...prev, ...product.pricing }));
+        } else {
+          // legacy root fields → one_time pricing
+          setPricing((prev) => ({
+            ...prev,
+            model: "one_time",
+            currency: (product.currency || "gbp").toLowerCase(),
+            basePrice: Number(product.price || 0),
+          }));
+        }
+
+        // 3) Instructors
+        if (instructorsRes?.data?.success) {
+          setInstructors(instructorsRes.data.data.instructors || []);
+        } else {
+          setInstructors([]);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load product");
@@ -110,7 +153,7 @@ export default function ProductEditPage() {
       }
     };
 
-    fetchProduct();
+    if (params.id) fetchProduct();
   }, [params.id]);
 
   const handleChange = (
@@ -227,7 +270,7 @@ export default function ProductEditPage() {
     }
 
     try {
-      // Validate duration in minutes (1-120 minutes)
+      // Validate durations
       if (
         (form.durationInMinutes ?? 0) < 1 ||
         (form.durationInMinutes ?? 0) > 120
@@ -236,8 +279,6 @@ export default function ProductEditPage() {
         setSaving(false);
         return;
       }
-
-      // Validate minutes per session (1-120 minutes)
       if (
         (form.minutesPerSession ?? 0) < 1 ||
         (form.minutesPerSession ?? 0) > 120
@@ -247,31 +288,52 @@ export default function ProductEditPage() {
         return;
       }
 
-      const payload = {
+      // Validate pricing
+      const pErr = validatePricing(pricing as Pricing);
+      if (pErr) {
+        setError(pErr);
+        setSaving(false);
+        return;
+      }
+
+      // Build root payload (WITHOUT legacy price/currency if pricing endpoint is canonical)
+      const rootPayload = {
         ...form,
-        price: Number(form.price) || 0,
-        currency: form.currency || "gbp",
         discountPercentage: Number(form.discountPercentage) || 0,
         maxParticipants: Number(form.maxParticipants) || 1,
         programLength: Number(form.programLength) || 0,
         durationInMinutes: Number(form.durationInMinutes) || 0,
         minutesPerSession: Number(form.minutesPerSession) || 0,
         tags: Array.isArray(form.tags) ? form.tags : [],
-      };
+      } as const;
 
-      const response = await updateApiRequest(
-        `/api/products/${params.id}`,
-        token,
-        payload
-      );
+      // Build pricing payload
+      const pricingPayload = pickPricingForApi(pricing as Pricing);
 
-      if (response?.data?.success) {
+      // Update both: root + pricing
+      const [rootRes, pricingRes] = await Promise.all([
+        updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
+        updateApiRequest(
+          `/api/products/${params.id}/pricing`,
+          token,
+          pricingPayload
+        ),
+      ]);
+
+      if (
+        rootRes?.data?.success &&
+        (pricingRes?.data?.ok || pricingRes?.data?.success)
+      ) {
         setSuccess("Product updated successfully!");
         setTimeout(() => {
           router.push(`/dashboard/products/${params.id}`);
-        }, 2000);
+        }, 1200);
       } else {
-        setError(response?.data?.message || "Failed to update product");
+        const msg =
+          rootRes?.data?.message ||
+          pricingRes?.data?.message ||
+          "Failed to update product";
+        setError(msg);
       }
     } catch (err: any) {
       setError(err.message || "Failed to update product");
@@ -778,7 +840,7 @@ export default function ProductEditPage() {
                     </label>
                     <Input
                       name="programLength"
-                      value={form.programLength || ""}
+                      value={form.programLength ?? ""}
                       onChange={handleChange}
                       type="number"
                       min={0}
@@ -815,69 +877,8 @@ export default function ProductEditPage() {
               <h2 className="text-2xl font-bold text-slate-900 mb-6">
                 Pricing & Duration
               </h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Price *
-                  </label>
-                  <Input
-                    name="price"
-                    value={form.price || ""}
-                    onChange={handleChange}
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="0.00 (free) or amount"
-                    className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Currency
-                  </label>
-                  <select
-                    name="currency"
-                    value={form.currency || "gbp"}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  >
-                    {CURRENCY_OPTIONS.map((currency) => (
-                      <option key={currency.value} value={currency.value}>
-                        {currency.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Max Participants
-                  </label>
-                  <Input
-                    name="maxParticipants"
-                    value={form.maxParticipants || ""}
-                    onChange={handleChange}
-                    type="number"
-                    min={1}
-                    placeholder="Maximum number of participants"
-                    className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Discount Percentage
-                  </label>
-                  <Input
-                    name="discountPercentage"
-                    value={form.discountPercentage || ""}
-                    onChange={handleChange}
-                    type="number"
-                    min={0}
-                    max={100}
-                    placeholder="0-100"
-                    className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-6">
+                <PricingForm value={pricing} onChange={setPricing} />
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Duration (minutes) *
@@ -938,7 +939,7 @@ export default function ProductEditPage() {
                   { key: "hasAssessment", label: "Has Assessment" },
                   { key: "hasClassroom", label: "Has Classroom" },
                   { key: "hasSession", label: "Has Session" },
-                  { key: "requiresBooking", label: "Requires Booking" },
+                  { key: "requ+iresBooking", label: "Requires Booking" },
                   { key: "requiresEnrollment", label: "Requires Enrollment" },
                   { key: "isBookableService", label: "Bookable Service" },
                   { key: "isRecurring", label: "Recurring" },
@@ -1031,7 +1032,7 @@ export default function ProductEditPage() {
             </div>
             {/* Success/Error Messages */}
             {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
+              <div className="my-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
                     <div className="w-2 h-2 bg-green-600 rounded-full"></div>
@@ -1042,7 +1043,7 @@ export default function ProductEditPage() {
             )}
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+              <div className="my-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
                     <div className="w-2 h-2 bg-red-600 rounded-full"></div>

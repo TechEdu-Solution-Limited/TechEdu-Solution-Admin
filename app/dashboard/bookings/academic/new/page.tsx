@@ -34,6 +34,7 @@ import { postApiRequest, getApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/products";
 import { toast } from "react-toastify";
+import safeConsole from "@/lib/console";
 
 interface Instructor {
   _id: string;
@@ -225,7 +226,7 @@ export default function CreateAcademicBookingPage() {
 
       return uploadedUrls;
     } catch (error) {
-      console.error("File upload error:", error);
+      safeConsole.error("File upload error:", error);
       toast.error("Failed to upload some files. Please try again.");
       throw error;
     } finally {
@@ -286,10 +287,14 @@ export default function CreateAcademicBookingPage() {
         toast.success("Academic booking created successfully!");
         router.push("/dashboard/bookings");
       } else {
-        toast.error(response?.data?.message || "Failed to create booking");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to create booking"
+            : response?.data?.message || "Failed to create booking"
+        );
       }
     } catch (error: any) {
-      console.error("Error creating booking:", error);
+      safeConsole.error("Error creating booking:", error);
       toast.error("Error creating booking");
     } finally {
       setLoading(false);

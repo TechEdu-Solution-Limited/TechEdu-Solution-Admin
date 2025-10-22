@@ -32,6 +32,7 @@ import { getApiRequest, deleteApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { toast } from "react-toastify";
 import { Booking } from "@/types/booking";
+import safeConsole from "@/lib/console";
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -61,12 +62,20 @@ export default function AdminBookingsPage() {
         const bookingsData = response.data.data || [];
         setBookings(bookingsData);
       } else {
-        console.error("Failed to fetch bookings:", response?.data?.message);
-        toast.error("Failed to fetch bookings");
+        safeConsole.error("Failed to fetch bookings:", response?.data?.message);
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Something went wrong"
+            : "Failed to fetch bookings"
+        );
       }
     } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error("Error fetching bookings");
+      safeConsole.error("Error fetching bookings:", error);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Error fetching bookings"
+      );
     } finally {
       setLoading(false);
     }
@@ -91,11 +100,19 @@ export default function AdminBookingsPage() {
         toast.success("Booking cancelled successfully");
         fetchBookings(); // Refresh the list
       } else {
-        toast.error(response?.data?.message || "Failed to cancel booking");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to cancel booking"
+            : response?.data?.message || "Failed to cancel booking"
+        );
       }
     } catch (error) {
-      console.error("Error cancelling booking:", error);
-      toast.error("Error cancelling booking");
+      safeConsole.error("Error cancelling booking:", error);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Error cancelling booking"
+      );
     } finally {
       setCancellingId(null);
     }

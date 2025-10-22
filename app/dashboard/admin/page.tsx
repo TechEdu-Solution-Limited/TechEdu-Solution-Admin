@@ -202,7 +202,11 @@ export default function AdminDashboard() {
       }
     } catch (error: any) {
       // console.error("Error fetching dashboard data:", error);
-      toast.error("Failed to load dashboard data");
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Failed to load dashboard data"
+      );
     } finally {
       setLoading(false);
     }

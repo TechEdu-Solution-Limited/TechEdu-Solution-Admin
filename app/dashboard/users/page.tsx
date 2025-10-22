@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import safeConsole from "@/lib/console";
 
 interface User {
   _id: string;
@@ -228,12 +229,20 @@ export default function UserManagementPage() {
         setHasMore(hasMore);
         setCurrentPage(page);
       } else {
-        console.error("API error:", response);
-        toast.error(response.message || "Failed to fetch users");
+        safeConsole.error("API error:", response);
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Something went wrong"
+            : response.message || "Failed to fetch users"
+        );
       }
     } catch (error: any) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to load users");
+      safeConsole.error("Error fetching users:", error);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Failed to load users"
+      );
     } finally {
       setLoading(false);
     }

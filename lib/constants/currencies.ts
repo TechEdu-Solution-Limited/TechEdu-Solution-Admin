@@ -63,12 +63,16 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
 ];
 
 // Helper function to get currency symbol by code
-export const getCurrencySymbol = (currencyCode: string): string => {
-  const currency = CURRENCY_OPTIONS.find(
-    (c) => c.value === currencyCode.toLowerCase()
-  );
-  return currency ? currency.label.split(" ")[0] : currencyCode.toUpperCase();
-};
+// /lib/constants/currencies.ts
+export function getCurrencySymbol(code?: string) {
+  const map: Record<string, string> = {
+    gbp: "£",
+    usd: "$",
+    eur: "€" /* ... */,
+  };
+  const key = (code ?? "gbp").toLowerCase();
+  return map[key] ?? "£";
+}
 
 // Helper function to get currency label by code
 export const getCurrencyLabel = (currencyCode: string): string => {

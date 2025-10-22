@@ -173,13 +173,25 @@ export default function ApplicationsPage() {
           );
           toast.success(`Application status updated to ${newStatus}`);
         } else {
-          toast.error(res.data?.message || "Failed to update status");
+          toast.error(
+            process.env.NEXT_PUBLIC_NODE_ENV === "production"
+              ? "Failed to update status"
+              : res.data?.message || "Failed to update status"
+          );
         }
       } else {
-        toast.error(res.message || "Failed to update status");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to update status"
+            : res.message || "Failed to update status"
+        );
       }
     } catch (e: any) {
-      toast.error(e.message || "An error occurred while updating status");
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : e.message || "An error occurred while updating status"
+      );
     }
   };
 
@@ -201,13 +213,25 @@ export default function ApplicationsPage() {
           setApplications((prev) => prev.filter((app) => app._id !== id));
           toast.success("Application has been deleted");
         } else {
-          toast.error(res.data?.message || "Failed to delete application");
+          toast.error(
+            process.env.NEXT_PUBLIC_NODE_ENV === "production"
+              ? "Failed to delete application"
+              : res.data?.message || "Failed to delete application"
+          );
         }
       } else {
-        toast.error(res.message || "Failed to delete application");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to delete application"
+            : res.message || "Failed to delete application"
+        );
       }
     } catch (e: any) {
-      toast.error(e.message || "An error occurred while deleting");
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : e.message || "An error occurred while deleting"
+      );
     }
     setDeleteModal({ isOpen: false, applicationId: null });
   };

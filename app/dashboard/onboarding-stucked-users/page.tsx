@@ -40,6 +40,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+import safeConsole from "@/lib/console";
 
 export default function OnboardingStuckUsersPage() {
   const [onboardingStuckUsers, setOnboardingStuckUsers] = useState<any[]>([]);
@@ -196,8 +197,12 @@ export default function OnboardingStuckUsersPage() {
         toast.error("Failed to send reminders");
       }
     } catch (err: any) {
-      console.error("Error sending reminders:", err);
-      toast.error(err.message || "Failed to send reminders");
+      safeConsole.error("Error sending reminders:", err);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Failed to send reminders"
+          : err.message || "Failed to send reminders"
+      );
     } finally {
       setReminderLoading(false);
     }

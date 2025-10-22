@@ -32,6 +32,7 @@ import {
 import { getApiRequest, putApiRequest } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { toast } from "react-toastify";
+import safeConsole from "@/lib/console";
 
 interface Instructor {
   _id: string;
@@ -121,11 +122,19 @@ export default function EditBookingPage({
           isSession: bookingData.isSession || false,
         });
       } else {
-        toast.error(response?.data?.message || "Failed to fetch booking");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Something went wrong"
+            : response?.data?.message || "Failed to fetch booking"
+        );
       }
     } catch (error: any) {
-      console.error("Error fetching booking:", error);
-      toast.error("Error fetching booking");
+      safeConsole.error("Error fetching booking:", error);
+      toast.error(
+        process.env.NEXT_PUBLIC_NODE_ENV === "production"
+          ? "Something went wrong"
+          : "Error fetching booking"
+      );
     } finally {
       setFetching(false);
     }
@@ -146,10 +155,13 @@ export default function EditBookingPage({
           response.data.data?.users || response.data.users || [];
         setInstructors(instructorData);
       } else {
-        console.error("Failed to fetch instructors:", response?.data?.message);
+        safeConsole.error(
+          "Failed to fetch instructors:",
+          response?.data?.message
+        );
       }
     } catch (err: any) {
-      console.error("Error fetching instructors:", err);
+      safeConsole.error("Error fetching instructors:", err);
     } finally {
       setInstructorsLoading(false);
     }
@@ -170,10 +182,10 @@ export default function EditBookingPage({
           response.data.data?.products || response.data.products || [];
         setProducts(productsData);
       } else {
-        console.error("Failed to fetch products:", response?.data?.message);
+        safeConsole.error("Failed to fetch products:", response?.data?.message);
       }
     } catch (err: any) {
-      console.error("Error fetching products:", err);
+      safeConsole.error("Error fetching products:", err);
     } finally {
       setProductsLoading(false);
     }
@@ -233,10 +245,14 @@ export default function EditBookingPage({
         toast.success("Booking updated successfully!");
         router.push(`/dashboard/bookings/${params.id}`);
       } else {
-        toast.error(response?.data?.message || "Failed to update booking");
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Something went wrong"
+            : response?.data?.message || "Failed to update booking"
+        );
       }
     } catch (error: any) {
-      console.error("Error updating booking:", error);
+      safeConsole.error("Error updating booking:", error);
       toast.error("Error updating booking");
     } finally {
       setLoading(false);

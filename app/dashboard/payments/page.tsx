@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
 import { Payment } from "@/types/payments";
 import { getCurrencySymbol } from "@/lib/constants/currencies";
+import { useRouter } from "next/navigation";
 
 interface PaymentDetails extends Payment {
   // Additional fields for detailed view if needed
@@ -39,6 +40,7 @@ export default function AdminPaymentsPage() {
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const route = useRouter();
 
   // Fetch all payments once (client-side pagination)
   useEffect(() => {
@@ -156,25 +158,25 @@ export default function AdminPaymentsPage() {
   };
 
   // Fetch single payment details
-  const openPaymentModal = async (paymentId: string) => {
-    setModalOpen(true);
-    setModalLoading(true);
-    setSelectedPayment(null);
-    const token = getTokenFromCookies();
-    if (!token) {
-      setError("Authentication required.");
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await getApiRequest(`/api/payments/${paymentId}`, token);
-      setSelectedPayment(res.data.data);
-    } catch (err: any) {
-      setSelectedPayment(null);
-    } finally {
-      setModalLoading(false);
-    }
-  };
+  // const openPaymentModal = async (paymentId: string) => {
+  //   setModalOpen(true);
+  //   setModalLoading(true);
+  //   setSelectedPayment(null);
+  //   const token = getTokenFromCookies();
+  //   if (!token) {
+  //     setError("Authentication required.");
+  //     setLoading(false);
+  //     return;
+  //   }
+  //   try {
+  //     const res = await getApiRequest(`/api/payments/${paymentId}`, token);
+  //     setSelectedPayment(res.data.data);
+  //   } catch (err: any) {
+  //     setSelectedPayment(null);
+  //   } finally {
+  //     setModalLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6 lg:p-8">
@@ -383,7 +385,7 @@ export default function AdminPaymentsPage() {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <button
                         className="text-blue-600 hover:text-blue-800 text-sm mr-3 transition-colors duration-200"
-                        onClick={() => openPaymentModal(payment._id)}
+                        onClick={() => route.push(`/payments/${payment._id}`)}
                       >
                         View Details
                       </button>

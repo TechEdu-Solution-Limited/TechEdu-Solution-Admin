@@ -22,6 +22,11 @@ import {
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from "@/types/products";
+import {
+  getDiscountedPriceLabel,
+  getDiscountPercent,
+  getPriceLabel,
+} from "@/utils/pricingDisplay";
 
 export default function ProductViewPage() {
   const params = useParams();
@@ -538,17 +543,26 @@ export default function ProductViewPage() {
             {/* Price Card */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
               <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                  <span className="text-3xl font-bold text-green-600">
-                    {product.price === 0
-                      ? "Free"
-                      : `$${product.price.toFixed(2)}`}
-                  </span>
+                <div className="flex flex-col items-center gap-1">
+                  {getDiscountPercent(product) > 0 ? (
+                    <>
+                      <div className="text-sm text-slate-500 line-through">
+                        {getPriceLabel(product)}
+                      </div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {getDiscountedPriceLabel(product)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-3xl font-bold text-green-600">
+                      {getPriceLabel(product)}
+                    </div>
+                  )}
                 </div>
-                {product.discountPercentage > 0 && (
-                  <span className="inline-block px-3 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200">
-                    {product.discountPercentage}% OFF
+
+                {getDiscountPercent(product) > 0 && (
+                  <span className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200">
+                    {getDiscountPercent(product)}% OFF
                   </span>
                 )}
               </div>
