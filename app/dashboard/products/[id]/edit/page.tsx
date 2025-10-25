@@ -16,7 +16,6 @@ import {
   deleteFileFromFirebase,
 } from "@/lib/firebase";
 import { Product } from "@/types/products";
-import { CURRENCY_OPTIONS } from "@/lib/constants/currencies";
 import {
   PRODUCT_TYPE_OPTIONS,
   DELIVERY_MODE_OPTIONS,
@@ -24,7 +23,7 @@ import {
   MODE_OPTIONS,
 } from "@/lib/constants/products";
 import { Pricing } from "@/lib/constants/pricing";
-import PricingForm from "@/components/PricingForms"; // same component you used on create
+import PricingForm from "@/components/PricingForms";
 import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
 
 // Helper function to check if product type requires training materials
@@ -67,9 +66,15 @@ export default function ProductEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [form, setForm] = useState<Partial<Product>>({});
+
+  // Allow an extra field "nonBookableService" alongside Product fields
+  const [form, setForm] = useState<
+    Partial<Product> & { nonBookableService?: boolean }
+  >({});
+
   const [instructors, setInstructors] = useState<any[]>([]);
   const [instructorsLoading, setInstructorsLoading] = useState(false);
+
   const [pricing, setPricing] = useState<Pricing>({
     model: "one_time",
     currency: "gbp",
@@ -93,6 +98,10 @@ export default function ProductEditPage() {
     proration: true,
     installments: undefined,
   });
+
+  // Derived flags
+  const isBookable = !!form.isBookableService;
+  const instructorRequired = isBookable; // Tools included when bookable
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -120,7 +129,7 @@ export default function ProductEditPage() {
 
         const product = productRes.data.data;
 
-        // 1) Form — set ONCE
+        // Form — set with mirrored nonBookableService
         setForm({
           productType: product.productType,
           service: product.service,
@@ -138,6 +147,7 @@ export default function ProductEditPage() {
           requiresBooking: product.requiresBooking,
           requiresEnrollment: product.requiresEnrollment,
           isBookableService: product.isBookableService,
+          nonBookableService: !product.isBookableService, // ← mirror here
           price: product.price,
           currency: product.currency || "gbp",
           discountPercentage: product.discountPercentage,
@@ -154,11 +164,10 @@ export default function ProductEditPage() {
           instructorId: product.instructorId,
         });
 
-        // 2) Pricing — hydrate using functional update
+        // Pricing
         if (product.pricing) {
           setPricing((prev) => ({ ...prev, ...product.pricing }));
         } else {
-          // legacy root fields → one_time pricing
           setPricing((prev) => ({
             ...prev,
             model: "one_time",
@@ -167,7 +176,7 @@ export default function ProductEditPage() {
           }));
         }
 
-        // 3) Instructors
+        // Instructors
         if (instructorsRes?.data?.success) {
           setInstructors(instructorsRes.data.data.instructors || []);
         } else {
@@ -189,6 +198,25 @@ export default function ProductEditPage() {
     >
   ) => {
     const { name, value, type } = e.target;
+
+    // Keep nonBookableService mirrored to the inverse of isBookableService
+    if (name === "isBookableService") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setForm((prev) => ({
+        ...prev,
+        isBookableService: checked,
+        nonBookableService: !checked,
+        // Optional: when turning OFF bookable, clear scheduling/instructor
+        ...(checked
+          ? {}
+          : {
+              publicSchedulingUrl: "",
+              instructorId: "",
+            }),
+      }));
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       [name]:
@@ -204,20 +232,12 @@ export default function ProductEditPage() {
 
   const handleDeleteMaterial = async () => {
     if (!form.materialUrl) return;
-
     setSaving(true);
     try {
-      // Delete the file from Firebase Storage
       await deleteFileFromFirebase(form.materialUrl);
-
-      // Clear the material URL from the form
-      setForm((prev) => ({
-        ...prev,
-        materialUrl: "",
-      }));
-
+      setForm((prev) => ({ ...prev, materialUrl: "" }));
       setSuccess("Material deleted successfully!");
-    } catch (err) {
+    } catch {
       setError("Failed to delete material. Please try again.");
     } finally {
       setSaving(false);
@@ -227,18 +247,14 @@ export default function ProductEditPage() {
   const handleImageUpload = async (file: File, type: "icon" | "thumbnail") => {
     setSaving(true);
     try {
-      // If there's an existing image, delete it first
       const currentUrl = type === "icon" ? form.iconUrl : form.thumbnailUrl;
       if (currentUrl) {
         try {
           await deleteFileFromFirebase(currentUrl);
         } catch (deleteErr) {
           console.warn(`Failed to delete old ${type}:`, deleteErr);
-          // Continue with upload even if deletion fails
         }
       }
-
-      // Upload new image
       const url = await uploadAssetImage(file, `product-${type}s`);
       setForm((prev: any) => ({
         ...prev,
@@ -247,7 +263,7 @@ export default function ProductEditPage() {
       setSuccess(
         `${type === "icon" ? "Icon" : "Thumbnail"} uploaded successfully!`
       );
-    } catch (err) {
+    } catch {
       setError(`${type === "icon" ? "Icon" : "Thumbnail"} upload failed`);
     } finally {
       setSaving(false);
@@ -257,22 +273,17 @@ export default function ProductEditPage() {
   const handleDeleteImage = async (type: "icon" | "thumbnail") => {
     const currentUrl = type === "icon" ? form.iconUrl : form.thumbnailUrl;
     if (!currentUrl) return;
-
     setSaving(true);
     try {
-      // Delete the file from Firebase Storage
       await deleteFileFromFirebase(currentUrl);
-
-      // Clear the image URL from the form
       setForm((prev) => ({
         ...prev,
         [type === "icon" ? "iconUrl" : "thumbnailUrl"]: "",
       }));
-
       setSuccess(
         `${type === "icon" ? "Icon" : "Thumbnail"} deleted successfully!`
       );
-    } catch (err) {
+    } catch {
       setError(
         `Failed to delete ${
           type === "icon" ? "icon" : "thumbnail"
@@ -297,22 +308,43 @@ export default function ProductEditPage() {
     }
 
     try {
-      // Validate durations
-      if (
-        (form.durationInMinutes ?? 0) < 1 ||
-        (form.durationInMinutes ?? 0) > 120
-      ) {
-        setError("Duration must be between 1 and 120 minutes.");
-        setSaving(false);
-        return;
-      }
-      if (
-        (form.minutesPerSession ?? 0) < 1 ||
-        (form.minutesPerSession ?? 0) > 120
-      ) {
-        setError("Minutes per session must be between 1 and 120 minutes.");
-        setSaving(false);
-        return;
+      // Duration guards — only enforce strictly when bookable
+      if (isBookable) {
+        if (
+          (form.durationInMinutes ?? 0) < 1 ||
+          (form.durationInMinutes ?? 0) > 120
+        ) {
+          setError("Duration must be between 1 and 120 minutes.");
+          setSaving(false);
+          return;
+        }
+        if (
+          (form.minutesPerSession ?? 0) < 1 ||
+          (form.minutesPerSession ?? 0) > 120
+        ) {
+          setError("Minutes per session must be between 1 and 120 minutes.");
+          setSaving(false);
+          return;
+        }
+      } else {
+        if (
+          form.durationInMinutes &&
+          (form.durationInMinutes < 1 || form.durationInMinutes > 120)
+        ) {
+          setError("Duration must be between 1 and 120 minutes (if provided).");
+          setSaving(false);
+          return;
+        }
+        if (
+          form.minutesPerSession &&
+          (form.minutesPerSession < 1 || form.minutesPerSession > 120)
+        ) {
+          setError(
+            "Minutes per session must be between 1 and 120 (if provided)."
+          );
+          setSaving(false);
+          return;
+        }
       }
 
       // Validate pricing
@@ -323,9 +355,11 @@ export default function ProductEditPage() {
         return;
       }
 
-      // Build root payload (WITHOUT legacy price/currency if pricing endpoint is canonical)
+      // Build root payload and enforce instructor nulling when not required
       const rootPayload = {
         ...form,
+        nonBookableService: !isBookable, // ensure mirrored on send
+        instructorId: instructorRequired ? form.instructorId || null : null,
         discountPercentage: Number(form.discountPercentage) || 0,
         maxParticipants: Number(form.maxParticipants) || 1,
         programLength: Number(form.programLength) || 0,
@@ -334,7 +368,7 @@ export default function ProductEditPage() {
         tags: Array.isArray(form.tags) ? form.tags : [],
       } as const;
 
-      // Build + sanitize pricing payload
+      // Pricing payload
       const rawPricing = pickPricingForApi(pricing as Pricing);
       const pricingPayload = {
         ...rawPricing,
@@ -343,10 +377,6 @@ export default function ProductEditPage() {
           (rawPricing as any)?.currency ?? pricing.currency
         ),
       };
-      // Optional: sanity guard to avoid sending unexpected fields
-      // delete (pricingPayload as any).discountPercent; // if your API expects discountPercentage instead
-      // delete (pricingPayload as any).unknownKey;
-
       if (!ALLOWED_MODELS.includes(pricingPayload.model)) {
         setError(`Pricing model must be one of: ${ALLOWED_MODELS.join(", ")}`);
         setSaving(false);
@@ -358,10 +388,6 @@ export default function ProductEditPage() {
         return;
       }
 
-      // Optional debug:
-      // console.debug("PATCH /pricing payload →", pricingPayload);
-
-      // Update both: root + pricing
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
         patchApiRequest(
@@ -502,9 +528,30 @@ export default function ProductEditPage() {
                   />
                 </div>
 
+                {/* Bookable toggle (moved up from Features) */}
+                <div className="mt-2">
+                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isBookableService"
+                      checked={!!form.isBookableService}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">
+                      Bookable Service
+                    </span>
+                  </label>
+                  <p className="text-slate-500 text-xs mt-1 ml-2">
+                    If enabled, customers schedule sessions. An instructor is
+                    required when bookable (including for “Tools”).
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Booking Scheduling Link *
+                    Booking Scheduling Link{" "}
+                    {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <Input
                     name="publicSchedulingUrl"
@@ -512,21 +559,39 @@ export default function ProductEditPage() {
                     onChange={handleChange}
                     placeholder="Generate the scheduling link for the service"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    required
+                    required={isBookable}
+                    disabled={!isBookable}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Assign Instructor
+                    Assign Instructor{" "}
+                    {instructorRequired && (
+                      <span className="text-red-500">*</span>
+                    )}
                   </label>
                   <select
                     name="instructorId"
                     value={form.instructorId || ""}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className={`w-full px-4 py-3 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
+                      instructorRequired && !form.instructorId
+                        ? "border-red-300 focus:ring-red-500"
+                        : "border-slate-200"
+                    }`}
+                    disabled={!isBookable || instructorsLoading}
+                    required={instructorRequired}
                   >
-                    <option value="">Select Instructor (Optional)</option>
+                    <option value="">
+                      {instructorsLoading
+                        ? "Loading instructors..."
+                        : !isBookable
+                        ? "Select Instructor (Disabled for non-bookable)"
+                        : instructorRequired
+                        ? "Select Instructor (Required)"
+                        : "Select Instructor (Optional)"}
+                    </option>
                     {instructors.map((instructor) => (
                       <option key={instructor._id} value={instructor.userId}>
                         {instructor.fullName} - {instructor.title}
@@ -535,7 +600,7 @@ export default function ProductEditPage() {
                   </select>
                 </div>
 
-                {/* Material Upload field for Training Programs */}
+                {/* Materials for training-typed products */}
                 {form.productType &&
                   requiresTrainingMaterials(form.productType) && (
                     <div>
@@ -543,7 +608,6 @@ export default function ProductEditPage() {
                         Training Materials *
                       </label>
 
-                      {/* Current Material Display */}
                       {form.materialUrl && (
                         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
                           <div className="flex items-center justify-between mb-2">
@@ -577,7 +641,6 @@ export default function ProductEditPage() {
                         </div>
                       )}
 
-                      {/* File Upload Input */}
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
@@ -587,7 +650,6 @@ export default function ProductEditPage() {
                           if (file) {
                             setSaving(true);
                             try {
-                              // If there's an existing material, delete it first
                               if (form.materialUrl) {
                                 try {
                                   await deleteFileFromFirebase(
@@ -598,11 +660,8 @@ export default function ProductEditPage() {
                                     "Failed to delete old material:",
                                     deleteErr
                                   );
-                                  // Continue with upload even if deletion fails
                                 }
                               }
-
-                              // Upload new material
                               const url = await uploadMaterial(
                                 file,
                                 "course-materials"
@@ -612,7 +671,7 @@ export default function ProductEditPage() {
                                 materialUrl: url,
                               }));
                               setSuccess("Material uploaded successfully!");
-                            } catch (err) {
+                            } catch {
                               setError("Material upload failed");
                             } finally {
                               setSaving(false);
@@ -621,7 +680,6 @@ export default function ProductEditPage() {
                         }}
                       />
 
-                      {/* Info Box */}
                       <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
                         <div className="flex items-start gap-3">
                           <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -646,12 +704,11 @@ export default function ProductEditPage() {
                             <p className="text-blue-700 text-sm">
                               Upload training materials, course content,
                               resources, or documents that tech professionals
-                              can view and download after purchasing this
-                              program.
+                              can view and download after purchase.
                             </p>
                             <p className="text-blue-600 text-xs mt-1">
-                              Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT,
-                              ZIP, RAR, XLSX, CSV
+                              Supported: PDF, DOC, DOCX, PPT, PPTX, TXT, ZIP,
+                              RAR, XLSX, CSV
                             </p>
                             {form.materialUrl && (
                               <p className="text-blue-600 text-xs mt-2 font-medium">
@@ -665,30 +722,10 @@ export default function ProductEditPage() {
                     </div>
                   )}
 
-                {/* Attachment Required Checkbox for all services */}
-                {form.productType && (
-                  <div className="mt-4">
-                    <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="isAttachmentRequired"
-                        checked={!!form.isAttachmentRequired}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-sm font-medium text-slate-700">
-                        Attachment Required
-                      </span>
-                    </label>
-                    <p className="text-slate-500 text-sm mt-1 ml-2">
-                      Check if users need to submit attachments for this service
-                    </p>
-                  </div>
-                )}
-
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Description *
+                    Description{" "}
+                    {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <textarea
                     name="description"
@@ -697,7 +734,7 @@ export default function ProductEditPage() {
                     placeholder="Enter product description"
                     rows={4}
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
-                    required
+                    required={isBookable}
                   />
                 </div>
 
@@ -707,7 +744,6 @@ export default function ProductEditPage() {
                     Product Icon
                   </label>
 
-                  {/* Current Icon Display */}
                   {form.iconUrl && (
                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
                       <div className="flex items-center justify-between mb-3">
@@ -744,21 +780,17 @@ export default function ProductEditPage() {
                     </div>
                   )}
 
-                  {/* Icon Upload Input */}
                   <input
                     type="file"
                     accept="image/*"
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        await handleImageUpload(file, "icon");
-                      }
+                      if (file) await handleImageUpload(file, "icon");
                     }}
                   />
                   <p className="text-slate-500 text-sm mt-1">
-                    Upload a square icon image (recommended: 64x64px or
-                    128x128px)
+                    Upload a square icon image (64–128px)
                   </p>
                 </div>
 
@@ -768,7 +800,6 @@ export default function ProductEditPage() {
                     Product Thumbnail
                   </label>
 
-                  {/* Current Thumbnail Display */}
                   {form.thumbnailUrl && (
                     <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
                       <div className="flex items-center justify-between mb-3">
@@ -805,21 +836,17 @@ export default function ProductEditPage() {
                     </div>
                   )}
 
-                  {/* Thumbnail Upload Input */}
                   <input
                     type="file"
                     accept="image/*"
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        await handleImageUpload(file, "thumbnail");
-                      }
+                      if (file) await handleImageUpload(file, "thumbnail");
                     }}
                   />
                   <p className="text-slate-500 text-sm mt-1">
-                    Upload a thumbnail image (recommended: 400x300px or 16:9
-                    aspect ratio)
+                    Recommended: 16:9 or ~400×300px
                   </p>
                 </div>
 
@@ -846,14 +873,15 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Delivery Mode *
+                    Delivery Mode{" "}
+                    {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <select
                     name="deliveryMode"
                     value={form.deliveryMode || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    required
+                    required={isBookable}
                   >
                     <option value="">Select Delivery Mode</option>
                     {DELIVERY_MODE_OPTIONS.map((mode) => (
@@ -866,14 +894,15 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Session Type *
+                    Session Type{" "}
+                    {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <select
                     name="sessionType"
                     value={form.sessionType || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    required
+                    required={isBookable}
                   >
                     <option value="">Select Session Type</option>
                     {SESSION_TYPE_OPTIONS.map((type) => (
@@ -887,7 +916,8 @@ export default function ProductEditPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Program Length *
+                      Program Length{" "}
+                      {isBookable && <span className="text-red-500">*</span>}
                     </label>
                     <Input
                       name="programLength"
@@ -897,19 +927,20 @@ export default function ProductEditPage() {
                       min={0}
                       placeholder="e.g., 8"
                       className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      required
+                      required={isBookable}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Mode *
+                      Mode{" "}
+                      {isBookable && <span className="text-red-500">*</span>}
                     </label>
                     <select
                       name="mode"
                       value={form.mode || ""}
                       onChange={handleChange}
                       className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      required
+                      required={isBookable}
                     >
                       <option value="">Select Mode</option>
                       {MODE_OPTIONS.map((opt) => (
@@ -932,18 +963,19 @@ export default function ProductEditPage() {
                 <PricingForm value={pricing} onChange={setPricing} />
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Duration (minutes) *
+                    Duration (minutes){" "}
+                    {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <Input
                     name="durationInMinutes"
-                    value={form.durationInMinutes || ""}
+                    value={form.durationInMinutes ?? ""}
                     onChange={handleChange}
                     type="number"
                     min={1}
                     max={120}
                     placeholder="Total duration (1-120 minutes)"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    required
+                    required={isBookable}
                   />
                   {form.durationInMinutes &&
                     (form.durationInMinutes < 1 ||
@@ -955,18 +987,19 @@ export default function ProductEditPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Minutes Per Session *
+                    Minutes Per Session{" "}
+                    {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <Input
                     name="minutesPerSession"
-                    value={form.minutesPerSession || ""}
+                    value={form.minutesPerSession ?? ""}
                     onChange={handleChange}
                     type="number"
                     min={1}
                     max={120}
                     placeholder="Per session duration (1-120 minutes)"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    required
+                    required={isBookable}
                   />
                   {form.minutesPerSession &&
                     (form.minutesPerSession < 1 ||
@@ -979,7 +1012,7 @@ export default function ProductEditPage() {
               </div>
             </div>
 
-            {/* Features */}
+            {/* Features (minus Bookable Service, since it's now in Basic Info) */}
             <div className="mt-8 pt-8 border-t border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">
                 Features
@@ -992,7 +1025,7 @@ export default function ProductEditPage() {
                   { key: "hasSession", label: "Has Session" },
                   { key: "requiresBooking", label: "Requires Booking" },
                   { key: "requiresEnrollment", label: "Requires Enrollment" },
-                  { key: "isBookableService", label: "Bookable Service" },
+                  // removed isBookableService from here
                   { key: "isRecurring", label: "Recurring" },
                 ].map(({ key, label }) => (
                   <label
@@ -1051,7 +1084,7 @@ export default function ProductEditPage() {
               </label>
             </div>
 
-            {/* Form Actions */}
+            {/* Actions */}
             <div className="mt-8 pt-8 border-t border-slate-200">
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <Link href={`/dashboard/products/${params.id}`}>
@@ -1081,7 +1114,8 @@ export default function ProductEditPage() {
                 </button>
               </div>
             </div>
-            {/* Success/Error Messages */}
+
+            {/* Messages */}
             {success && (
               <div className="my-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
                 <div className="flex items-center gap-3">
