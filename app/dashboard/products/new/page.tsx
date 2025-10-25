@@ -139,7 +139,7 @@ export default function CreateProductPage() {
 
   // Derived booleans used everywhere
   const isBookable = !!form.isBookableService;
-  const instructorRequired = isBookable && form.productType !== "Tools";
+  const instructorRequired = isBookable;
 
   const addTag = () => {
     const trimmedTag = tagInput.trim();
@@ -479,17 +479,10 @@ export default function CreateProductPage() {
       { field: "category", label: "Product Category" },
       { field: "subcategory", label: "Product Subcategory" },
       { field: "service", label: "Service" },
-      { field: "deliveryMode", label: "Delivery Mode" },
-      { field: "sessionType", label: "Session Type" },
-      { field: "programLength", label: "Program Length" },
-      { field: "mode", label: "Mode" },
-      { field: "durationInMinutes", label: "Duration in Minutes" },
-      { field: "minutesPerSession", label: "Minutes Per Session" },
-      { field: "description", label: "Description" },
       { field: "slug", label: "Slug" },
     ];
 
-    // Training materials required for these product types
+    // Training materials required for specific product types
     if (requiresTrainingMaterials(form.productType)) {
       requiredFields.push({
         field: "materialUrl",
@@ -497,25 +490,52 @@ export default function CreateProductPage() {
       });
     }
 
-    // Conditionally require scheduling + instructor based on bookable + tools rule
+    // Bookable-only requirements
     if (isBookable) {
-      requiredFields.push({
-        field: "publicSchedulingUrl",
-        label: "Booking Scheduling Link",
-      });
+      requiredFields.push(
+        { field: "publicSchedulingUrl", label: "Booking Scheduling Link" },
+        { field: "deliveryMode", label: "Delivery Mode" },
+        { field: "sessionType", label: "Session Type" },
+        { field: "programLength", label: "Program Length" },
+        { field: "mode", label: "Mode" },
+        { field: "durationInMinutes", label: "Duration in Minutes" },
+        { field: "minutesPerSession", label: "Minutes Per Session" },
+        { field: "description", label: "Description" }
+      );
+
       if (instructorRequired) {
         requiredFields.push({ field: "instructorId", label: "Instructor" });
       }
     }
 
     // Duration guards
-    if (form.durationInMinutes < 1 || form.durationInMinutes > 120) {
-      setError("Duration must be between 1 and 120 minutes.");
-      return;
-    }
-    if (form.minutesPerSession < 1 || form.minutesPerSession > 120) {
-      setError("Minutes per session must be between 1 and 120 minutes.");
-      return;
+    if (isBookable) {
+      if (form.durationInMinutes < 1 || form.durationInMinutes > 120) {
+        setError("Duration must be between 1 and 120 minutes.");
+        return;
+      }
+      if (form.minutesPerSession < 1 || form.minutesPerSession > 120) {
+        setError("Minutes per session must be between 1 and 120 minutes.");
+        return;
+      }
+    } else {
+      // Optional: only warn if the user entered a non-zero value out of range
+      if (
+        form.durationInMinutes > 0 &&
+        (form.durationInMinutes < 1 || form.durationInMinutes > 120)
+      ) {
+        setError("Duration must be between 1 and 120 minutes (if provided).");
+        return;
+      }
+      if (
+        form.minutesPerSession > 0 &&
+        (form.minutesPerSession < 1 || form.minutesPerSession > 120)
+      ) {
+        setError(
+          "Minutes per session must be between 1 and 120 (if provided)."
+        );
+        return;
+      }
     }
 
     const missingFields = requiredFields.filter(({ field }) => {
@@ -588,6 +608,7 @@ export default function CreateProductPage() {
         hasAssessment: !!form.hasAssessment,
         requiresBooking: !!form.requiresBooking,
         requiresEnrollment: !!form.requiresEnrollment,
+        instructorRequired: !!form.instructorRequired,
         hasCertificate: !!form.hasCertificate,
         isBookableService: !!form.isBookableService,
         nonBookableService: !!form.nonBookableService, // ← NEW
@@ -805,8 +826,8 @@ export default function CreateProductPage() {
                         </span>
                       </label>
                       <p className="text-slate-500 text-xs mt-1 ml-2">
-                        If enabled, customers will schedule sessions. Instructor
-                        becomes required except for the “Tools” product type.
+                        If enabled, customers will schedule sessions. An
+                        instructor is required when this is bookable.
                       </p>
                     </div>
 
@@ -1258,7 +1279,7 @@ export default function CreateProductPage() {
                   value={form.deliveryMode}
                   onChange={handleChange}
                   className="w-full border rounded-[10px] p-2"
-                  required
+                  required={isBookable}
                 >
                   <option value="">Select Delivery Mode</option>
                   {DELIVERY_MODE_OPTIONS.map((mode) => (
@@ -1275,7 +1296,7 @@ export default function CreateProductPage() {
                   value={form.sessionType}
                   onChange={handleChange}
                   className="w-full border rounded-[10px] p-2"
-                  required
+                  required={isBookable}
                 >
                   <option value="">Select Session Type</option>
                   {SESSION_TYPE_OPTIONS.map((type) => (
