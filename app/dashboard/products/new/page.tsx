@@ -47,6 +47,7 @@ const initialForm = {
   hasSession: false,
   hasAssessment: false,
   isBookableService: false,
+  nonBookableService: true, // ← NEW (unchecked bookable = non-bookable)
   programLength: 0,
   mode: "",
   durationInMinutes: 0,
@@ -136,6 +137,10 @@ export default function CreateProductPage() {
     installments: undefined,
   });
 
+  // Derived booleans used everywhere
+  const isBookable = !!form.isBookableService;
+  const instructorRequired = isBookable && form.productType !== "Tools";
+
   const addTag = () => {
     const trimmedTag = tagInput.trim();
     if (trimmedTag && !form.tags.includes(trimmedTag)) {
@@ -147,9 +152,6 @@ export default function CreateProductPage() {
     }
   };
 
-  const isBookableServiceType = (productType: string) =>
-    PRODUCT_TYPE_OPTIONS.includes(productType);
-
   const requiresTrainingMaterials = (productType: string) => {
     return [
       "Training & Certification",
@@ -160,8 +162,10 @@ export default function CreateProductPage() {
 
   const getServiceTypeDescription = () => {
     if (!form.productType) return "";
-    if (isBookableServiceType(form.productType)) {
-      return "This is a bookable service that requires an instructor. Users can book sessions with specific instructors.";
+    if (isBookable) {
+      return form.productType === "Tools"
+        ? "This is a bookable service. Users can schedule sessions. Instructor is optional for this product type."
+        : "This is a bookable service that typically involves an instructor. Users can book sessions with specific instructors.";
     } else {
       return "This is a non-bookable service. Users can access this service without booking with a specific instructor.";
     }
@@ -398,6 +402,17 @@ export default function CreateProductPage() {
       return;
     }
 
+    // keep nonBookableService mirrored to the inverse of isBookableService
+    if (name === "isBookableService") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setForm((prev: any) => ({
+        ...prev,
+        isBookableService: checked,
+        nonBookableService: !checked,
+      }));
+      return;
+    }
+
     setForm((prev: any) => ({
       ...prev,
       [name]:
@@ -458,13 +473,12 @@ export default function CreateProductPage() {
     e.preventDefault();
     if (step !== steps.length - 1) return;
 
-    // Required fields
+    // Required fields (baseline)
     const requiredFields = [
       { field: "productType", label: "Product Type" },
       { field: "category", label: "Product Category" },
       { field: "subcategory", label: "Product Subcategory" },
       { field: "service", label: "Service" },
-      { field: "publicSchedulingUrl", label: "Booking Scheduling Link" },
       { field: "deliveryMode", label: "Delivery Mode" },
       { field: "sessionType", label: "Session Type" },
       { field: "programLength", label: "Program Length" },
@@ -475,16 +489,26 @@ export default function CreateProductPage() {
       { field: "slug", label: "Slug" },
     ];
 
-    if (form.productType === "Training & Certification") {
+    // Training materials required for these product types
+    if (requiresTrainingMaterials(form.productType)) {
       requiredFields.push({
         field: "materialUrl",
         label: "Training Materials",
       });
     }
-    if (isBookableServiceType(form.productType) && !form.instructorId) {
-      requiredFields.push({ field: "instructorId", label: "Instructor" });
+
+    // Conditionally require scheduling + instructor based on bookable + tools rule
+    if (isBookable) {
+      requiredFields.push({
+        field: "publicSchedulingUrl",
+        label: "Booking Scheduling Link",
+      });
+      if (instructorRequired) {
+        requiredFields.push({ field: "instructorId", label: "Instructor" });
+      }
     }
 
+    // Duration guards
     if (form.durationInMinutes < 1 || form.durationInMinutes > 120) {
       setError("Duration must be between 1 and 120 minutes.");
       return;
@@ -498,7 +522,7 @@ export default function CreateProductPage() {
       const value = form[field];
       if (value === null || value === undefined) return true;
       if (typeof value === "string") return value.trim() === "";
-      if (typeof value === "number") return value <= 0; // programLength may be 0 allowed; but it's marked required above
+      if (typeof value === "number") return value <= 0;
       return false;
     });
 
@@ -565,10 +589,9 @@ export default function CreateProductPage() {
         requiresBooking: !!form.requiresBooking,
         requiresEnrollment: !!form.requiresEnrollment,
         hasCertificate: !!form.hasCertificate,
-        isBookableService: isBookableServiceType(form.productType),
-        instructorId: isBookableServiceType(form.productType)
-          ? form.instructorId || null
-          : null,
+        isBookableService: !!form.isBookableService,
+        nonBookableService: !!form.nonBookableService, // ← NEW
+        instructorId: instructorRequired ? form.instructorId || null : null,
 
         // --- Scheduling & duration ---
         programLength: Number(form.programLength) || 0,
@@ -724,7 +747,7 @@ export default function CreateProductPage() {
                     {form.productType && (
                       <div
                         className={`p-4 rounded-2xl border-2 ${
-                          isBookableServiceType(form.productType)
+                          isBookable
                             ? "bg-blue-50 border-blue-200"
                             : "bg-green-50 border-green-200"
                         }`}
@@ -732,28 +755,22 @@ export default function CreateProductPage() {
                         <div className="flex items-center gap-2 mb-2">
                           <div
                             className={`w-3 h-3 rounded-full ${
-                              isBookableServiceType(form.productType)
-                                ? "bg-blue-500"
-                                : "bg-green-500"
+                              isBookable ? "bg-blue-500" : "bg-green-500"
                             }`}
                           ></div>
                           <span
                             className={`font-semibold text-sm ${
-                              isBookableServiceType(form.productType)
-                                ? "text-blue-700"
-                                : "text-green-700"
+                              isBookable ? "text-blue-700" : "text-green-700"
                             }`}
                           >
-                            {isBookableServiceType(form.productType)
-                              ? "Bookable Service with Instructor"
+                            {isBookable
+                              ? "Bookable Service"
                               : "Non-Bookable Service"}
                           </span>
                         </div>
                         <p
                           className={`text-sm ${
-                            isBookableServiceType(form.productType)
-                              ? "text-blue-600"
-                              : "text-green-600"
+                            isBookable ? "text-blue-600" : "text-green-600"
                           }`}
                         >
                           {getServiceTypeDescription()}
@@ -773,8 +790,29 @@ export default function CreateProductPage() {
                       required
                     />
 
+                    {/* NEW: Bookable toggle moved here */}
+                    <div className="mt-2">
+                      <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="isBookableService"
+                          checked={!!form.isBookableService}
+                          onChange={handleChange}
+                          className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">
+                          Bookable Service
+                        </span>
+                      </label>
+                      <p className="text-slate-500 text-xs mt-1 ml-2">
+                        If enabled, customers will schedule sessions. Instructor
+                        becomes required except for the “Tools” product type.
+                      </p>
+                    </div>
+
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Booking Scheduling Link *
+                      Booking Scheduling Link{" "}
+                      {isBookable && <span className="text-red-500">*</span>}
                     </label>
                     <Input
                       name="publicSchedulingUrl"
@@ -782,7 +820,8 @@ export default function CreateProductPage() {
                       onChange={handleChange}
                       placeholder="Generate the scheduling link for the service"
                       className="px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      required
+                      required={isBookable}
+                      disabled={!isBookable}
                     />
 
                     {/* Training materials */}
@@ -1090,7 +1129,7 @@ export default function CreateProductPage() {
 
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
                       Assign Instructor{" "}
-                      {isBookableServiceType(form.productType) && (
+                      {instructorRequired && (
                         <span className="text-red-500">*</span>
                       )}
                     </label>
@@ -1099,18 +1138,19 @@ export default function CreateProductPage() {
                       value={form.instructorId}
                       onChange={handleChange}
                       className={`w-full px-4 py-6 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                        isBookableServiceType(form.productType) &&
-                        !form.instructorId
+                        instructorRequired && !form.instructorId
                           ? "border-red-300 focus:ring-red-500"
                           : "border-slate-200"
                       }`}
-                      disabled={instructorsLoading}
-                      required={isBookableServiceType(form.productType)}
+                      disabled={!isBookable || instructorsLoading}
+                      required={instructorRequired}
                     >
                       <option value="">
                         {instructorsLoading
                           ? "Loading instructors..."
-                          : isBookableServiceType(form.productType)
+                          : !isBookable
+                          ? "Select Instructor (Disabled for non-bookable)"
+                          : instructorRequired
                           ? "Select Instructor (Required)"
                           : "Select Instructor (Optional)"}
                       </option>
@@ -1250,7 +1290,7 @@ export default function CreateProductPage() {
                     { key: "hasCertificate", label: "Has Certificate" },
                     { key: "hasClassroom", label: "Has Classroom" },
                     { key: "hasSession", label: "Has Session" },
-                    { key: "isBookableService", label: "Bookable Service" },
+                    // REMOVED isBookableService from here (moved to Step 0)
                     { key: "hasAssessment", label: "Has Assessment" },
                   ].map(({ key, label }) => (
                     <label
@@ -1600,13 +1640,11 @@ export default function CreateProductPage() {
                       <span className="font-medium">Service Type:</span>{" "}
                       <span
                         className={`font-semibold ${
-                          isBookableServiceType(form.productType)
-                            ? "text-blue-600"
-                            : "text-green-600"
+                          isBookable ? "text-blue-600" : "text-green-600"
                         }`}
                       >
-                        {isBookableServiceType(form.productType)
-                          ? "Bookable Service with Instructor"
+                        {isBookable
+                          ? "Bookable Service"
                           : "Non-Bookable Service"}
                       </span>
                     </div>
@@ -1649,14 +1687,16 @@ export default function CreateProductPage() {
                       <span className="font-medium">Subcategory:</span>{" "}
                       {form.subcategory}
                     </div>
-                    {isBookableServiceType(form.productType) && (
+                    {isBookable && (
                       <div>
                         <span className="font-medium">Instructor:</span>{" "}
                         {form.instructorId
                           ? instructors.find(
                               (i) => i.userId === form.instructorId
                             )?.fullName || "Selected"
-                          : "Not assigned"}
+                          : instructorRequired
+                          ? "Not assigned"
+                          : "Optional"}
                       </div>
                     )}
                   </div>

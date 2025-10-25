@@ -5,8 +5,8 @@ export const PRODUCT_TYPE_OPTIONS = [
   "Corporate & Business Consultancy",
   "Career Connect",
   // "Institutional & Team Services",
-  // "AI-Powered or Automation Services",
-  // "Marketing, Consultation & Free Services",
+  "Tools",
+  "Marketing, Consultation & Free Services",
 ];
 
 export const DELIVERY_MODE_OPTIONS = ["online", "physical", "hybrid"];

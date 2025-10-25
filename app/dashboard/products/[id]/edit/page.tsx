@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getApiRequest, updateApiRequest } from "@/lib/apiFetch";
+import {
+  getApiRequest,
+  patchApiRequest,
+  updateApiRequest,
+} from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
@@ -31,6 +35,29 @@ const requiresTrainingMaterials = (productType: string) => {
     "Career Development & Mentorship",
   ].includes(productType);
 };
+
+// Build + sanitize pricing
+const ALLOWED_MODELS = ["one_time", "subscription", "per_unit"] as const;
+const ALLOWED_CURRENCIES = [
+  "usd",
+  "eur",
+  "gbp",
+  "cad",
+  "aud",
+  "jpy",
+  "inr",
+  "ngn",
+] as const;
+const normModel = (m: unknown) =>
+  (["one_time", "subscription", "per_unit"].includes(
+    String(m).toLowerCase().replace(/-/g, "_")
+  )
+    ? String(m).toLowerCase().replace(/-/g, "_")
+    : "one_time") as (typeof ALLOWED_MODELS)[number];
+const normCurrency = (c: unknown) =>
+  (ALLOWED_CURRENCIES.includes(String(c || "gbp").toLowerCase() as any)
+    ? String(c).toLowerCase()
+    : "gbp") as (typeof ALLOWED_CURRENCIES)[number];
 
 export default function ProductEditPage() {
   const params = useParams();
@@ -307,13 +334,37 @@ export default function ProductEditPage() {
         tags: Array.isArray(form.tags) ? form.tags : [],
       } as const;
 
-      // Build pricing payload
-      const pricingPayload = pickPricingForApi(pricing as Pricing);
+      // Build + sanitize pricing payload
+      const rawPricing = pickPricingForApi(pricing as Pricing);
+      const pricingPayload = {
+        ...rawPricing,
+        model: normModel((rawPricing as any)?.model ?? pricing.model),
+        currency: normCurrency(
+          (rawPricing as any)?.currency ?? pricing.currency
+        ),
+      };
+      // Optional: sanity guard to avoid sending unexpected fields
+      // delete (pricingPayload as any).discountPercent; // if your API expects discountPercentage instead
+      // delete (pricingPayload as any).unknownKey;
+
+      if (!ALLOWED_MODELS.includes(pricingPayload.model)) {
+        setError(`Pricing model must be one of: ${ALLOWED_MODELS.join(", ")}`);
+        setSaving(false);
+        return;
+      }
+      if (!ALLOWED_CURRENCIES.includes(pricingPayload.currency)) {
+        setError(`Currency must be one of: ${ALLOWED_CURRENCIES.join(", ")}`);
+        setSaving(false);
+        return;
+      }
+
+      // Optional debug:
+      // console.debug("PATCH /pricing payload →", pricingPayload);
 
       // Update both: root + pricing
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
-        updateApiRequest(
+        patchApiRequest(
           `/api/products/${params.id}/pricing`,
           token,
           pricingPayload
@@ -939,7 +990,7 @@ export default function ProductEditPage() {
                   { key: "hasAssessment", label: "Has Assessment" },
                   { key: "hasClassroom", label: "Has Classroom" },
                   { key: "hasSession", label: "Has Session" },
-                  { key: "requ+iresBooking", label: "Requires Booking" },
+                  { key: "requiresBooking", label: "Requires Booking" },
                   { key: "requiresEnrollment", label: "Requires Enrollment" },
                   { key: "isBookableService", label: "Bookable Service" },
                   { key: "isRecurring", label: "Recurring" },
