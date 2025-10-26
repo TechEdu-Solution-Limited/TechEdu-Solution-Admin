@@ -37,6 +37,7 @@ import {
   PricingModel,
   Tier,
   TierType,
+  UnitType,
 } from "@/lib/constants/pricing";
 
 /*************************
@@ -672,7 +673,7 @@ const defaultPricing: Pricing = {
   vatPercentage: 0,
   discountPercent: 0,
   basePrice: 0,
-  unitName: "participant",
+  unitName: "team",
   allowQuantity: false,
   minQty: 1,
   maxQty: 1000,
@@ -779,7 +780,7 @@ export function PricingForm({
               <RadioGroupItem value="subscription" /> Subscription
             </Label>
             <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
-              <RadioGroupItem value="per_unit" /> Per-person
+              <RadioGroupItem value="per_unit" /> Per-unit
             </Label>
           </RadioGroup>
         </CardContent>
@@ -1126,21 +1127,28 @@ export function PricingForm({
           {v.model === "per_unit" && (
             <Card className="rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-base">Per-person Settings</CardTitle>
+                <CardTitle className="text-base">Per-unit Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4 flex-wrap">
                   {CurrencySelect}
                   <div className="space-y-1">
-                    <Label>Unit label</Label>
-                    <Input
-                      value={v.unitName || "participant"}
-                      onChange={(e) =>
-                        apply({ unitName: e.target.value || "participant" })
+                    <Label>Unit Name</Label>
+                    <Select
+                      value={v.unitName}
+                      onValueChange={(val: UnitType) =>
+                        apply({ unitName: val })
                       }
-                      disabled={disabled}
-                      className="w-[220px] rounded-[10px]"
-                    />
+                      required
+                    >
+                      <SelectTrigger className="w-[200px] rounded-[10px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white rounded-[10px]">
+                        <SelectItem value="team">Team</SelectItem>
+                        <SelectItem value="person">Person</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1">
                     <Label>Allow quantity</Label>
@@ -1159,6 +1167,7 @@ export function PricingForm({
                     <Input
                       type="number"
                       min={1}
+                      step="1"
                       value={v.minQty ?? 1}
                       onChange={(e) =>
                         apply({ minQty: Number(e.target.value || 1) })
@@ -1171,8 +1180,10 @@ export function PricingForm({
                     <Label>Max qty</Label>
                     <Input
                       type="number"
-                      min={v.minQty ?? 1}
-                      value={v.maxQty ?? 1000}
+                      min={1}
+                      max={1000}
+                      step="1"
+                      value={v.maxQty ?? 2}
                       onChange={(e) =>
                         apply({
                           maxQty: Number(e.target.value || v.minQty || 1),
@@ -1213,9 +1224,9 @@ export function PricingForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white rounded-[10px]">
-                        <SelectItem value="none">None</SelectItem>
+                        {/* <SelectItem value="none">None</SelectItem> */}
                         <SelectItem value="volume">Volume</SelectItem>
-                        <SelectItem value="graduated">Graduated</SelectItem>
+                        {/* <SelectItem value="graduated">Graduated</SelectItem> */}
                         <SelectItem value="stairstep">Stairstep</SelectItem>
                       </SelectContent>
                     </Select>

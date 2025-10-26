@@ -613,10 +613,10 @@ export default function CreateProductPage() {
         isBookableService: !!form.isBookableService,
         nonBookableService: !!form.nonBookableService, // ← NEW
         instructorId: instructorRequired ? form.instructorId || null : null,
+        mode: form.mode || "weeks",
 
         // --- Scheduling & duration ---
         programLength: Number(form.programLength) || 0,
-        mode: form.mode || "weeks",
         durationInMinutes: Number(form.durationInMinutes) || 0,
         minutesPerSession: Number(form.minutesPerSession) || 0,
         maxParticipants: Number(form.maxParticipants) || 1,
@@ -1329,6 +1329,23 @@ export default function CreateProductPage() {
                     </label>
                   ))}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Mode</label>
+                  <select
+                    name="mode"
+                    value={form.mode}
+                    onChange={handleChange}
+                    className="w-full border rounded-[10px] p-2"
+                  >
+                    <option value="">Select Mode</option>
+                    {MODE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt} className="rounded-[10px]">
+                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             )}
 
@@ -1415,29 +1432,6 @@ export default function CreateProductPage() {
                       min={0}
                       className="rounded-[10px]"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Mode
-                    </label>
-                    <select
-                      name="mode"
-                      value={form.mode}
-                      onChange={handleChange}
-                      className="w-full border rounded-[10px] p-2"
-                    >
-                      <option value="">Select Mode</option>
-                      {MODE_OPTIONS.map((opt) => (
-                        <option
-                          key={opt}
-                          value={opt}
-                          className="rounded-[10px]"
-                        >
-                          {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                 </div>
               </div>

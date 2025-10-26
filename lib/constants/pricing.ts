@@ -14,6 +14,7 @@ export type PricingModel = "one_time" | "subscription" | "per_unit";
 export type Interval = "day" | "week" | "month" | "year";
 export type TierType = "none" | "volume" | "graduated" | "stairstep";
 export type DownPaymentType = "percent" | "amount";
+export type UnitType = "team" | "person";
 
 export interface Tier {
   upTo: number; // inclusive cap
@@ -112,7 +113,7 @@ export const defaultPricing: Pricing = {
   allowQuantity: false,
   minQty: 1,
   maxQty: 1000,
-  tierType: "none",
+  tierType: "volume",
   tiers: [],
   subscriptionPrice: undefined,
   interval: "month",
