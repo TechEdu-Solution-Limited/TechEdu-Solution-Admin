@@ -147,7 +147,7 @@ export default function SubscriptionsPage() {
                 <option value="stripe">Stripe</option>
               </select>
             </div>
-            <div>
+    <div>
               <select
                 className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={String(limit)}

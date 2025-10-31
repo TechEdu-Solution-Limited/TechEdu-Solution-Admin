@@ -59,6 +59,7 @@ const initialForm = {
   iconUrl: "",
   thumbnailUrl: "",
   materialUrl: "",
+  mediaType: "", // For Tools + nonBookableService
   isAttachmentRequired: false,
   publicSchedulingUrl: "",
   enabled: true,
@@ -478,12 +479,12 @@ export default function CreateProductPage() {
       { field: "slug", label: "Slug" },
     ];
 
-    // Training materials required for specific product types
-    if (requiresTrainingMaterials(form.productType)) {
-      requiredFields.push({
-        field: "materialUrl",
-        label: "Training Materials",
-      });
+    // Media type and file required for Tools + nonBookableService + mediaType selected
+    if (form.productType === "Tools" && !form.isBookableService && form.mediaType) {
+      requiredFields.push(
+        { field: "mediaType", label: "Media Type" },
+        { field: "materialUrl", label: "Media File" }
+      );
     }
 
     // Bookable-only requirements
@@ -584,10 +585,10 @@ export default function CreateProductPage() {
 
       const toBackendPricing = (p: Pricing) => {
         if (p.model === "subscription") {
-          return {
+          const payload: any = {
             model: "subscription",
+            priceBasis: p.priceBasis ?? "flat",
             currency: safeCurrency,
-            subscriptionPrice: Number(p.subscriptionPrice ?? p.basePrice ?? 0),
             interval: p.interval || "month",
             intervalCount: p.intervalCount || 1,
             trialDays: p.trialDays ?? 0,
@@ -595,6 +596,29 @@ export default function CreateProductPage() {
             autoRenew: p.autoRenew ?? true,
             minTermMonths: p.minTermMonths ?? 0,
             proration: p.proration ?? true,
+          };
+          // Use basePrice for flat pricing, add per_unit fields if needed
+          if (p.priceBasis === "flat") {
+            payload.basePrice = Number(p.basePrice ?? p.subscriptionPrice ?? 0);
+          } else if (p.priceBasis === "per_unit") {
+            const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+            payload.unitName = unitName;
+            payload.allowQuantity = true;
+            payload.minQty = p.minQty ?? 1;
+            payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
+            payload.tierType = p.tierType || "volume";
+            payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+          }
+          // Add tax fields if present
+          if (p.taxInclusive !== undefined) payload.taxInclusive = p.taxInclusive;
+          if (p.vatPercentage !== undefined) payload.vatPercentage = p.vatPercentage ?? 0;
+          return payload;
+        }
+        
+        if (p.model === "free") {
+          return {
+            model: "free",
+            currency: safeCurrency,
           };
         }
 
@@ -629,6 +653,7 @@ export default function CreateProductPage() {
             provider: p.installments.provider || "in_house",
           };
         }
+        // DO NOT include allowInstallments in payload - backend validates against it when installments is present
         return payload;
       };
 
@@ -645,7 +670,7 @@ export default function CreateProductPage() {
         Math.min(100, Number(pricing.discountPercentage ?? 0))
       );
 
-      const payload = {
+      const payload: any = {
         // --- Basic & meta ---
         productType: form.productType,
         service: form.service,
@@ -690,6 +715,11 @@ export default function CreateProductPage() {
         pricing: backendPricing,
         discountPercentage: rootDiscountPercentage,
       };
+
+      // Add mediaType for Tools + nonBookableService
+      if (form.productType === "Tools" && !form.isBookableService && form.mediaType) {
+        payload.mediaType = form.mediaType;
+      }
 
       // Extra debug for root payload shape (omit large fields)
       try {
@@ -913,6 +943,105 @@ export default function CreateProductPage() {
                       required={isBookable}
                       disabled={!isBookable}
                     />
+
+                    {/* Media Type - only for Tools + nonBookableService */}
+                    {form.productType === "Tools" && !form.isBookableService && (
+                      <>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Media Type *
+                        </label>
+                        <select
+                          name="mediaType"
+                          value={form.mediaType}
+                          onChange={handleChange}
+                          className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          required
+                        >
+                          <option value="">Select Media Type</option>
+                          <option value="file">File</option>
+                          <option value="audio">Audio</option>
+                          <option value="video">Video</option>
+                        </select>
+
+                        {/* Media upload for Tools */}
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Media File * ({form.mediaType || "Select type first"})
+                        </label>
+                        {form.materialUrl && (
+                          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-green-700 text-sm font-medium">
+                                  Current Media File
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleDeleteMaterial}
+                                disabled={loading}
+                                className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
+                              >
+                                {loading ? "Deleting..." : "Delete"}
+                              </button>
+                            </div>
+                            <a
+                              href={form.materialUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm underline"
+                            >
+                              Preview uploaded media
+                            </a>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept={
+                            form.mediaType === "file"
+                              ? ".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                              : form.mediaType === "audio"
+                              ? "audio/*"
+                              : form.mediaType === "video"
+                              ? "video/*"
+                              : "*"
+                          }
+                          className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setLoading(true);
+                              try {
+                                if (form.materialUrl) {
+                                  try {
+                                    await deleteFileFromFirebase(form.materialUrl);
+                                  } catch (deleteErr) {
+                                    console.warn("Failed to delete old media:", deleteErr);
+                                  }
+                                }
+                                const url = await uploadMaterial(file, "tool-media");
+                                setForm((prev: any) => ({
+                                  ...prev,
+                                  materialUrl: url,
+                                }));
+                                toast.success("Media uploaded successfully!");
+                              } catch {
+                                setError("Media upload failed");
+                              } finally {
+                                setLoading(false);
+                              }
+                            }
+                          }}
+                          required
+                          disabled={!form.mediaType}
+                        />
+                        {!form.mediaType && (
+                          <p className="text-slate-500 text-xs mt-1">
+                            Please select a media type first
+                          </p>
+                        )}
+                      </>
+                    )}
 
                     {/* Training materials */}
                     {requiresTrainingMaterials(form.productType) && (

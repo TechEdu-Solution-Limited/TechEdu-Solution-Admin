@@ -396,10 +396,10 @@ export default function ProductEditPage() {
 
       const toBackendPricing = (p: Pricing) => {
         if (p.model === "subscription") {
-          return {
+          const payload: any = {
             model: "subscription",
+            priceBasis: p.priceBasis ?? "flat",
             currency: safeCurrency,
-            subscriptionPrice: Number(p.subscriptionPrice ?? p.basePrice ?? 0),
             interval: p.interval || "month",
             intervalCount: p.intervalCount || 1,
             trialDays: p.trialDays ?? 0,
@@ -407,6 +407,29 @@ export default function ProductEditPage() {
             autoRenew: p.autoRenew ?? true,
             minTermMonths: p.minTermMonths ?? 0,
             proration: p.proration ?? true,
+          };
+          // Use basePrice for flat pricing, add per_unit fields if needed
+          if (p.priceBasis === "flat") {
+            payload.basePrice = Number(p.basePrice ?? p.subscriptionPrice ?? 0);
+          } else if (p.priceBasis === "per_unit") {
+            const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+            payload.unitName = unitName;
+            payload.allowQuantity = true;
+            payload.minQty = p.minQty ?? 1;
+            payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
+            payload.tierType = p.tierType || "volume";
+            payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+          }
+          // Add tax fields if present
+          if (p.taxInclusive !== undefined) payload.taxInclusive = p.taxInclusive;
+          if (p.vatPercentage !== undefined) payload.vatPercentage = p.vatPercentage ?? 0;
+          return payload;
+        }
+        
+        if (p.model === "free") {
+          return {
+            model: "free",
+            currency: safeCurrency,
           };
         }
 
@@ -443,6 +466,7 @@ export default function ProductEditPage() {
             provider: p.installments.provider || "in_house",
           };
         }
+        // DO NOT include allowInstallments in payload - backend validates against it when installments is present
         return payload;
       };
 
@@ -464,7 +488,7 @@ export default function ProductEditPage() {
         patchApiRequest(
           `/api/products/${params.id}/pricing`,
           token,
-          sanitizedPricing
+          { pricing: sanitizedPricing }
         ),
       ]);
 

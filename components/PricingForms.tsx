@@ -98,6 +98,18 @@ export function computeInstallments(total: number, cfg?: InstallmentsConfig) {
  * Price computation (client-side preview)
  *************************/
 export function computePrice(pricing: Pricing, quantity = 1): PriceBreakdown {
+  // Handle free model
+  if (pricing.model === "free") {
+    return {
+      model: "free",
+      quantity: 1,
+      subtotal: 0,
+      discount: 0,
+      net: 0,
+      total: 0,
+    };
+  }
+
   const taxInclusive = pricing.taxInclusive ?? false;
   const vatPct = pricing.vatPercentage ?? 0;
   const discountPct = clamp(pricing.discountPercentage ?? 0, 0, 100);
@@ -126,7 +138,7 @@ export function computePrice(pricing: Pricing, quantity = 1): PriceBreakdown {
     }
 
     if (pricing.model === "subscription") {
-      const priceC = toCents(pricing.subscriptionPrice ?? pricing.basePrice ?? 0);
+      const priceC = toCents(pricing.basePrice ?? 0);
       const setupFeeC = toCents(pricing.setupFee ?? 0);
       const subtotalC = priceC;
       const discountC = pct(subtotalC, discountPct);
@@ -483,7 +495,7 @@ export function PricePreviewCard({
           <div className="space-y-1">
             <div>
               <span className="font-medium">Recurring:</span>{" "}
-              {money(Number((pricing.subscriptionPrice ?? pricing.basePrice ?? 0)))} /{" "}
+              {money(Number((pricing.basePrice ?? 0)))} /{" "}
               {pricing.intervalCount || 1} {pricing.interval || "month"}
             </div>
             {(pricing.trialDays ?? 0) > 0 && (
@@ -806,7 +818,7 @@ export function PricingForm({
 }: PricingFormProps) {
   const v: Pricing = { ...defaultPricing, ...value };
   
-  // Ensure priceBasis is always set
+  // Ensure priceBasis is always set (except for free model)
   if (!v.priceBasis && (v.model === "one_time" || v.model === "subscription")) {
     v.priceBasis = "flat";
   }
@@ -837,6 +849,28 @@ export function PricingForm({
         // Remove installments for subscriptions
         next.allowInstallments = false;
         next.installments = undefined;
+      } else if (patch.model === "free") {
+        // Free model: clear pricing fields, only keep currency
+        // Use type assertion for free model since priceBasis isn't needed
+        const freeNext = next as any;
+        freeNext.priceBasis = undefined;
+        freeNext.basePrice = undefined;
+        freeNext.subscriptionPrice = undefined;
+        freeNext.interval = undefined;
+        freeNext.intervalCount = undefined;
+        next.allowInstallments = false;
+        freeNext.installments = undefined;
+        freeNext.tiers = undefined;
+        freeNext.tierType = undefined;
+        freeNext.unitName = undefined;
+        next.taxInclusive = false;
+        next.vatPercentage = 0;
+        next.discountPercentage = 0;
+        freeNext.trialDays = undefined;
+        freeNext.setupFee = undefined;
+        freeNext.autoRenew = undefined;
+        freeNext.minTermMonths = undefined;
+        freeNext.proration = undefined;
       }
     }
     
@@ -904,7 +938,7 @@ export function PricingForm({
         </CardHeader>
         <CardContent>
           <RadioGroup
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-2"
             value={v.model}
             onValueChange={(val: PriceModel) => apply({ model: val as PriceModel })}
             disabled={disabled}
@@ -915,12 +949,32 @@ export function PricingForm({
             <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
               <RadioGroupItem value="subscription" /> Subscription
             </Label>
+            <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
+              <RadioGroupItem value="free" /> Free
+            </Label>
           </RadioGroup>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 space-y-6">
+          {/* Free model - minimal settings */}
+          {v.model === "free" && (
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-base">Free Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {CurrencySelect}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <p className="text-green-700 text-sm">
+                    This product is free. No pricing configuration is needed.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* One-time */}
           {v.model === "one_time" && (
             <Card className="rounded-2xl">
@@ -1245,9 +1299,9 @@ export function PricingForm({
                       type="number"
                       min={0}
                       step="0.01"
-                      value={v.subscriptionPrice ?? v.basePrice ?? 0}
+                      value={v.basePrice ?? 0}
                       onChange={(e) =>
-                        apply({ subscriptionPrice: Number(e.target.value || 0) })
+                        apply({ basePrice: Number(e.target.value || 0) })
                       }
                       disabled={disabled}
                       className="w-[220px] rounded-[10px]"

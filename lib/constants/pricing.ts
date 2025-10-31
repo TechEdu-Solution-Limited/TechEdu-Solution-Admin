@@ -130,6 +130,15 @@ export const defaultPricing: Pricing = {
 export function normalizePricingForApi(p: Pricing): Pricing {
   const out: Pricing = { ...p };
 
+  // Free model: only keep model and currency
+  if (out.model === "free") {
+    return {
+      model: "free",
+      priceBasis: "flat", // Required by interface but won't be sent to API
+      currency: out.currency,
+    } as Pricing;
+  }
+
   // Never send installments for subscriptions
   if (out.model === "subscription") {
     delete out.allowInstallments;
@@ -154,6 +163,8 @@ export function normalizePricingForApi(p: Pricing): Pricing {
         allowEarlyPayoff: out.installments.allowEarlyPayoff,
         provider: out.installments.provider || "in_house",
       };
+      // DO NOT include allowInstallments - backend rejects it when installments is present
+      delete out.allowInstallments;
     }
   }
 
