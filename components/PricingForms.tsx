@@ -29,12 +29,14 @@ import { Plus, Trash2 } from "lucide-react";
 import {
   Currency,
   currencySymbols,
+  defaultPricing,
   DownPaymentType,
   InstallmentsConfig,
   Interval,
   PriceBreakdown,
+  PriceBasis,
+  PriceModel,
   Pricing,
-  PricingModel,
   Tier,
   TierType,
   UnitType,
@@ -51,13 +53,15 @@ const pct = (baseC: number, p: number) =>
   Math.round((baseC * (Number(p) || 0)) / 100);
 
 export function formatMoney(amount: number, currency: Currency) {
+  // Show "Free" when price is 0
+  if (amount === 0) return "Free";
+  
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency,
     }).format(amount);
   } catch {
-    // Fallback
     return `${currencySymbols[currency]}${Number(amount).toLocaleString()}`;
   }
 }
@@ -77,14 +81,11 @@ export function computeInstallments(total: number, cfg?: InstallmentsConfig) {
       ? pct(totalC, clamp(cfg.downPaymentValue ?? 0, 0, 100))
       : toCents(cfg.downPaymentValue ?? 0);
 
-  // Cap down payment at total
   const downC = Math.min(Math.max(0, rawDownC), totalC);
   const remainderC = Math.max(0, totalC - downC);
 
-  // Split remainder into N equal installments
   const each = Math.floor(remainderC / count);
   const planC = Array.from({ length: count }, () => each);
-  // Fix rounding on the last installment
   planC[planC.length - 1] += remainderC - each * count;
 
   return {
@@ -97,176 +98,150 @@ export function computeInstallments(total: number, cfg?: InstallmentsConfig) {
  * Price computation (client-side preview)
  *************************/
 export function computePrice(pricing: Pricing, quantity = 1): PriceBreakdown {
-  const taxInclusive = pricing.taxInclusive ?? true;
+  const taxInclusive = pricing.taxInclusive ?? false;
   const vatPct = pricing.vatPercentage ?? 0;
-  const discountPct = clamp(pricing.discountPercent ?? 0, 0, 100);
+  const discountPct = clamp(pricing.discountPercentage ?? 0, 0, 100);
+  const hasVat = vatPct > 0;
 
-  if (pricing.model === "one_time") {
-    const subtotalC = toCents(pricing.basePrice ?? 0);
-    const discountC = pct(subtotalC, discountPct);
-    const netC = subtotalC - discountC;
-    const vatC = taxInclusive ? 0 : pct(netC, vatPct);
-    const totalC = netC + vatC;
+  // Handle flat pricing (one_time or subscription with flat basis)
+  if (pricing.priceBasis === "flat") {
+    if (pricing.model === "one_time") {
+      const subtotalC = toCents(pricing.basePrice ?? 0);
+      const discountC = pct(subtotalC, discountPct);
+      const netC = subtotalC - discountC;
+      // Only calculate VAT if VAT percentage is set and tax is not inclusive
+      const vatC = hasVat && !taxInclusive ? pct(netC, vatPct) : 0;
+      const totalC = netC + vatC;
 
-    return {
-      model: "one_time",
-      quantity: 1,
-      unitPrice: fromCents(subtotalC),
-      subtotal: fromCents(subtotalC),
-      discount: fromCents(discountC),
-      net: fromCents(netC),
-      vat: fromCents(vatC),
-      total: fromCents(totalC),
-    };
+      return {
+        model: "one_time",
+        quantity: 1,
+        unitPrice: fromCents(subtotalC),
+        subtotal: fromCents(subtotalC),
+        discount: fromCents(discountC),
+        net: fromCents(netC),
+        vat: hasVat && !taxInclusive ? fromCents(vatC) : undefined,
+        total: fromCents(totalC),
+      };
+    }
+
+    if (pricing.model === "subscription") {
+      const priceC = toCents(pricing.subscriptionPrice ?? pricing.basePrice ?? 0);
+      const setupFeeC = toCents(pricing.setupFee ?? 0);
+      const subtotalC = priceC;
+      const discountC = pct(subtotalC, discountPct);
+      const netC = subtotalC - discountC;
+      // Only calculate VAT if VAT percentage is set and tax is not inclusive
+      const vatC = hasVat && !taxInclusive ? pct(netC, vatPct) : 0;
+      // Setup fee is added to total, but typically not subject to discount/VAT (depends on business logic)
+      // Here we add it after VAT for "due now" calculation
+      const totalC = netC + vatC + setupFeeC;
+
+      return {
+        model: "subscription",
+        quantity: 1,
+        unitPrice: fromCents(priceC),
+        interval: pricing.interval || "month",
+        intervalCount: pricing.intervalCount || 1,
+        subtotal: fromCents(subtotalC),
+        discount: fromCents(discountC),
+        net: fromCents(netC),
+        vat: hasVat && !taxInclusive ? fromCents(vatC) : undefined,
+        setupFee: fromCents(setupFeeC),
+        total: fromCents(totalC),
+      };
+    }
   }
 
-  if (pricing.model === "subscription") {
-    const priceC = toCents(pricing.subscriptionPrice ?? 0);
-    const setupC = toCents(pricing.setupFee ?? 0);
-    const subtotalC = priceC + setupC;
-    const discountC = pct(subtotalC, discountPct); // optional: discount applied to first invoice preview
-    const netC = subtotalC - discountC;
-    const vatC = taxInclusive ? 0 : pct(netC, vatPct);
-    const totalC = netC + vatC;
+  // Handle per_unit pricing (one_time or subscription with per_unit basis)
+  if (pricing.priceBasis === "per_unit") {
+    const qMin = Math.max(pricing.minQty ?? 1, 1);
+    const qMax = Math.max(pricing.maxQty ?? 1000, qMin);
+    const q = clamp(quantity || qMin, qMin, qMax);
+    const tierType: TierType = pricing.tierType || "volume";
+    const tiers = (pricing.tiers || []).slice().sort((a, b) => a.upTo - b.upTo);
 
-    return {
-      model: "subscription",
-      quantity: 1,
-      unitPrice: fromCents(priceC),
-      setupFee: fromCents(setupC),
-      interval: pricing.interval || "month",
-      intervalCount: pricing.intervalCount || 1,
-      subtotal: fromCents(subtotalC),
-      discount: fromCents(discountC),
-      net: fromCents(netC),
-      vat: fromCents(vatC),
-      total: fromCents(totalC),
-    };
-  }
-
-  // per_unit
-  const qMin = Math.max(pricing.minQty ?? 1, 1);
-  const qMax = Math.max(pricing.maxQty ?? 1000, qMin);
-  const q = clamp(quantity || qMin, qMin, qMax);
-  const tierType: TierType = pricing.tierType || "none";
-
-  if (tierType === "none") {
-    const unitC = toCents(pricing.basePrice ?? 0);
-    const subtotalC = unitC * q;
-    const discountC = pct(subtotalC, discountPct);
-    const netC = subtotalC - discountC;
-    const vatC = taxInclusive ? 0 : pct(netC, vatPct);
-    const totalC = netC + vatC;
-
-    return {
-      model: "per_unit",
-      quantity: q,
-      unitPrice: fromCents(unitC),
-      subtotal: fromCents(subtotalC),
-      discount: fromCents(discountC),
-      net: fromCents(netC),
-      vat: fromCents(vatC),
-      total: fromCents(totalC),
-      tierType,
-    };
-  }
-
-  // volume / graduated / stairstep
-  const tiers = (pricing.tiers || []).slice().sort((a, b) => a.upTo - b.upTo);
-
-  if (tiers.length === 0) {
-    return {
-      model: "per_unit",
-      quantity: q,
-      subtotal: 0,
-      discount: 0,
-      net: 0,
-      vat: 0,
-      total: 0,
-      tierType,
-    };
-  }
+    if (tiers.length === 0) {
+      return {
+        model: pricing.model,
+        quantity: q,
+        subtotal: 0,
+        discount: 0,
+        net: 0,
+        vat: undefined,
+        total: 0,
+        tierType,
+      };
+    }
 
   if (tierType === "volume") {
-    let unit = tiers[tiers.length - 1].unitPrice;
-    for (const t of tiers) {
-      if (q <= t.upTo) {
-        unit = t.unitPrice;
-        break;
-      }
-    }
-    const unitC = toCents(unit);
-    const subtotalC = unitC * q;
-    const discountC = pct(subtotalC, discountPct);
-    const netC = subtotalC - discountC;
-    const vatC = taxInclusive ? 0 : pct(netC, vatPct);
-    const totalC = netC + vatC;
+      // Volume: per-unit pricing within each tier
+    let idx = tiers.findIndex((t) => q <= t.upTo);
+    if (idx === -1) idx = tiers.length - 1;
 
-    return {
-      model: "per_unit",
-      quantity: q,
-      unitPrice: fromCents(unitC),
-      subtotal: fromCents(subtotalC),
-      discount: fromCents(discountC),
-      net: fromCents(netC),
-      vat: fromCents(vatC),
-      total: fromCents(totalC),
-      tierType,
-    };
-  }
+    const t = tiers[idx];
+    const isLast = idx === tiers.length - 1;
+    const effectiveQty = isLast ? q : t.upTo;
 
-  // graduated / stairstep (treated similarly for preview)
-  let remaining = q;
-  let lastCap = 0;
-  let subtotalC = 0;
-  const graduatedDetail: Array<{
-    qty: number;
-    unitPrice: number;
-    line: number;
-  }> = [];
-  for (const t of tiers) {
-    const span = Math.max(Math.min(remaining, t.upTo - lastCap), 0);
-    if (span > 0) {
       const unitC = toCents(t.unitPrice);
-      const lineC = unitC * span;
-      subtotalC += lineC;
-      graduatedDetail.push({
-        qty: span,
-        unitPrice: t.unitPrice,
-        line: fromCents(lineC),
-      });
-      remaining -= span;
-      lastCap = t.upTo;
+      const bandFlatC = unitC * effectiveQty;
+      const discountC = pct(bandFlatC, discountPct);
+      const netC = bandFlatC - discountC;
+      // Only calculate VAT if VAT percentage is set and tax is not inclusive
+      const vatC = hasVat && !taxInclusive ? pct(netC, vatPct) : 0;
+      const totalC = netC + vatC;
+
+      return {
+        model: pricing.model,
+        quantity: q,
+        unitPrice: fromCents(unitC),
+        subtotal: fromCents(bandFlatC),
+        discount: fromCents(discountC),
+        net: fromCents(netC),
+        vat: hasVat && !taxInclusive ? fromCents(vatC) : undefined,
+        total: fromCents(totalC),
+        tierType,
+        interval: pricing.interval,
+        intervalCount: pricing.intervalCount,
+      };
     }
-    if (remaining <= 0) break;
-  }
-  if (remaining > 0) {
-    const last = tiers[tiers.length - 1];
-    const unitC = toCents(last.unitPrice);
-    const lineC = unitC * remaining;
-    subtotalC += lineC;
-    graduatedDetail.push({
-      qty: remaining,
-      unitPrice: last.unitPrice,
-      line: fromCents(lineC),
-    });
+
+    if (tierType === "stairstep") {
+      // Stairstep: flat tier price for the hit band
+      let idx = tiers.findIndex((t) => q <= t.upTo);
+      if (idx === -1) idx = tiers.length - 1;
+      const t = tiers[idx];
+      const flatC = toCents(t.unitPrice);
+      const discountC = pct(flatC, discountPct);
+      const netC = flatC - discountC;
+      // Only calculate VAT if VAT percentage is set and tax is not inclusive
+      const vatC = hasVat && !taxInclusive ? pct(netC, vatPct) : 0;
+      const totalC = netC + vatC;
+
+      return {
+        model: pricing.model,
+        quantity: q,
+        subtotal: fromCents(flatC),
+        discount: fromCents(discountC),
+        net: fromCents(netC),
+        vat: hasVat && !taxInclusive ? fromCents(vatC) : undefined,
+        total: fromCents(totalC),
+        tierType,
+        interval: pricing.interval,
+        intervalCount: pricing.intervalCount,
+      };
+    }
   }
 
-  const discountC = pct(subtotalC, discountPct);
-  const netC = subtotalC - discountC;
-  const vatC = taxInclusive ? 0 : pct(netC, vatPct);
-  const totalC = netC + vatC;
-
+  // Fallback
   return {
-    model: "per_unit",
-    quantity: q,
-    subtotal: fromCents(subtotalC),
-    discount: fromCents(discountC),
-    net: fromCents(netC),
-    vat: fromCents(vatC),
-    total: fromCents(totalC),
-    tierType,
-    graduatedDetail,
+    model: pricing.model,
+    quantity: 1,
+    subtotal: 0,
+    discount: 0,
+    net: 0,
+    vat: undefined,
+    total: 0,
   };
 }
 
@@ -283,24 +258,27 @@ export interface TierEditorProps {
 export function normalizePricingForApi(p: Pricing): Pricing {
   const out: Pricing = { ...p };
 
-  // Never send installments for subscriptions
   if (out.model === "subscription") {
     delete out.installments;
+    delete out.allowInstallments;
     return out;
   }
 
-  // Remove installments entirely when disabled
   if (!out.installments?.enabled) {
     delete out.installments;
   } else {
     out.installments = {
       enabled: true,
       count: Math.max(2, Number(out.installments.count || 2)),
+      interval: out.installments.interval || "month",
+      intervalCount: out.installments.intervalCount || 1,
       downPaymentType: out.installments.downPaymentType,
       downPaymentValue: Math.max(
         0,
         Number(out.installments.downPaymentValue || 0)
       ),
+      allowEarlyPayoff: out.installments.allowEarlyPayoff,
+      provider: out.installments.provider || "in_house",
     };
   }
 
@@ -313,7 +291,7 @@ export function TierEditor({
   onChange,
   disabled,
 }: TierEditorProps) {
-  if (tierType === "none") return null;
+  // tierType is required and cannot be "none" in the new structure
 
   const sorted = useMemo(
     () => (tiers || []).slice().sort((a, b) => a.upTo - b.upTo),
@@ -339,6 +317,9 @@ export function TierEditor({
     onChange(next);
   };
 
+  const priceColumnLabel =
+    tierType === "stairstep" ? "Flat price (band)" : "Unit price";
+
   return (
     <Card className="border rounded-2xl">
       <CardHeader>
@@ -350,7 +331,7 @@ export function TierEditor({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[160px]">Up to (qty)</TableHead>
-                <TableHead className="w-[160px]">Unit price</TableHead>
+                <TableHead className="w-[160px]">{priceColumnLabel}</TableHead>
                 <TableHead className="w-[80px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -430,8 +411,67 @@ export function PricePreviewCard({
     () => computePrice(pricing, quantity),
     [pricing, quantity]
   );
-  const label = pricing.unitName || "participant";
-  const money = (n: number) => formatMoney(n, pricing.currency);
+  const label = pricing.unitName || "team";
+  const money = (n: number) => {
+    // Ensure currency is a valid Currency type
+    const validCurrency: Currency = (["usd", "eur", "gbp", "cad", "aud", "jpy", "inr", "ngn"].includes(pricing.currency.toLowerCase()) 
+      ? pricing.currency.toLowerCase() 
+      : "gbp") as Currency;
+    return formatMoney(n, validCurrency);
+  };
+
+  // Band summaries for tiered modes
+  const tiersSorted = (pricing.tiers || [])
+    .slice()
+    .sort((a, b) => a.upTo - b.upTo);
+
+  // Stairstep band summary
+  let stairstepBand: {
+    idx: number;
+    min: number;
+    max: number | null;
+    flat: number;
+  } | null = null;
+  if (
+    pricing.priceBasis === "per_unit" &&
+    pricing.tierType === "stairstep" &&
+    tiersSorted.length
+  ) {
+    let idx = tiersSorted.findIndex((t) => quantity <= t.upTo);
+    if (idx === -1) idx = tiersSorted.length - 1;
+    const t = tiersSorted[idx];
+    const min = idx === 0 ? 1 : tiersSorted[idx - 1].upTo + 1;
+    const max = idx === tiersSorted.length - 1 ? null : t.upTo;
+    stairstepBand = { idx, min, max, flat: t.unitPrice };
+  }
+
+  // Volume band summary (with new band-flat rule)
+  let volumeBand: {
+    idx: number;
+    min: number;
+    max: number | null;
+    unit: number;
+    effectiveQty: number;
+  } | null = null;
+  if (
+    pricing.priceBasis === "per_unit" &&
+    pricing.tierType === "volume" &&
+    tiersSorted.length
+  ) {
+    let idx = tiersSorted.findIndex((t) => quantity <= t.upTo);
+    if (idx === -1) idx = tiersSorted.length - 1;
+    const t = tiersSorted[idx];
+    const isLast = idx === tiersSorted.length - 1;
+    const min = idx === 0 ? 1 : tiersSorted[idx - 1].upTo + 1;
+    const max = isLast ? null : t.upTo;
+    volumeBand = {
+      idx,
+      min,
+      max,
+      unit: t.unitPrice,
+      effectiveQty: isLast ? quantity : t.upTo, // mirrors computePrice
+    };
+  }
 
   return (
     <Card className="border rounded-2xl">
@@ -439,25 +479,18 @@ export function PricePreviewCard({
         <CardTitle className="text-base">Price Preview</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        {pricing.model === "subscription" ? (
+        {pricing.model === "subscription" && pricing.priceBasis === "flat" ? (
           <div className="space-y-1">
             <div>
               <span className="font-medium">Recurring:</span>{" "}
-              {money(Number(pricing.subscriptionPrice || 0))} /{" "}
+              {money(Number((pricing.subscriptionPrice ?? pricing.basePrice ?? 0)))} /{" "}
               {pricing.intervalCount || 1} {pricing.interval || "month"}
             </div>
-            {pricing.setupFee ? (
-              <div>
-                <span className="font-medium">Setup fee:</span>{" "}
-                {money(Number(pricing.setupFee))}
+            {(pricing.trialDays ?? 0) > 0 && (
+              <div className="text-xs text-muted-foreground">
+                {pricing.trialDays} day{pricing.trialDays !== 1 ? "s" : ""} free trial
               </div>
-            ) : null}
-            {pricing.trialDays ? (
-              <div>
-                <span className="font-medium">Trial:</span> {pricing.trialDays}{" "}
-                days
-              </div>
-            ) : null}
+            )}
             <div className="pt-2">
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
@@ -466,7 +499,7 @@ export function PricePreviewCard({
               {typeof breakdown.discount === "number" &&
                 breakdown.discount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span>Discount ({pricing.discountPercent ?? 0}%)</span>
+                    <span>Discount ({pricing.discountPercentage ?? 0}%)</span>
                     <span>-{money(breakdown.discount)}</span>
                   </div>
                 )}
@@ -476,19 +509,181 @@ export function PricePreviewCard({
                   <span>{money(breakdown.net)}</span>
                 </div>
               )}
-              {!pricing.taxInclusive && (
-                <div className="flex items-center justify-between">
-                  <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
-                  <span>{money(breakdown.vat || 0)}</span>
-                </div>
+              {typeof breakdown.setupFee === "number" &&
+                breakdown.setupFee > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Setup Fee</span>
+                    <span>{money(breakdown.setupFee)}</span>
+                  </div>
+                )}
+              {(pricing.vatPercentage ?? 0) > 0 && (
+                breakdown.vat && breakdown.vat > 0 ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
+                      <span>{money(breakdown.vat)}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Calc: {money(breakdown.net || 0)} × {pricing.vatPercentage ?? 0}% = {money(breakdown.vat)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between text-muted-foreground text-xs">
+                      <span>VAT ({pricing.vatPercentage ?? 0}%) included in price</span>
+                      {(() => {
+                        const rate = pricing.vatPercentage ?? 0;
+                        const base = Math.max(0, (breakdown.total || 0) - (breakdown.setupFee || 0));
+                        const included = base * rate / (100 + rate);
+                        return <span>{money(included)}</span>;
+                      })()}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {(() => {
+                        const rate = pricing.vatPercentage ?? 0;
+                        const base = Math.max(0, (breakdown.total || 0) - (breakdown.setupFee || 0));
+                        const included = base * rate / (100 + rate);
+                        return (
+                          <>
+                            Calc: {money(base)} × {rate}% ÷ (100% + {rate}%) = {money(included)}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )
               )}
               <div className="flex items-center justify-between font-semibold border-t pt-2 mt-1">
                 <span>Total due now</span>
                 <span>{money(breakdown.total)}</span>
               </div>
             </div>
+            {(pricing.minTermMonths ?? 0) > 0 && (
+              <div className="text-xs text-muted-foreground pt-2 border-t">
+                Minimum term: {pricing.minTermMonths} month
+                {pricing.minTermMonths !== 1 ? "s" : ""}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground space-y-1">
+              {pricing.autoRenew !== false && (
+                <div>✓ Auto-renewal enabled</div>
+              )}
+              {pricing.proration !== false && (
+                <div>✓ Proration enabled</div>
+              )}
+            </div>
           </div>
-        ) : pricing.model === "one_time" ? (
+        ) : pricing.priceBasis === "per_unit" ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium capitalize">Per {label}</span>
+              <span className="text-muted-foreground">tiered</span>
+            </div>
+
+            {/* Volume band summary (new rule) */}
+            {pricing.tierType === "volume" && volumeBand && (
+              <div className="rounded-xl border p-2 bg-muted/30">
+                <div className="text-xs font-medium mb-1">
+                  Selected volume band (flat)
+                </div>
+                <div className="text-xs flex items-center justify-between">
+                  <span>
+                    Band: {volumeBand.min}
+                    {volumeBand.max ? `–${volumeBand.max}` : "+"} (units:{" "}
+                    {quantity})
+                  </span>
+                  <span>
+                    Band calc: {volumeBand.effectiveQty} ×{" "}
+                    {money(volumeBand.unit)} ={" "}
+                    {money(volumeBand.effectiveQty * volumeBand.unit)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Stairstep band summary */}
+            {pricing.tierType === "stairstep" && stairstepBand && (
+              <div className="rounded-xl border p-2 bg-muted/30">
+                <div className="text-xs font-medium mb-1">
+                  Selected band (flat)
+                </div>
+                <div className="text-xs flex items-center justify-between">
+                  <span>
+                    Band: {stairstepBand.min}
+                    {stairstepBand.max
+                      ? `–${stairstepBand.max}`
+                      : "+"} (units: {quantity})
+                  </span>
+                  <span>Band price: {money(stairstepBand.flat)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-1">
+              <div className="flex items-center justify-between">
+                <span>
+                  Subtotal ({breakdown.quantity} {label}
+                  {breakdown.quantity > 1 ? "s" : ""})
+                </span>
+                <span>{money(breakdown.subtotal)}</span>
+              </div>
+              {typeof breakdown.discount === "number" &&
+                breakdown.discount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Discount ({pricing.discountPercentage ?? 0}%)</span>
+                    <span>-{money(breakdown.discount)}</span>
+                  </div>
+                )}
+              {typeof breakdown.net === "number" && (
+                <div className="flex items-center justify-between">
+                  <span>Net</span>
+                  <span>{money(breakdown.net)}</span>
+                </div>
+              )}
+              {(pricing.vatPercentage ?? 0) > 0 && (
+                breakdown.vat && breakdown.vat > 0 ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
+                      <span>{money(breakdown.vat)}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Calc: {money(breakdown.net || 0)} × {pricing.vatPercentage ?? 0}% = {money(breakdown.vat)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between text-muted-foreground text-xs">
+                      <span>VAT ({pricing.vatPercentage ?? 0}%) included in price</span>
+                      {(() => {
+                        const rate = pricing.vatPercentage ?? 0;
+                        const base = Math.max(0, (breakdown.total || 0));
+                        const included = base * rate / (100 + rate);
+                        return <span>{money(included)}</span>;
+                      })()}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {(() => {
+                        const rate = pricing.vatPercentage ?? 0;
+                        const base = Math.max(0, (breakdown.total || 0));
+                        const included = base * rate / (100 + rate);
+                        return (
+                          <>
+                            Calc: {money(base)} × {rate}% ÷ (100% + {rate}%) = {money(included)}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )
+              )}
+              <div className="flex items-center justify-between font-semibold border-t pt-2 mt-1">
+                <span>Total</span>
+                <span>{money(breakdown.total)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="space-y-1">
             <div>
               <span className="font-medium">One-time:</span>{" "}
@@ -502,7 +697,7 @@ export function PricePreviewCard({
               {typeof breakdown.discount === "number" &&
                 breakdown.discount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span>Discount ({pricing.discountPercent ?? 0}%)</span>
+                    <span>Discount ({pricing.discountPercentage ?? 0}%)</span>
                     <span>-{money(breakdown.discount)}</span>
                   </div>
                 )}
@@ -512,106 +707,42 @@ export function PricePreviewCard({
                   <span>{money(breakdown.net)}</span>
                 </div>
               )}
-              {!pricing.taxInclusive && (
-                <div className="flex items-center justify-between">
-                  <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
-                  <span>{money(breakdown.vat || 0)}</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between font-semibold border-t pt-2 mt-1">
-                <span>Total</span>
-                <span>{money(breakdown.total)}</span>
-              </div>
-            </div>
-
-            {/* Installments for one-time */}
-            {pricing.installments?.enabled && (
-              <div className="rounded-xl border p-2 mt-3 bg-muted/30">
-                <div className="text-xs font-medium mb-1">Installments</div>
-                {(() => {
-                  const plan = computeInstallments(
-                    breakdown.total,
-                    pricing.installments
-                  );
-                  if (!plan) return null;
-                  return (
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span>Down payment</span>
-                        <span>{money(plan.downPayment)}</span>
-                      </div>
-                      {plan.plan.map((amt, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between"
-                        >
-                          <span>Installment {i + 1}</span>
-                          <span>{money(amt)}</span>
-                        </div>
-                      ))}
+              {(pricing.vatPercentage ?? 0) > 0 && (
+                breakdown.vat && breakdown.vat > 0 ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
+                      <span>{money(breakdown.vat)}</span>
                     </div>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium capitalize">Per {label}</span>
-              {breakdown.unitPrice !== undefined ? (
-                <span>{money(breakdown.unitPrice || 0)}</span>
-              ) : (
-                <span className="text-muted-foreground">tiered</span>
-              )}
-            </div>
-
-            {breakdown.graduatedDetail &&
-              breakdown.graduatedDetail.length > 0 && (
-                <div className="rounded-xl border p-2 bg-muted/30">
-                  <div className="text-xs font-medium mb-1">Tier breakdown</div>
-                  <div className="space-y-1 text-xs">
-                    {breakdown.graduatedDetail.map((row, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between"
-                      >
-                        <span>
-                          {row.qty} × {money(row.unitPrice)}
-                        </span>
-                        <span>{money(row.line)}</span>
-                      </div>
-                    ))}
+                    <div className="text-[11px] text-muted-foreground">
+                      Calc: {money(breakdown.net || 0)} × {pricing.vatPercentage ?? 0}% = {money(breakdown.vat)}
+                    </div>
                   </div>
-                </div>
-              )}
-
-            <div className="pt-1">
-              <div className="flex items-center justify-between">
-                <span>
-                  Subtotal ({breakdown.quantity} {label}
-                  {breakdown.quantity > 1 ? "s" : ""})
-                </span>
-                <span>{money(breakdown.subtotal)}</span>
-              </div>
-              {typeof breakdown.discount === "number" &&
-                breakdown.discount > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span>Discount ({pricing.discountPercent ?? 0}%)</span>
-                    <span>-{money(breakdown.discount)}</span>
+                ) : (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between text-muted-foreground text-xs">
+                      <span>VAT ({pricing.vatPercentage ?? 0}%) included in price</span>
+                      {(() => {
+                        const rate = pricing.vatPercentage ?? 0;
+                        const base = Math.max(0, (breakdown.total || 0));
+                        const included = base * rate / (100 + rate);
+                        return <span>{money(included)}</span>;
+                      })()}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {(() => {
+                        const rate = pricing.vatPercentage ?? 0;
+                        const base = Math.max(0, (breakdown.total || 0));
+                        const included = base * rate / (100 + rate);
+                        return (
+                          <>
+                            Calc: {money(base)} × {rate}% ÷ (100% + {rate}%) = {money(included)}
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
-                )}
-              {typeof breakdown.net === "number" && (
-                <div className="flex items-center justify-between">
-                  <span>Net</span>
-                  <span>{money(breakdown.net)}</span>
-                </div>
-              )}
-              {!pricing.taxInclusive && (
-                <div className="flex items-center justify-between">
-                  <span>VAT ({pricing.vatPercentage ?? 0}%)</span>
-                  <span>{money(breakdown.vat || 0)}</span>
-                </div>
+                )
               )}
               <div className="flex items-center justify-between font-semibold border-t pt-2 mt-1">
                 <span>Total</span>
@@ -619,7 +750,6 @@ export function PricePreviewCard({
               </div>
             </div>
 
-            {/* Installments for per-unit */}
             {pricing.installments?.enabled && (
               <div className="rounded-xl border p-2 mt-3 bg-muted/30">
                 <div className="text-xs font-medium mb-1">Installments</div>
@@ -651,6 +781,7 @@ export function PricePreviewCard({
             )}
           </div>
         )}
+        
       </CardContent>
     </Card>
   );
@@ -666,29 +797,6 @@ export interface PricingFormProps {
   showPreview?: boolean; // default true
 }
 
-const defaultPricing: Pricing = {
-  model: "one_time",
-  currency: "gbp",
-  taxInclusive: true,
-  vatPercentage: 0,
-  discountPercent: 0,
-  basePrice: 0,
-  unitName: "team",
-  allowQuantity: false,
-  minQty: 1,
-  maxQty: 1000,
-  tierType: "none",
-  tiers: [],
-  subscriptionPrice: undefined,
-  interval: "month",
-  intervalCount: 1,
-  trialDays: 0,
-  setupFee: 0,
-  autoRenew: true,
-  minTermMonths: 0,
-  proration: true,
-  installments: undefined,
-};
 
 export function PricingForm({
   value,
@@ -696,33 +804,61 @@ export function PricingForm({
   disabled,
   showPreview = true,
 }: PricingFormProps) {
-  const [qtyPreview, setQtyPreview] = useState<number>(value.minQty ?? 1);
-
   const v: Pricing = { ...defaultPricing, ...value };
+  
+  // Ensure priceBasis is always set
+  if (!v.priceBasis && (v.model === "one_time" || v.model === "subscription")) {
+    v.priceBasis = "flat";
+  }
 
   const apply = (patch: Partial<Pricing>) => {
     const next: Pricing = { ...v, ...patch };
-    // model-specific hygiene
-    if (patch.model) {
-      if (patch.model === "one_time") {
-        next.tierType = "none";
-        next.tiers = [];
-        next.allowQuantity = false;
-        next.subscriptionPrice = undefined;
-        next.interval = "month";
-        next.intervalCount = 1;
-      } else if (patch.model === "subscription") {
-        next.tierType = "none";
-        next.tiers = [];
-        next.allowQuantity = false;
-        next.basePrice = undefined;
-      } else if (patch.model === "per_unit") {
-        // keep basePrice as unit price if no tiers
-        next.subscriptionPrice = undefined;
-        next.interval = "month";
-        next.intervalCount = 1;
+    
+    // Handle taxInclusive toggle: when turning off, clear VAT percentage
+    if (typeof patch.taxInclusive !== "undefined") {
+      if (!patch.taxInclusive) {
+        next.vatPercentage = 0;
       }
     }
+
+    // Handle model changes
+    if (patch.model) {
+      if (patch.model === "one_time") {
+        // Reset to flat by default for one_time
+        if (!next.priceBasis) next.priceBasis = "flat";
+        next.interval = undefined;
+        next.intervalCount = undefined;
+      } else if (patch.model === "subscription") {
+        // Reset to flat by default for subscription
+        if (!next.priceBasis) next.priceBasis = "flat";
+        // Subscription requires interval
+        next.interval = next.interval || "month";
+        next.intervalCount = next.intervalCount || 1;
+        // Remove installments for subscriptions
+        next.allowInstallments = false;
+        next.installments = undefined;
+      }
+    }
+    
+    // Handle priceBasis changes
+    if (patch.priceBasis) {
+      if (patch.priceBasis === "flat") {
+        // Remove per_unit specific fields
+        delete next.unitName;
+        delete next.tierType;
+        delete next.tiers;
+      } else if (patch.priceBasis === "per_unit") {
+        // Set defaults for per_unit
+        next.unitName = next.unitName || "team";
+        next.tierType = next.tierType || "volume";
+        next.tiers = next.tiers || [];
+        // Remove basePrice if not needed
+        if (!next.basePrice) {
+          delete next.basePrice;
+        }
+      }
+    }
+    
     onChange(next);
   };
 
@@ -768,9 +904,9 @@ export function PricingForm({
         </CardHeader>
         <CardContent>
           <RadioGroup
-            className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
             value={v.model}
-            onValueChange={(val: PricingModel) => apply({ model: val })}
+            onValueChange={(val: PriceModel) => apply({ model: val as PriceModel })}
             disabled={disabled}
           >
             <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
@@ -779,12 +915,10 @@ export function PricingForm({
             <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
               <RadioGroupItem value="subscription" /> Subscription
             </Label>
-            <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
-              <RadioGroupItem value="per_unit" /> Per-unit
-            </Label>
           </RadioGroup>
         </CardContent>
       </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 space-y-6">
           {/* One-time */}
@@ -794,8 +928,45 @@ export function PricingForm({
                 <CardTitle className="text-base">One-time Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Price Basis Selection */}
+                <div className="space-y-2">
+                  <Label>Price Basis</Label>
+                  <RadioGroup
+                    value={v.priceBasis || "flat"}
+                    onValueChange={(val: PriceBasis) => apply({ priceBasis: val })}
+                    disabled={disabled}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
+                      <RadioGroupItem value="flat" /> Flat Price
+                    </Label>
+                    <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
+                      <RadioGroupItem value="per_unit" /> Per-unit
+                    </Label>
+                  </RadioGroup>
+                </div>
+
                 <div className="flex items-center gap-4 flex-wrap">
                   {CurrencySelect}
+                  <div className="space-y-1">
+                    <Label>Discount %</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.1"
+                      value={v.discountPercentage ?? 0}
+                      onChange={(e) =>
+                        apply({ discountPercentage: Number(e.target.value || 0) })
+                      }
+                      disabled={disabled}
+                      className="w-[140px] rounded-[10px]"
+                    />
+                  </div>
+                </div>
+
+                {/* Flat Price Fields */}
+                {v.priceBasis === "flat" && (
                   <div className="space-y-1">
                     <Label>Price</Label>
                     <Input
@@ -810,22 +981,7 @@ export function PricingForm({
                       className="w-[220px] rounded-[10px]"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label>Discount %</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step="0.1"
-                      value={v.discountPercent ?? 0}
-                      onChange={(e) =>
-                        apply({ discountPercent: Number(e.target.value || 0) })
-                      }
-                      disabled={disabled}
-                      className="w-[140px] rounded-[10px]"
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div className="flex items-center gap-6 flex-wrap">
                   <div className="flex items-center gap-2">
@@ -838,7 +994,7 @@ export function PricingForm({
                     />
                     <Label>Tax inclusive</Label>
                   </div>
-                  {!v.taxInclusive && (
+                  {v.taxInclusive && (
                     <div className="space-y-1">
                       <Label>VAT %</Label>
                       <Input
@@ -857,29 +1013,33 @@ export function PricingForm({
                   )}
                 </div>
 
-                {/* Installments */}
+                {/* Installments - only for one_time flat */}
+                {v.model === "one_time" && v.priceBasis === "flat" && (
                 <div className="flex items-center gap-6 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={!!v.installments?.enabled}
+                        checked={v.allowInstallments ?? false}
                       onCheckedChange={(checked) =>
                         apply({
+                            allowInstallments: checked,
                           installments: checked
                             ? v.installments ?? {
                                 enabled: true,
-                                count: 2, // minimum required by backend
+                                count: 2,
+                                  interval: "month",
+                                  intervalCount: 1,
                                 downPaymentType: "percent",
                                 downPaymentValue: 20,
                               }
-                            : undefined, // <— do NOT send installments at all when disabled
+                            : undefined,
                         })
                       }
                       disabled={disabled}
                     />
-                    <Label>Installments (in-house)</Label>
+                      <Label>Allow Installments</Label>
                   </div>
 
-                  {v.installments?.enabled && (
+                    {v.allowInstallments && v.installments && (
                     <>
                       <div className="space-y-1">
                         <Label>Count</Label>
@@ -895,6 +1055,52 @@ export function PricingForm({
                               },
                             })
                           }
+                            disabled={disabled}
+                            className="w-[120px] rounded-[10px]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Interval</Label>
+                          <Select
+                            value={v.installments.interval}
+                            onValueChange={(val: Interval) =>
+                              apply({
+                                installments: {
+                                  ...v.installments!,
+                                  interval: val,
+                                },
+                              })
+                            }
+                            disabled={disabled}
+                          >
+                            <SelectTrigger className="w-[160px] rounded-[10px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white rounded-[10px]">
+                              <SelectItem value="hour">hour</SelectItem>
+                              <SelectItem value="day">day</SelectItem>
+                              <SelectItem value="week">week</SelectItem>
+                              <SelectItem value="month">month</SelectItem>
+                              <SelectItem value="year">year</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Interval Count</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={v.installments.intervalCount}
+                            onChange={(e) =>
+                              apply({
+                                installments: {
+                                  ...v.installments!,
+                                  intervalCount: Number(e.target.value || 1),
+                                },
+                              })
+                            }
+                            disabled={disabled}
+                            className="w-[120px] rounded-[10px]"
                         />
                       </div>
                       <div className="space-y-1">
@@ -946,6 +1152,7 @@ export function PricingForm({
                     </>
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -959,24 +1166,26 @@ export function PricingForm({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Price Basis Selection */}
+                <div className="space-y-2">
+                  <Label>Price Basis</Label>
+                  <RadioGroup
+                    value={v.priceBasis || "flat"}
+                    onValueChange={(val: PriceBasis) => apply({ priceBasis: val })}
+                    disabled={disabled}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
+                      <RadioGroupItem value="flat" /> Flat Price
+                    </Label>
+                    <Label className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer">
+                      <RadioGroupItem value="per_unit" /> Per-unit
+                    </Label>
+                  </RadioGroup>
+                </div>
+
                 <div className="flex items-center gap-4 flex-wrap">
                   {CurrencySelect}
-                  <div className="space-y-1">
-                    <Label>Price per interval</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={v.subscriptionPrice ?? 0}
-                      onChange={(e) =>
-                        apply({
-                          subscriptionPrice: Number(e.target.value || 0),
-                        })
-                      }
-                      disabled={disabled}
-                      className="w-[220px] rounded-[10px]"
-                    />
-                  </div>
                   <div className="space-y-1">
                     <Label>Every</Label>
                     <Input
@@ -993,7 +1202,7 @@ export function PricingForm({
                   <div className="space-y-1">
                     <Label>Interval</Label>
                     <Select
-                      value={v.interval}
+                      value={v.interval || "month"}
                       onValueChange={(val: Interval) =>
                         apply({ interval: val })
                       }
@@ -1003,6 +1212,7 @@ export function PricingForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white rounded-[10px]">
+                        <SelectItem value="hour">hour</SelectItem>
                         <SelectItem value="day">day</SelectItem>
                         <SelectItem value="week">week</SelectItem>
                         <SelectItem value="month">month</SelectItem>
@@ -1017,9 +1227,9 @@ export function PricingForm({
                       min={0}
                       max={100}
                       step="0.1"
-                      value={v.discountPercent ?? 0}
+                      value={v.discountPercentage ?? 0}
                       onChange={(e) =>
-                        apply({ discountPercent: Number(e.target.value || 0) })
+                        apply({ discountPercentage: Number(e.target.value || 0) })
                       }
                       disabled={disabled}
                       className="w-[140px] rounded-[10px]"
@@ -1027,70 +1237,25 @@ export function PricingForm({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 flex-wrap">
+                {/* Flat Price Fields */}
+                {v.priceBasis === "flat" && (
                   <div className="space-y-1">
-                    <Label>Setup fee</Label>
+                    <Label>Subscription price</Label>
                     <Input
                       type="number"
                       min={0}
                       step="0.01"
-                      value={v.setupFee ?? 0}
+                      value={v.subscriptionPrice ?? v.basePrice ?? 0}
                       onChange={(e) =>
-                        apply({ setupFee: Number(e.target.value || 0) })
+                        apply({ subscriptionPrice: Number(e.target.value || 0) })
                       }
                       disabled={disabled}
-                      className="w-[160px] rounded-[10px]"
+                      className="w-[220px] rounded-[10px]"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label>Trial days</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={v.trialDays ?? 0}
-                      onChange={(e) =>
-                        apply({ trialDays: Number(e.target.value || 0) })
-                      }
-                      disabled={disabled}
-                      className="w-[140px] rounded-[10px]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Minimum term (months)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={v.minTermMonths ?? 0}
-                      onChange={(e) =>
-                        apply({ minTermMonths: Number(e.target.value || 0) })
-                      }
-                      disabled={disabled}
-                      className="w-[180px] rounded-[10px]"
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div className="flex items-center gap-6 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={v.autoRenew}
-                      onCheckedChange={(checked) =>
-                        apply({ autoRenew: checked })
-                      }
-                      disabled={disabled}
-                    />
-                    <Label>Auto-renew</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={v.proration}
-                      onCheckedChange={(checked) =>
-                        apply({ proration: checked })
-                      }
-                      disabled={disabled}
-                    />
-                    <Label>Prorate changes</Label>
-                  </div>
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={v.taxInclusive}
@@ -1101,8 +1266,8 @@ export function PricingForm({
                     />
                     <Label>Tax inclusive</Label>
                   </div>
-                  {!v.taxInclusive && (
-                    <div className="space-y-1">
+                  {v.taxInclusive && (
+                  <div className="space-y-1">
                       <Label>VAT %</Label>
                       <Input
                         type="number"
@@ -1119,12 +1284,84 @@ export function PricingForm({
                     </div>
                   )}
                 </div>
+
+                {/* Additional Subscription Fields */}
+                <div className="space-y-4 border-t pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label>Trial Days</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={v.trialDays ?? 0}
+                      onChange={(e) =>
+                        apply({ trialDays: Number(e.target.value || 0) })
+                      }
+                      disabled={disabled}
+                        className="w-full rounded-[10px]"
+                        placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                      <Label>Setup Fee</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={v.setupFee ?? 0}
+                        onChange={(e) =>
+                          apply({ setupFee: Number(e.target.value || 0) })
+                        }
+                        disabled={disabled}
+                        className="w-full rounded-[10px]"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Minimum Term (Months)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={v.minTermMonths ?? 0}
+                      onChange={(e) =>
+                        apply({ minTermMonths: Number(e.target.value || 0) })
+                      }
+                      disabled={disabled}
+                        className="w-full rounded-[10px]"
+                        placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                        checked={v.autoRenew ?? true}
+                      onCheckedChange={(checked) =>
+                        apply({ autoRenew: checked })
+                      }
+                      disabled={disabled}
+                    />
+                      <Label>Auto Renew</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                        checked={v.proration ?? true}
+                      onCheckedChange={(checked) =>
+                        apply({ proration: checked })
+                      }
+                      disabled={disabled}
+                    />
+                      <Label>Proration</Label>
+                  </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Per-person */}
-          {v.model === "per_unit" && (
+          {/* Per-unit Settings - shown when priceBasis is per_unit */}
+          {v.priceBasis === "per_unit" && (
             <Card className="rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-base">Per-unit Settings</CardTitle>
@@ -1135,11 +1372,12 @@ export function PricingForm({
                   <div className="space-y-1">
                     <Label>Unit Name</Label>
                     <Select
-                      value={v.unitName}
-                      onValueChange={(val: UnitType) =>
+                      value={v.unitName || "team"}
+                      onValueChange={(val: "person" | "team") =>
                         apply({ unitName: val })
                       }
                       required
+                      disabled={disabled}
                     >
                       <SelectTrigger className="w-[200px] rounded-[10px]">
                         <SelectValue />
@@ -1151,23 +1389,11 @@ export function PricingForm({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label>Allow quantity</Label>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={!!v.allowQuantity}
-                        onCheckedChange={(checked) =>
-                          apply({ allowQuantity: checked })
-                        }
-                        disabled={disabled}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
                     <Label>Min qty</Label>
                     <Input
                       type="number"
                       min={1}
-                      step="1"
+                      step={1}
                       value={v.minQty ?? 1}
                       onChange={(e) =>
                         apply({ minQty: Number(e.target.value || 1) })
@@ -1182,8 +1408,8 @@ export function PricingForm({
                       type="number"
                       min={1}
                       max={1000}
-                      step="1"
-                      value={v.maxQty ?? 2}
+                      step={1}
+                      value={v.maxQty ?? 1000}
                       onChange={(e) =>
                         apply({
                           maxQty: Number(e.target.value || v.minQty || 1),
@@ -1193,28 +1419,13 @@ export function PricingForm({
                       className="w-[120px] rounded-[10px]"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label>Discount %</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step="0.1"
-                      value={v.discountPercent ?? 0}
-                      onChange={(e) =>
-                        apply({ discountPercent: Number(e.target.value || 0) })
-                      }
-                      disabled={disabled}
-                      className="w-[140px] rounded-[10px]"
-                    />
-                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="space-y-1">
                     <Label>Tier type</Label>
                     <Select
-                      value={v.tierType}
+                      value={v.tierType || "volume"}
                       onValueChange={(val: TierType) =>
                         apply({ tierType: val })
                       }
@@ -1224,167 +1435,19 @@ export function PricingForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white rounded-[10px]">
-                        {/* <SelectItem value="none">None</SelectItem> */}
                         <SelectItem value="volume">Volume</SelectItem>
-                        {/* <SelectItem value="graduated">Graduated</SelectItem> */}
                         <SelectItem value="stairstep">Stairstep</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {v.tierType === "none" && (
-                    <div className="space-y-1">
-                      <Label>Unit price</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={v.basePrice ?? 0}
-                        onChange={(e) =>
-                          apply({ basePrice: Number(e.target.value || 0) })
-                        }
-                        disabled={disabled}
-                        className="w-[200px] rounded-[10px]"
-                      />
-                    </div>
-                  )}
                 </div>
 
-                {v.tierType !== "none" && (
                   <TierEditor
-                    tierType={v.tierType as TierType}
+                  tierType={(v.tierType || "volume") as TierType}
                     tiers={v.tiers || []}
                     onChange={(next) => apply({ tiers: next })}
                     disabled={disabled}
                   />
-                )}
-
-                <div className="flex items-center gap-6 pt-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={v.taxInclusive}
-                      onCheckedChange={(checked) =>
-                        apply({ taxInclusive: checked })
-                      }
-                      disabled={disabled}
-                    />
-                    <Label>Tax inclusive</Label>
-                  </div>
-                  {!v.taxInclusive && (
-                    <div className="space-y-1">
-                      <Label>VAT %</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        step="0.1"
-                        value={v.vatPercentage ?? 0}
-                        onChange={(e) =>
-                          apply({ vatPercentage: Number(e.target.value || 0) })
-                        }
-                        disabled={disabled}
-                        className="w-[140px] rounded-[10px]"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Installments */}
-                <div className="flex items-center gap-6 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={!!v.installments?.enabled}
-                      onCheckedChange={(checked) =>
-                        apply({
-                          installments: checked
-                            ? v.installments ?? {
-                                enabled: true,
-                                count: 3,
-                                downPaymentType: "percent",
-                                downPaymentValue: 20,
-                              }
-                            : {
-                                enabled: false,
-                                count: 0,
-                                downPaymentType: "percent",
-                                downPaymentValue: 0,
-                              },
-                        })
-                      }
-                      disabled={disabled}
-                    />
-                    <Label>Installments (in-house)</Label>
-                  </div>
-
-                  {v.installments?.enabled && (
-                    <>
-                      <div className="space-y-1">
-                        <Label>Count</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={v.installments.count}
-                          onChange={(e) =>
-                            apply({
-                              installments: {
-                                ...v.installments!,
-                                count: Number(e.target.value || 1),
-                              },
-                            })
-                          }
-                          disabled={disabled}
-                          className="w-[120px] rounded-[10px]"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Down payment type</Label>
-                        <Select
-                          value={v.installments.downPaymentType}
-                          onValueChange={(val: DownPaymentType) =>
-                            apply({
-                              installments: {
-                                ...v.installments!,
-                                downPaymentType: val,
-                              },
-                            })
-                          }
-                          disabled={disabled}
-                        >
-                          <SelectTrigger className="w-[160px] rounded-[10px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white rounded-[10px]">
-                            <SelectItem value="percent">percent</SelectItem>
-                            <SelectItem value="amount">amount</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label>
-                          {v.installments.downPaymentType === "percent"
-                            ? "Down payment (%)"
-                            : "Down payment amount"}
-                        </Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={v.installments.downPaymentValue}
-                          onChange={(e) =>
-                            apply({
-                              installments: {
-                                ...v.installments!,
-                                downPaymentValue: Number(e.target.value || 0),
-                              },
-                            })
-                          }
-                          disabled={disabled}
-                          className="w-[160px] rounded-[10px]"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
               </CardContent>
             </Card>
           )}
@@ -1393,30 +1456,10 @@ export function PricingForm({
         {/* Preview side */}
         <div className="lg:col-span-5 space-y-4">
           {showPreview && (
-            <div className="space-y-3">
-              {v.model === "per_unit" && v.allowQuantity && (
-                <div className="space-y-1">
-                  <Label>
-                    Quantity ({v.unitName || "participant"}) — min{" "}
-                    {v.minQty ?? 1}
-                  </Label>
-                  <Input
-                    type="number"
-                    min={v.minQty ?? 1}
-                    max={v.maxQty ?? 1000}
-                    value={qtyPreview}
-                    onChange={(e) =>
-                      setQtyPreview(Number(e.target.value || v.minQty || 1))
-                    }
-                    className="w-full"
-                  />
-                </div>
-              )}
               <PricePreviewCard
                 pricing={v}
-                quantity={v.model === "per_unit" ? qtyPreview : 1}
+              quantity={v.priceBasis === "per_unit" ? (v.minQty ?? 1) : 1}
               />
-            </div>
           )}
         </div>
       </div>
@@ -1432,18 +1475,17 @@ export function PricingForm({
 //   currency: 'gbp',
 //   taxInclusive: false,
 //   vatPercentage: 20,
-//   unitName: 'participant',
+//   unitName: 'team',
 //   allowQuantity: true,
-//   minQty: 5,
+//   minQty: 1,
 //   maxQty: 100,
 //   tierType: 'volume',
 //   tiers: [
 //     { upTo: 10, unitPrice: 150 },
-//     { upTo: 50, unitPrice: 135 },
-//     { upTo: 100, unitPrice: 120 },
+//     { upTo: 25, unitPrice: 135 },
+//     { upTo: 999999, unitPrice: 120 }, // open-ended
 //   ],
-//   discountPercent: 10,
-//   installments: { enabled: true, count: 3, downPaymentType: 'percent', downPaymentValue: 20 },
+//   discountPercent: 0,
 // });
 // <PricingForm value={pricing} onChange={setPricing} />
 

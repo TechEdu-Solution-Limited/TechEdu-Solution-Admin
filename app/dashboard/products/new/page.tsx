@@ -26,7 +26,7 @@ import {
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
-import { normalizePricingForApi, Pricing } from "@/lib/constants/pricing";
+import { normalizePricingForApi, Pricing, Currency } from "@/lib/constants/pricing";
 import PricingForm, {
   computePrice,
   formatMoney,
@@ -118,22 +118,12 @@ export default function CreateProductPage() {
     currency: "gbp",
     taxInclusive: true,
     vatPercentage: 0,
-    discountPercent: 0,
+    priceBasis: "flat",
+    discountPercentage: 0,
     basePrice: 0,
-    unitName: "participant",
-    allowQuantity: false,
     minQty: 1,
     maxQty: 1000,
-    tierType: "none",
-    tiers: [],
-    subscriptionPrice: undefined,
-    interval: "month",
-    intervalCount: 1,
-    trialDays: 0,
-    setupFee: 0,
-    autoRenew: true,
-    minTermMonths: 0,
-    proration: true,
+    allowInstallments: false,
     installments: undefined,
   });
 
@@ -442,29 +432,35 @@ export default function CreateProductPage() {
 
   // 🔒 Validate pricing before submit
   const validatePricing = (): string | null => {
-    if (pricing.model === "one_time") {
+    // Validate flat pricing
+    if (pricing.priceBasis === "flat") {
       if ((pricing.basePrice ?? 0) < 0)
-        return "One-time price cannot be negative.";
-    }
-    if (pricing.model === "subscription") {
-      if (!pricing.subscriptionPrice || pricing.subscriptionPrice < 0)
-        return "Subscription price is required.";
-      if (!pricing.interval) return "Subscription interval is required.";
-      if ((pricing.intervalCount ?? 1) < 1)
-        return "Subscription interval count must be at least 1.";
-    }
-    if (pricing.model === "per_unit") {
-      if (pricing.tierType === "none") {
-        if ((pricing.basePrice ?? 0) < 0)
-          return "Unit price cannot be negative.";
-      } else {
-        if (!pricing.tiers || pricing.tiers.length === 0)
-          return "Please add at least one tier.";
+        return "Price cannot be negative.";
+      
+      // Subscription requires interval
+      if (pricing.model === "subscription") {
+        if (!pricing.interval) return "Subscription interval is required.";
+        if ((pricing.intervalCount ?? 1) < 1)
+          return "Subscription interval count must be at least 1.";
       }
+    }
+    
+    // Validate per_unit pricing
+    if (pricing.priceBasis === "per_unit") {
+      if (!pricing.tierType) return "Tier type is required for per-unit pricing.";
+      if (!pricing.tiers || pricing.tiers.length === 0)
+        return "Please add at least one tier for per-unit pricing.";
       if ((pricing.minQty ?? 1) < 1)
         return "Minimum quantity must be at least 1.";
       if ((pricing.maxQty ?? 1) < (pricing.minQty ?? 1))
         return "Max quantity must be >= min quantity.";
+      
+      // Subscription per_unit also requires interval
+      if (pricing.model === "subscription") {
+        if (!pricing.interval) return "Subscription interval is required.";
+        if ((pricing.intervalCount ?? 1) < 1)
+          return "Subscription interval count must be at least 1.";
+      }
     }
     return null;
   };
@@ -578,12 +574,75 @@ export default function CreateProductPage() {
         (sub) => sub.name === form.subcategory
       );
 
-      // Map Pricing -> API schema (adds defaults for installments provider)
+      // Map Pricing -> backend pricing schema
       const normalizedPricing = normalizePricingForApi(pricing);
+      const allowedCurrencies = ["usd", "eur", "gbp", "cad", "aud", "jpy", "inr", "ngn"] as const;
+      const currency = (normalizedPricing.currency || "gbp").toLowerCase();
+      const safeCurrency = (allowedCurrencies.includes(currency as any)
+        ? currency
+        : "gbp") as typeof allowedCurrencies[number];
+
+      const toBackendPricing = (p: Pricing) => {
+        if (p.model === "subscription") {
+          return {
+            model: "subscription",
+            currency: safeCurrency,
+            subscriptionPrice: Number(p.subscriptionPrice ?? p.basePrice ?? 0),
+            interval: p.interval || "month",
+            intervalCount: p.intervalCount || 1,
+            trialDays: p.trialDays ?? 0,
+            setupFee: Number(p.setupFee || 0),
+            autoRenew: p.autoRenew ?? true,
+            minTermMonths: p.minTermMonths ?? 0,
+            proration: p.proration ?? true,
+          };
+        }
+
+        const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+        const payload: any = {
+          model: "one_time",
+          priceBasis: p.priceBasis ?? "flat", // Default to flat only if missing (preserves "per_unit" if set)
+          currency: safeCurrency,
+          taxInclusive: p.taxInclusive ?? false,
+          vatPercentage: p.vatPercentage ?? 0,
+        };
+        if (p.priceBasis !== "per_unit") {
+          payload.basePrice = Number(p.basePrice || 0);
+        }
+        if (p.priceBasis === "per_unit") {
+          payload.unitName = unitName;
+          payload.allowQuantity = true;
+          payload.minQty = p.minQty ?? 1;
+          payload.maxQty = p.maxQty ?? Math.max(payload.minQty ?? 1, 1000);
+          payload.tierType = p.tierType || "volume";
+          payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+        }
+        if (p.allowInstallments && p.installments) {
+          payload.installments = {
+            enabled: true,
+            count: Math.max(2, Number(p.installments.count || 2)),
+            interval: p.installments.interval || "month",
+            intervalCount: p.installments.intervalCount || 1,
+            downPaymentType: p.installments.downPaymentType,
+            downPaymentValue: Math.max(0, Number(p.installments.downPaymentValue || 0)),
+            allowEarlyPayoff: p.installments.allowEarlyPayoff ?? false,
+            provider: p.installments.provider || "in_house",
+          };
+        }
+        return payload;
+      };
+
+      const backendPricing = toBackendPricing(normalizedPricing);
+
+      // Debug: show payloads being sent (pricing by model)
+      try {
+        console.log("[Create Product] Pricing model:", normalizedPricing.model);
+        console.log("[Create Product] Pricing payload:", backendPricing);
+      } catch {}
 
       const rootDiscountPercentage = Math.max(
         0,
-        Math.min(100, Number(pricing.discountPercent ?? 0))
+        Math.min(100, Number(pricing.discountPercentage ?? 0))
       );
 
       const payload = {
@@ -628,9 +687,19 @@ export default function CreateProductPage() {
         isAttachmentRequired: !!form.isAttachmentRequired,
 
         // --- Pricing ---
-        pricing: normalizedPricing,
+        pricing: backendPricing,
         discountPercentage: rootDiscountPercentage,
       };
+
+      // Extra debug for root payload shape (omit large fields)
+      try {
+        console.log("[Create Product] Root payload (partial):", {
+          productType: payload.productType,
+          service: payload.service,
+          isBookableService: payload.isBookableService,
+          nonBookableService: payload.nonBookableService,
+        });
+      } catch {}
 
       const response = await postApiRequest("/api/products", token, payload);
 
@@ -651,12 +720,12 @@ export default function CreateProductPage() {
 
   // 🧾 Pricing review summary (uses minQty for per-unit)
   const reviewQty =
-    pricing.model === "per_unit" ? Math.max(pricing.minQty ?? 1, 1) : 1;
+    pricing.priceBasis === "per_unit" ? Math.max(pricing.minQty ?? 1, 1) : 1;
   const breakdown = useMemo(
     () => computePrice(pricing, reviewQty),
     [pricing, reviewQty]
   );
-  const money = (n: number) => formatMoney(n, pricing.currency);
+  const money = (n: number) => formatMoney(n, pricing.currency as Currency);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -1772,15 +1841,9 @@ export default function CreateProductPage() {
                       <>
                         <div>
                           <span className="font-medium">Recurring:</span>{" "}
-                          {money(pricing.subscriptionPrice || 0)} /{" "}
+                          {money(pricing.basePrice || 0)} /{" "}
                           {pricing.intervalCount || 1} {pricing.interval}
                         </div>
-                        {pricing.setupFee ? (
-                          <div>
-                            <span className="font-medium">Setup fee:</span>{" "}
-                            {money(pricing.setupFee)}
-                          </div>
-                        ) : null}
                       </>
                     ) : pricing.model === "one_time" ? (
                       <div>
@@ -1793,9 +1856,9 @@ export default function CreateProductPage() {
                           <span className="font-medium">Unit label:</span>{" "}
                           {pricing.unitName || "participant"}
                         </div>
-                        {pricing.tierType === "none" ? (
+                        {pricing.priceBasis === "flat" ? (
                           <div>
-                            <span className="font-medium">Unit price:</span>{" "}
+                            <span className="font-medium">Price:</span>{" "}
                             {money(pricing.basePrice || 0)}
                           </div>
                         ) : (
@@ -1812,7 +1875,7 @@ export default function CreateProductPage() {
                       <div className="flex items-center justify-between">
                         <span>
                           Subtotal
-                          {pricing.model === "per_unit"
+                          {pricing.priceBasis === "per_unit"
                             ? ` (${reviewQty} ${
                                 pricing.unitName || "participant"
                               }${reviewQty > 1 ? "s" : ""})`
@@ -1844,10 +1907,9 @@ export default function CreateProductPage() {
                         <span>{money(breakdown.total)}</span>
                       </div>
 
-                      {/* Installments preview */}
-                      {pricing.installments?.enabled &&
-                        (pricing.model === "one_time" ||
-                          pricing.model === "per_unit") && (
+                      {/* Installments preview - only for one_time */}
+                      {pricing.allowInstallments &&
+                        pricing.model === "one_time" && (
                           <div className="mt-3 text-sm text-slate-700">
                             <span className="font-medium">
                               Installments enabled

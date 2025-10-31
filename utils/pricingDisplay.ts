@@ -5,7 +5,7 @@ import { Currency, Pricing } from "@/lib/constants/pricing";
 export type WithPricing =
   | Partial<Pricing>
   | (object & {
-      pricing?: Partial<Pricing>;
+      pricing?: Partial<Pricing> | null;
       discountPercentage?: number;
       currency?: string; // server may send uppercase/lowercase
       price?: number; // legacy root price
@@ -46,6 +46,9 @@ export function inferCurrency(
 
 export function formatMoneySafe(amount: unknown, currency?: Currency): string {
   const n = Number(amount ?? 0);
+  // Show "Free" when price is 0
+  if (n === 0) return "Free";
+  
   const safeCode = (currency ?? "gbp") as Currency;
   const iso = safeCode.toUpperCase();
   try {
@@ -59,20 +62,23 @@ export function formatMoneySafe(amount: unknown, currency?: Currency): string {
 }
 
 export function isTiered(p: Partial<Pricing>): boolean {
-  return p.model === "per_unit" && (p.tierType ?? "none") !== "none";
+  return p.priceBasis === "per_unit" && (p.tierType === "volume" || p.tierType === "stairstep");
 }
 
 export function getPrimaryPrice(input: WithPricing): number {
   const p = asPricing(input);
-  if (p.model === "subscription") return Number(p.subscriptionPrice || 0);
-  if (p.model === "per_unit") {
+  if (p.priceBasis === "flat") {
+    // Flat pricing for both one_time and subscription
+    return Number(p.basePrice || 0);
+  }
+  if (p.priceBasis === "per_unit") {
     if (isTiered(p)) {
       const tiers = (p.tiers || []).slice().sort((a, b) => a.upTo - b.upTo);
       return Number(tiers[0]?.unitPrice || 0);
     }
     return Number(p.basePrice || 0);
   }
-  // one_time or fallback
+  // Fallback
   if (p.basePrice != null) return Number(p.basePrice || 0);
   // final fallback to root price if we never built pricing
   return Number((input as any).price || 0);
@@ -84,29 +90,50 @@ export function getPriceLabel(input: WithPricing): string {
   const cur = inferCurrency(input);
 
   if (p.model === "subscription") {
-    const cost = formatMoneySafe(p.subscriptionPrice, cur);
+    const cost = formatMoneySafe(p.basePrice || 0, cur);
+    // If cost is "Free", just show "Free"
+    if (cost === "Free") return "Free";
     const ic = p.intervalCount ?? 1;
     const interval = p.interval ?? "month";
     return `${cost} / ${ic} ${interval}${ic > 1 ? "s" : ""}`;
   }
 
-  if (p.model === "per_unit") {
-    if (isTiered(p)) return "Tiered pricing";
-    const cost = formatMoneySafe(p.basePrice, cur);
-    const unit = p.unitName || "participant";
+  if (p.priceBasis === "per_unit") {
+    if (isTiered(p)) {
+      // Show tier range (e.g., "£400 - £700 per team")
+      const tiers = (p.tiers || []).slice().sort((a, b) => a.unitPrice - b.unitPrice);
+      if (tiers.length === 0) return "Tiered pricing";
+      const minPrice = tiers[0]?.unitPrice || 0;
+      const maxPrice = tiers[tiers.length - 1]?.unitPrice || 0;
+      const unit = p.unitName || "team";
+      
+      // If all tiers are free, just show "Free"
+      if (minPrice === 0 && maxPrice === 0) {
+        return "Free";
+      }
+      
+      if (minPrice === maxPrice) {
+        return `${formatMoneySafe(minPrice, cur)} per ${unit}`;
+      }
+      return `${formatMoneySafe(minPrice, cur)} - ${formatMoneySafe(maxPrice, cur)} per ${unit}`;
+    }
+    const cost = formatMoneySafe(p.basePrice || 0, cur);
+    const unit = p.unitName || "team";
+    // If cost is "Free", don't add "per unit"
+    if (cost === "Free") return "Free";
     return `${cost} per ${unit}`;
   }
 
-  // one_time or unknown -> show amount only
+  // one_time flat or unknown -> show amount only
   const amount = p.basePrice != null ? p.basePrice : (input as any).price ?? 0;
   return formatMoneySafe(amount, cur);
 }
 
-/** Prefer server root `discountPercentage`, otherwise fall back to internal `discountPercent`. */
+/** Get discount percentage from pricing or root level. */
 export function getDiscountPercent(input: WithPricing): number {
   const p = asPricing(input);
   const root = (input as any).discountPercentage;
-  const internal = p.discountPercent;
+  const internal = p.discountPercentage;
   const val = root ?? internal ?? 0;
   const num = Number(val);
   return Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0;
@@ -121,22 +148,28 @@ export function getDiscountedPriceLabel(input: WithPricing): string {
   const apply = (amount: number) => amount * (1 - pct / 100);
 
   if (p.model === "subscription") {
-    const base = Number(p.subscriptionPrice || 0);
+    const base = Number(p.basePrice || 0);
+    const discounted = apply(base);
+    const cost = formatMoneySafe(discounted, cur);
+    // If cost is "Free", just show "Free"
+    if (cost === "Free") return "Free";
     const ic = p.intervalCount ?? 1;
     const interval = p.interval ?? "month";
-    return `${formatMoneySafe(apply(base), cur)} / ${ic} ${interval}${
-      ic > 1 ? "s" : ""
-    }`;
+    return `${cost} / ${ic} ${interval}${ic > 1 ? "s" : ""}`;
   }
 
-  if (p.model === "per_unit") {
+  if (p.priceBasis === "per_unit") {
     if (isTiered(p)) return getPriceLabel(input); // ambiguous for tiered
     const base = Number(p.basePrice || 0);
-    const unit = p.unitName || "participant";
-    return `${formatMoneySafe(apply(base), cur)} per ${unit}`;
+    const discounted = apply(base);
+    const cost = formatMoneySafe(discounted, cur);
+    const unit = p.unitName || "team";
+    // If cost is "Free", don't add "per unit"
+    if (cost === "Free") return "Free";
+    return `${cost} per ${unit}`;
   }
 
-  // one_time or fallback
+  // one_time flat or fallback
   const base =
     p.basePrice != null
       ? Number(p.basePrice || 0)
@@ -144,7 +177,13 @@ export function getDiscountedPriceLabel(input: WithPricing): string {
   return formatMoneySafe(apply(base), cur);
 }
 
-/** Numeric value suitable for sorting by “price”. */
+/** Numeric value suitable for sorting by "price". */
 export function getSortablePrice(input: WithPricing): number {
+  const p = asPricing(input);
+  if (p.priceBasis === "per_unit" && isTiered(p)) {
+    // For tiered pricing, use the minimum tier price for sorting
+    const tiers = (p.tiers || []).slice().sort((a, b) => a.unitPrice - b.unitPrice);
+    return Number(tiers[0]?.unitPrice || 0);
+  }
   return getPrimaryPrice(input);
 }

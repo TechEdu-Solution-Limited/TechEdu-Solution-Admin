@@ -2,60 +2,95 @@
 import { Pricing } from "@/lib/constants/pricing";
 
 export const validatePricing = (pricing: Pricing): string | null => {
-  if (pricing.model === "one_time") {
+  // Validate flat pricing
+  if (pricing.priceBasis === "flat") {
     if ((pricing.basePrice ?? 0) < 0)
-      return "One-time price cannot be negative.";
-  } else if (pricing.model === "subscription") {
-    if (!pricing.subscriptionPrice || pricing.subscriptionPrice < 0)
-      return "Subscription price is required.";
-    if (!pricing.interval) return "Subscription interval is required.";
-    if ((pricing.intervalCount ?? 1) < 1)
-      return "Subscription interval count must be at least 1.";
-  } else if (pricing.model === "per_unit") {
-    if (pricing.tierType === "none") {
-      if ((pricing.basePrice ?? 0) < 0) return "Unit price cannot be negative.";
-    } else {
-      if (!pricing.tiers || pricing.tiers.length === 0)
-        return "Please add at least one tier.";
+      return "Price cannot be negative.";
+    
+    // Subscription requires interval
+    if (pricing.model === "subscription") {
+      if (!pricing.interval) return "Subscription interval is required.";
+      if ((pricing.intervalCount ?? 1) < 1)
+        return "Subscription interval count must be at least 1.";
     }
+  }
+  
+  // Validate per_unit pricing
+  if (pricing.priceBasis === "per_unit") {
+    if (!pricing.tierType) return "Tier type is required for per-unit pricing.";
+    if (!pricing.tiers || pricing.tiers.length === 0)
+      return "Please add at least one tier for per-unit pricing.";
     if ((pricing.minQty ?? 1) < 1)
       return "Minimum quantity must be at least 1.";
     if ((pricing.maxQty ?? 1) < (pricing.minQty ?? 1))
       return "Max quantity must be >= min quantity.";
+    
+    // Subscription per_unit also requires interval
+    if (pricing.model === "subscription") {
+      if (!pricing.interval) return "Subscription interval is required.";
+      if ((pricing.intervalCount ?? 1) < 1)
+        return "Subscription interval count must be at least 1.";
+    }
   }
+  
   return null;
 };
 
-export const pickPricingForApi = (p: Pricing) => ({
-  model: p.model,
-  currency: p.currency,
-  basePrice: p.basePrice,
-  unitName: p.unitName,
-  allowQuantity: p.allowQuantity,
-  minQty: p.minQty,
-  maxQty: p.maxQty,
-  tierType: p.tierType,
-  tiers: p.tiers,
-  taxInclusive: p.taxInclusive,
-  vatPercentage: p.vatPercentage,
-  subscriptionPrice: p.subscriptionPrice,
-  interval: p.interval,
-  intervalCount: p.intervalCount,
-  trialDays: p.trialDays,
-  setupFee: p.setupFee,
-  autoRenew: p.autoRenew,
-  minTermMonths: p.minTermMonths,
-  proration: p.proration,
-  installments: p.installments
-    ? {
+export const pickPricingForApi = (p: Pricing) => {
+  const base = {
+    model: p.model,
+    priceBasis: p.priceBasis,
+    currency: p.currency,
+    taxInclusive: p.taxInclusive,
+    vatPercentage: p.vatPercentage,
+    discountPercentage: p.discountPercentage,
+    minQty: p.minQty,
+    maxQty: p.maxQty,
+  };
+  
+  // Add fields based on priceBasis
+  if (p.priceBasis === "flat") {
+    return {
+      ...base,
+      basePrice: p.basePrice,
+    };
+  }
+  
+  if (p.priceBasis === "per_unit") {
+    return {
+      ...base,
+      unitName: p.unitName,
+      tierType: p.tierType,
+      tiers: p.tiers,
+    };
+  }
+  
+  // Add subscription-specific fields if applicable
+  if (p.model === "subscription") {
+    return {
+      ...base,
+      interval: p.interval,
+      intervalCount: p.intervalCount,
+    };
+  }
+  
+  // Add installments for one_time
+  if (p.model === "one_time" && p.allowInstallments && p.installments) {
+    return {
+      ...base,
+      allowInstallments: true,
+      installments: {
         enabled: true,
         count: p.installments.count,
-        interval: p.installments.interval ?? "month",
-        intervalCount: p.installments.intervalCount ?? 1,
+        interval: p.installments.interval,
+        intervalCount: p.installments.intervalCount,
         downPaymentType: p.installments.downPaymentType,
         downPaymentValue: p.installments.downPaymentValue,
-        allowEarlyPayoff: p.installments.allowEarlyPayoff ?? true,
-        provider: p.installments.provider ?? "in_house",
-      }
-    : { enabled: false },
-});
+        allowEarlyPayoff: p.installments.allowEarlyPayoff,
+        provider: p.installments.provider || "in_house",
+      },
+    };
+  }
+  
+  return base;
+};

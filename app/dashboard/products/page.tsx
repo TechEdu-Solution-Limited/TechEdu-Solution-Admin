@@ -23,7 +23,14 @@ import { deleteApiRequest } from "@/lib/apiFetch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrencySymbol } from "@/lib/constants/currencies";
 import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/products";
-import { getDiscountPercent, getPriceLabel } from "@/utils/pricingDisplay";
+import {
+  getDiscountPercent,
+  getPriceLabel,
+  getSortablePrice,
+  getDiscountedPriceLabel,
+  formatMoneySafe,
+} from "@/utils/pricingDisplay";
+import safeConsole from "@/lib/console";
 
 // Using centralized constants from lib/constants/products.ts
 
@@ -76,10 +83,12 @@ export default function ProductsPage() {
           getApiRequest(`/api/products/public?${params.toString()}`, token),
           getApiRequest("/api/users/admin/instructors", token),
         ]);
+        safeConsole.log("THE RAW PRODUCT RESPONSE:>>>>>>>>>>> ", productsRes);
 
         const root = productsRes?.data || {};
         const data = root?.data ?? root;
         const responseProducts = data?.products || [];
+        safeConsole.log("All Products", responseProducts);
         setProducts(responseProducts);
         setInstructors(instructorsRes?.data?.data?.instructors || []);
 
@@ -169,8 +178,13 @@ export default function ProductsPage() {
       });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    let aVal = a[sortKey];
-    let bVal = b[sortKey];
+    if (sortKey === "price") {
+      const aPrice = getSortablePrice(a);
+      const bPrice = getSortablePrice(b);
+      return sortDirection === "asc" ? aPrice - bPrice : bPrice - aPrice;
+    }
+    let aVal = (a as any)[sortKey];
+    let bVal = (b as any)[sortKey];
     if (typeof aVal === "string" && typeof bVal === "string") {
       return sortDirection === "asc"
         ? aVal.localeCompare(bVal)
@@ -492,23 +506,33 @@ export default function ProductsPage() {
                               <>
                                 <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
                                   <span className="text-sm font-medium text-blue-600">
-                                    {instructors
-                                      .find(
-                                        (i) => i.userId === product.instructorId
-                                      )
-                                      ?.fullName?.charAt(0) || "I"}
+                                    {(
+                                      instructors.find(
+                                        (i) =>
+                                          i.userId === product.instructorId ||
+                                          i._id === product.instructorId
+                                      )?.fullName?.charAt(0) || "I"
+                                    )}
                                   </span>
                                 </div>
                                 <div>
                                   <div className="text-sm font-medium text-slate-900">
-                                    {instructors.find(
-                                      (i) => i.userId === product.instructorId
-                                    )?.fullName || "Unknown Instructor"}
+                                    {(
+                                      instructors.find(
+                                        (i) =>
+                                          i.userId === product.instructorId ||
+                                          i._id === product.instructorId
+                                      )?.fullName || "Unknown Instructor"
+                                    )}
                                   </div>
                                   <div className="text-xs text-slate-500">
-                                    {instructors.find(
-                                      (i) => i.userId === product.instructorId
-                                    )?.title || "Instructor"}
+                                    {(
+                                      instructors.find(
+                                        (i) =>
+                                          i.userId === product.instructorId ||
+                                          i._id === product.instructorId
+                                      )?.title || "Instructor"
+                                    )}
                                   </div>
                                 </div>
                               </>
@@ -522,24 +546,77 @@ export default function ProductsPage() {
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
                           <div className="text-sm text-slate-700">
-                            {product.productCategoryTitle}
+                            {typeof product.productCategoryTitle === 'string' 
+                              ? product.productCategoryTitle 
+                              : (product.productCategoryId as any)?.title || 'N/A'}
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
                           <div className="text-sm text-slate-700">
-                            {product.productSubcategoryName}
+                            {typeof product.productSubcategoryName === 'string'
+                              ? product.productSubcategoryName
+                              : (product.productSubCategoryId as any)?.name || 'N/A'}
                           </div>
                         </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="text-sm font-bold text-green-600">
+                            {getDiscountPercent(product) > 0 ? (
+                              <>
+                                <span className="mr-2 line-through text-slate-500 font-normal">
+                                  {getPriceLabel(product)}
+                                </span>
+                                <span>{getDiscountedPriceLabel(product)}</span>
+                              </>
+                            ) : (
+                              getPriceLabel(product)
+                            )}
+                          </div>
+                          {product.pricing && (
+                            <div className="mt-1 text-xs text-slate-500">
+                              {product.pricing.priceBasis === "per_unit" ? (
+                                <>
+                                  <span>
+                                    {product.pricing.tierType || "none"} tiers
+                                    {product.pricing.unitName
+                                      ? ` • per ${product.pricing.unitName}`
+                                      : ""}
+                                  </span>
+                                  {Array.isArray(product.pricing.tiers) &&
+                                    product.pricing.tiers.length > 0 && (
+                                      <span className="block truncate max-w-[280px]">
+                                        {(product.pricing.tiers as Array<{ upTo: number; unitPrice: number }> | undefined)?.
+                                          slice(0, 3)
+                                          .map((t: { upTo: number; unitPrice: number }): string =>
+                                            `${t.upTo}: ${formatMoneySafe(
+                                              t.unitPrice,
+                                              product.pricing?.currency as any
+                                            )}`
+                                          )
+                                          .join(", ")}
+                                        {product.pricing.tiers.length > 3
+                                          ? ", …"
+                                          : ""}
+                                      </span>
+                                    )}
+                                </>
+                              ) : product.pricing.model === "subscription" ? (
+                                <span>
+                                  {product.pricing.intervalCount || 1} {product.pricing.interval || "month"}
+                                  {product.pricing.trialDays
+                                    ? ` • trial ${product.pricing.trialDays}d`
+                                    : ""}
+                                </span>
+                              ) : (
+                                <span>one-time</span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
                         <td className="px-8 py-6 whitespace-nowrap">
                           <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 border border-yellow-200">
                             {getDiscountPercent(product)}%
                           </span>
-                        </td>
-
-                        <td className="px-8 py-6 whitespace-nowrap">
-                          <div className="text-sm font-bold text-green-600">
-                            {getPriceLabel(product)}
-                          </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
                           <span

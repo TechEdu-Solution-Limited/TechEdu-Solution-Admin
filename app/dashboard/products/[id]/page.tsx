@@ -26,6 +26,7 @@ import {
   getDiscountedPriceLabel,
   getDiscountPercent,
   getPriceLabel,
+  formatMoneySafe,
 } from "@/utils/pricingDisplay";
 
 export default function ProductViewPage() {
@@ -71,7 +72,9 @@ export default function ProductViewPage() {
               if (instructorsResponse?.data?.success) {
                 const instructorData =
                   instructorsResponse.data.data.instructors.find(
-                    (i: any) => i.userId === productData.instructorId
+                    (i: any) =>
+                      i.userId === productData.instructorId ||
+                      i._id === productData.instructorId
                   );
                 setInstructor(instructorData);
               }
@@ -395,8 +398,12 @@ export default function ProductViewPage() {
                   {product.service}
                 </h1>
                 <p className="text-slate-600 mt-1">
-                  {product.productType} • {product.productCategoryTitle} •{" "}
-                  {product.productSubcategoryName}
+                  {product.productType} • {typeof product.productCategoryTitle === 'string' 
+                    ? product.productCategoryTitle 
+                    : (product.productCategoryId as any)?.title || 'N/A'} •{" "}
+                  {typeof product.productSubcategoryName === 'string'
+                    ? product.productSubcategoryName
+                    : (product.productSubCategoryId as any)?.name || 'N/A'}
                 </p>
               </div>
             </div>
@@ -536,140 +543,6 @@ export default function ProductViewPage() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Price Card */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
-              <div className="text-center mb-6">
-                <div className="flex flex-col items-center gap-1">
-                  {getDiscountPercent(product) > 0 ? (
-                    <>
-                      <div className="text-sm text-slate-500 line-through">
-                        {getPriceLabel(product)}
-                      </div>
-                      <div className="text-3xl font-bold text-green-600">
-                        {getDiscountedPriceLabel(product)}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-3xl font-bold text-green-600">
-                      {getPriceLabel(product)}
-                    </div>
-                  )}
-                </div>
-
-                {getDiscountPercent(product) > 0 && (
-                  <span className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200">
-                    {getDiscountPercent(product)}% OFF
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-slate-500" />
-                  <span className="text-slate-700">
-                    {product.programLength} {product.mode}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-slate-500" />
-                  <span className="text-slate-700">
-                    {product.durationInMinutes} minutes total
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-slate-500" />
-                  <span className="text-slate-700">
-                    {product.minutesPerSession} min per session
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Type & Category */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Product Information
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <span className="text-sm text-slate-500">Product Type</span>
-                  <p className="font-medium text-slate-900">
-                    {product.productType}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-sm text-slate-500">Category</span>
-                  <p className="font-medium text-slate-900">
-                    {product.productCategoryTitle}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-sm text-slate-500">Subcategory</span>
-                  <p className="font-medium text-slate-900">
-                    {product.productSubcategoryName}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-sm text-slate-500">Delivery Mode</span>
-                  <p className="font-medium text-slate-900 capitalize">
-                    {product.deliveryMode}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-sm text-slate-500">Session Type</span>
-                  <p className="font-medium text-slate-900">
-                    {product.sessionType}
-                  </p>
-                </div>
-                {(product.publicSchedulingUrl || product.schedulingUrl) && (
-                  <div>
-                    <span className="text-sm text-slate-500">
-                      Scheduling URL
-                    </span>
-                    <p className="font-medium text-slate-900">
-                      <a
-                        href={
-                          product.publicSchedulingUrl || product.schedulingUrl
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline break-all"
-                      >
-                        {product.publicSchedulingUrl || product.schedulingUrl}
-                      </a>
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <span className="text-sm text-slate-500">Instructor</span>
-                  {instructor ? (
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-600">
-                          {instructor.fullName.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {instructor.fullName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {instructor.title}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="font-medium text-slate-400 italic">
-                      Not assigned
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Features */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
@@ -741,6 +614,207 @@ export default function ProductViewPage() {
                   )}
                   <span className="text-slate-700">Recurring</span>
                 </div> */}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Price Card */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
+              <div className="text-center mb-6">
+                <div className="flex flex-col items-center gap-1">
+                  {getDiscountPercent(product) > 0 ? (
+                    <>
+                      <div className="text-sm text-slate-500 line-through">
+                        {getPriceLabel(product)}
+                      </div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {getDiscountedPriceLabel(product)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-3xl font-bold text-green-600">
+                      {getPriceLabel(product)}
+                    </div>
+                  )}
+                </div>
+
+                {getDiscountPercent(product) > 0 && (
+                  <span className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200">
+                    {getDiscountPercent(product)}% OFF
+                  </span>
+                )}
+              </div>
+
+              {/* Pricing breakdown */}
+              {product.pricing && (
+                <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Pricing Breakdown</h4>
+                  <div className="text-sm text-slate-700 space-y-1">
+                    <div>
+                      <span className="text-slate-500">Model:</span> {product.pricing.model}
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Currency:</span> {String(product.pricing.currency || product.currency).toUpperCase()}
+                    </div>
+                    {product.pricing.priceBasis === "per_unit" && (
+                      <>
+                        <div>
+                          <span className="text-slate-500">Unit:</span> {product.pricing.unitName || "team"}
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Tier type:</span> {product.pricing.tierType || "none"}
+                        </div>
+                        {Array.isArray(product.pricing.tiers) && product.pricing.tiers.length > 0 && (
+                          <div className="mt-1">
+                            <span className="text-slate-500">Tiers:</span>
+                            <ul className="mt-1 list-disc list-inside text-slate-700">
+                              {product.pricing.tiers.map((t, idx) => (
+                                <li key={idx}>
+                                  up to {t.upTo}: {formatMoneySafe(t.unitPrice, product.pricing?.currency as any)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {product.pricing.model === "subscription" && (
+                      <>
+                        <div>
+                          <span className="text-slate-500">Interval:</span> {product.pricing.intervalCount || 1} {product.pricing.interval || "month"}
+                        </div>
+                      </>
+                    )}
+                    {product.pricing.model === "one_time" && (
+                      <div>
+                        <span className="text-slate-500">Base price:</span> {formatMoneySafe(product.pricing.basePrice, product.pricing?.currency as any)}
+                      </div>
+                    )}
+                    {typeof product.pricing.vatPercentage === "number" && (
+                      <div>
+                        <span className="text-slate-500">VAT:</span> {product.pricing.vatPercentage}% {product.pricing.taxInclusive ? "(tax inclusive)" : "(tax exclusive)"}
+                      </div>
+                    )}
+                    {typeof product.discountPercentage === "number" && product.discountPercentage > 0 && (
+                      <div>
+                        <span className="text-slate-500">Discount:</span> {product.discountPercentage}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-slate-500" />
+                  <span className="text-slate-700">
+                    {product.programLength} {product.mode}
+                  </span>
+                </div>
+                {(product.durationInMinutes || product.durationMinutes) && (
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5 text-slate-500" />
+                    <span className="text-slate-700">
+                      {(product.durationInMinutes || product.durationMinutes)} minutes total
+                    </span>
+                  </div>
+                )}
+                {product.minutesPerSession && (
+                  <div className="flex items-center gap-3">
+                    <Users className="w-5 h-5 text-slate-500" />
+                    <span className="text-slate-700">
+                      {product.minutesPerSession} min per session
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Product Type & Category */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                Product Information
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm text-slate-500">Product Type</span>
+                  <p className="font-medium text-slate-900">
+                    {product.productType}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Category</span>
+                  <p className="font-medium text-slate-900">
+                    {typeof product.productCategoryTitle === 'string' 
+                      ? product.productCategoryTitle 
+                      : (product.productCategoryId as any)?.title || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Subcategory</span>
+                  <p className="font-medium text-slate-900">
+                    {typeof product.productSubcategoryName === 'string'
+                      ? product.productSubcategoryName
+                      : (product.productSubCategoryId as any)?.name || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Delivery Mode</span>
+                  <p className="font-medium text-slate-900 capitalize">
+                    {product.deliveryMode}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Session Type</span>
+                  <p className="font-medium text-slate-900">
+                    {product.sessionType}
+                  </p>
+                </div>
+                {(product.publicSchedulingUrl || product.schedulingUrl) && (
+                  <div>
+                    <span className="text-sm text-slate-500">
+                      Scheduling URL
+                    </span>
+                    <p className="font-medium text-slate-900">
+                      <a
+                        href={
+                          product.publicSchedulingUrl || product.schedulingUrl
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline break-all"
+                      >
+                        {product.publicSchedulingUrl || product.schedulingUrl}
+                      </a>
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-sm text-slate-500">Instructor</span>
+                  {instructor ? (
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-600">
+                          {instructor.fullName.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {instructor.fullName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {instructor.title}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="font-medium text-slate-400 italic">
+                      Not assigned
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

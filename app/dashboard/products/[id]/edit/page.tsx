@@ -22,7 +22,7 @@ import {
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
-import { Pricing } from "@/lib/constants/pricing";
+import { Pricing, defaultPricing, normalizePricingForApi } from "@/lib/constants/pricing";
 import PricingForm from "@/components/PricingForms";
 import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
 
@@ -35,28 +35,7 @@ const requiresTrainingMaterials = (productType: string) => {
   ].includes(productType);
 };
 
-// Build + sanitize pricing
-const ALLOWED_MODELS = ["one_time", "subscription", "per_unit"] as const;
-const ALLOWED_CURRENCIES = [
-  "usd",
-  "eur",
-  "gbp",
-  "cad",
-  "aud",
-  "jpy",
-  "inr",
-  "ngn",
-] as const;
-const normModel = (m: unknown) =>
-  (["one_time", "subscription", "per_unit"].includes(
-    String(m).toLowerCase().replace(/-/g, "_")
-  )
-    ? String(m).toLowerCase().replace(/-/g, "_")
-    : "one_time") as (typeof ALLOWED_MODELS)[number];
-const normCurrency = (c: unknown) =>
-  (ALLOWED_CURRENCIES.includes(String(c || "gbp").toLowerCase() as any)
-    ? String(c).toLowerCase()
-    : "gbp") as (typeof ALLOWED_CURRENCIES)[number];
+// Helper functions for form validation
 
 export default function ProductEditPage() {
   const params = useParams();
@@ -75,29 +54,7 @@ export default function ProductEditPage() {
   const [instructors, setInstructors] = useState<any[]>([]);
   const [instructorsLoading, setInstructorsLoading] = useState(false);
 
-  const [pricing, setPricing] = useState<Pricing>({
-    model: "one_time",
-    currency: "gbp",
-    taxInclusive: true,
-    vatPercentage: 0,
-    discountPercent: 0,
-    basePrice: 0,
-    unitName: "participant",
-    allowQuantity: false,
-    minQty: 1,
-    maxQty: 1000,
-    tierType: "none",
-    tiers: [],
-    subscriptionPrice: undefined,
-    interval: "month",
-    intervalCount: 1,
-    trialDays: 0,
-    setupFee: 0,
-    autoRenew: true,
-    minTermMonths: 0,
-    proration: true,
-    installments: undefined,
-  });
+  const [pricing, setPricing] = useState<Pricing>(defaultPricing);
 
   // Derived flags
   const isBookable = !!form.isBookableService;
@@ -164,17 +121,78 @@ export default function ProductEditPage() {
           instructorId: product.instructorId,
         });
 
-        // Pricing
-        if (product.pricing) {
-          setPricing((prev) => ({ ...prev, ...product.pricing }));
-        } else {
-          setPricing((prev) => ({
-            ...prev,
-            model: "one_time",
-            currency: (product.currency || "gbp").toLowerCase(),
-            basePrice: Number(product.price || 0),
-          }));
+        // Pricing - convert from API format to new structure
+        const pricingData: any = product.pricing || {};
+        
+        // Handle legacy format (model="per_unit") or new format
+        let model: "one_time" | "subscription" = pricingData.model || "one_time";
+        let priceBasis: "flat" | "per_unit" = "flat";
+        
+        // Handle migration from old format (model="per_unit" is no longer valid)
+        // This should only happen if API returns legacy data
+        if (pricingData.model === "per_unit") {
+          // Default to one_time with per_unit basis
+          model = "one_time";
+          priceBasis = "per_unit";
+        } else if (pricingData.priceBasis) {
+          priceBasis = pricingData.priceBasis;
+        } else if (pricingData.tiers && pricingData.tiers.length > 0) {
+          // If tiers exist but no priceBasis, assume per_unit
+          priceBasis = "per_unit";
         }
+        
+        // Safety check: ensure priceBasis is always set for one_time and subscription
+        if (!priceBasis && (model === "one_time" || model === "subscription")) {
+          priceBasis = "flat";
+        }
+        
+        // Build pricing object with new structure
+        const mappedPricing: Pricing = {
+          model,
+          priceBasis,
+          currency: pricingData.currency || (product.currency || "gbp").toLowerCase(),
+          taxInclusive: pricingData.taxInclusive ?? false,
+          vatPercentage: pricingData.vatPercentage ?? 0,
+          discountPercentage: pricingData.discountPercentage ?? pricingData.discountPercent ?? 0,
+          minQty: pricingData.minQty ?? 1,
+          maxQty: pricingData.maxQty ?? 1000,
+          allowInstallments: pricingData.allowInstallments ?? false,
+        };
+        
+        // Add fields based on priceBasis
+        if (priceBasis === "flat") {
+          mappedPricing.basePrice = pricingData.basePrice ?? Number(product.price || 0);
+        } else if (priceBasis === "per_unit") {
+          mappedPricing.unitName = pricingData.unitName || "team";
+          mappedPricing.tierType = pricingData.tierType || "volume";
+          mappedPricing.tiers = pricingData.tiers || [];
+        }
+        
+        // Add subscription-specific fields
+        if (model === "subscription") {
+          if (priceBasis === "flat" && mappedPricing.basePrice === undefined) {
+            mappedPricing.basePrice = Number(product.price || 0);
+          }
+          mappedPricing.interval = pricingData.interval || "month";
+          mappedPricing.intervalCount = pricingData.intervalCount || 1;
+        }
+        
+        // Add installments if enabled
+        if (model === "one_time" && pricingData.allowInstallments && pricingData.installments) {
+          mappedPricing.allowInstallments = true;
+          mappedPricing.installments = {
+            enabled: true,
+            count: pricingData.installments.count || 2,
+            interval: pricingData.installments.interval || "month",
+            intervalCount: pricingData.installments.intervalCount || 1,
+            downPaymentType: pricingData.installments.downPaymentType || "percent",
+            downPaymentValue: pricingData.installments.downPaymentValue || 20,
+            allowEarlyPayoff: pricingData.installments.allowEarlyPayoff,
+            provider: pricingData.installments.provider || "in_house",
+          };
+        }
+        
+        setPricing(mappedPricing);
 
         // Instructors
         if (instructorsRes?.data?.success) {
@@ -348,7 +366,7 @@ export default function ProductEditPage() {
       }
 
       // Validate pricing
-      const pErr = validatePricing(pricing as Pricing);
+      const pErr = validatePricing(pricing);
       if (pErr) {
         setError(pErr);
         setSaving(false);
@@ -368,32 +386,85 @@ export default function ProductEditPage() {
         tags: Array.isArray(form.tags) ? form.tags : [],
       } as const;
 
-      // Pricing payload
-      const rawPricing = pickPricingForApi(pricing as Pricing);
-      const pricingPayload = {
-        ...rawPricing,
-        model: normModel((rawPricing as any)?.model ?? pricing.model),
-        currency: normCurrency(
-          (rawPricing as any)?.currency ?? pricing.currency
-        ),
+      // Pricing payload - build to backend shape
+      const normalized = normalizePricingForApi(pricing);
+      const allowedCurrencies = ["usd", "eur", "gbp", "cad", "aud", "jpy", "inr", "ngn"] as const;
+      const currency = (normalized.currency || "gbp").toLowerCase();
+      const safeCurrency = (allowedCurrencies.includes(currency as any)
+        ? currency
+        : "gbp") as typeof allowedCurrencies[number];
+
+      const toBackendPricing = (p: Pricing) => {
+        if (p.model === "subscription") {
+          return {
+            model: "subscription",
+            currency: safeCurrency,
+            subscriptionPrice: Number(p.subscriptionPrice ?? p.basePrice ?? 0),
+            interval: p.interval || "month",
+            intervalCount: p.intervalCount || 1,
+            trialDays: p.trialDays ?? 0,
+            setupFee: Number(p.setupFee || 0),
+            autoRenew: p.autoRenew ?? true,
+            minTermMonths: p.minTermMonths ?? 0,
+            proration: p.proration ?? true,
+          };
+        }
+
+        const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+        const base = Number(p.basePrice || 0);
+        const payload: any = {
+          model: "one_time",
+          priceBasis: p.priceBasis ?? "flat", // Default to flat only if missing (preserves "per_unit" if set)
+          currency: safeCurrency,
+          taxInclusive: p.taxInclusive ?? false,
+          vatPercentage: p.vatPercentage ?? 0,
+        };
+        // Only send basePrice for flat pricing
+        if (p.priceBasis !== "per_unit") {
+          payload.basePrice = base;
+        }
+        if (p.priceBasis === "per_unit") {
+          payload.unitName = unitName;
+          payload.allowQuantity = true;
+          payload.minQty = p.minQty ?? 1;
+          payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
+          payload.tierType = p.tierType || "volume";
+          payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+        }
+        if (p.allowInstallments && p.installments) {
+          payload.installments = {
+            enabled: true,
+            count: Math.max(2, Number(p.installments.count || 2)),
+            interval: p.installments.interval || "month",
+            intervalCount: p.installments.intervalCount || 1,
+            downPaymentType: p.installments.downPaymentType,
+            downPaymentValue: Math.max(0, Number(p.installments.downPaymentValue || 0)),
+            allowEarlyPayoff: p.installments.allowEarlyPayoff ?? false,
+            provider: p.installments.provider || "in_house",
+          };
+        }
+        return payload;
       };
-      if (!ALLOWED_MODELS.includes(pricingPayload.model)) {
-        setError(`Pricing model must be one of: ${ALLOWED_MODELS.join(", ")}`);
-        setSaving(false);
-        return;
-      }
-      if (!ALLOWED_CURRENCIES.includes(pricingPayload.currency)) {
-        setError(`Currency must be one of: ${ALLOWED_CURRENCIES.join(", ")}`);
-        setSaving(false);
-        return;
-      }
+
+      const sanitizedPricing = toBackendPricing(normalized);
+
+      // Debug: show payloads being sent (pricing by model)
+      try {
+        console.log("[Edit Product] Pricing model:", normalized.model);
+        console.log("[Edit Product] Pricing payload:", sanitizedPricing);
+        console.log("[Edit Product] Root payload (partial):", {
+          isBookableService: rootPayload.isBookableService,
+          nonBookableService: rootPayload.nonBookableService,
+          productType: rootPayload.productType,
+        });
+      } catch {}
 
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
         patchApiRequest(
           `/api/products/${params.id}/pricing`,
           token,
-          pricingPayload
+          sanitizedPricing
         ),
       ]);
 
@@ -960,7 +1031,10 @@ export default function ProductEditPage() {
                 Pricing & Duration
               </h2>
               <div className="grid grid-cols-1 gap-6">
-                <PricingForm value={pricing} onChange={setPricing} />
+                <PricingForm 
+                  value={pricing} 
+                  onChange={(next) => setPricing(next)} 
+                />
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Duration (minutes){" "}
