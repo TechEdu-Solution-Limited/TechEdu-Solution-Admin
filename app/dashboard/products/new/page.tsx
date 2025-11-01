@@ -583,6 +583,10 @@ export default function CreateProductPage() {
         ? currency
         : "gbp") as typeof allowedCurrencies[number];
 
+      // Debug: show normalized pricing before toBackendPricing
+      console.log("[Create Product] Raw pricing:", pricing);
+      console.log("[Create Product] Normalized pricing:", normalizedPricing);
+
       const toBackendPricing = (p: Pricing) => {
         if (p.model === "subscription") {
           const payload: any = {
@@ -635,25 +639,27 @@ export default function CreateProductPage() {
         }
         if (p.priceBasis === "per_unit") {
           payload.unitName = unitName;
-          payload.allowQuantity = true;
           payload.minQty = p.minQty ?? 1;
-          payload.maxQty = p.maxQty ?? Math.max(payload.minQty ?? 1, 1000);
+          payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
           payload.tierType = p.tierType || "volume";
           payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
         }
-        if (p.allowInstallments && p.installments) {
+        // Only include installments if explicitly enabled
+        // Note: p is normalized which deletes installments if allowInstallments is false
+        // So we check original pricing object directly
+        if (pricing.allowInstallments && pricing.installments) {
+          payload.allowInstallments = true;
           payload.installments = {
             enabled: true,
-            count: Math.max(2, Number(p.installments.count || 2)),
-            interval: p.installments.interval || "month",
-            intervalCount: p.installments.intervalCount || 1,
-            downPaymentType: p.installments.downPaymentType,
-            downPaymentValue: Math.max(0, Number(p.installments.downPaymentValue || 0)),
-            allowEarlyPayoff: p.installments.allowEarlyPayoff ?? false,
-            provider: p.installments.provider || "in_house",
+            count: Math.max(2, Number(pricing.installments.count || 2)),
+            interval: pricing.installments.interval || "month",
+            intervalCount: pricing.installments.intervalCount || 1,
+            downPaymentType: pricing.installments.downPaymentType,
+            downPaymentValue: Math.max(0, Number(pricing.installments.downPaymentValue || 0)),
+            allowEarlyPayoff: pricing.installments.allowEarlyPayoff ?? false,
+            provider: pricing.installments.provider || "in_house",
           };
         }
-        // DO NOT include allowInstallments in payload - backend validates against it when installments is present
         return payload;
       };
 

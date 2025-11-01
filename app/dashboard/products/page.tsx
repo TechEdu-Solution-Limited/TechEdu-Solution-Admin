@@ -461,6 +461,9 @@ export default function ProductsPage() {
                       Subcategory
                     </th>
                     <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                      Price Model
+                    </th>
+                    <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
                       Price
                     </th>
                     <th className="px-8 py-6 text-left text-sm font-semibold text-slate-700 uppercase tracking-wider">
@@ -556,6 +559,19 @@ export default function ProductsPage() {
                             {typeof product.productSubcategoryName === 'string'
                               ? product.productSubcategoryName
                               : (product.productSubCategoryId as any)?.name || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-slate-900">
+                            {product.pricing?.model ? (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border border-purple-200">
+                                {product.pricing.model === "one_time" && "One-time"}
+                                {product.pricing.model === "subscription" && "Subscription"}
+                                {product.pricing.model === "free" && "Free"}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">N/A</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
