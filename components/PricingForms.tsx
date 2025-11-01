@@ -694,6 +694,37 @@ export function PricePreviewCard({
                 <span>{money(breakdown.total)}</span>
               </div>
             </div>
+
+            {/* Installments preview for per_unit */}
+            {pricing.model === "one_time" && pricing.installments?.enabled && (
+              <div className="rounded-xl border p-2 mt-3 bg-muted/30">
+                <div className="text-xs font-medium mb-1">Installments</div>
+                {(() => {
+                  const plan = computeInstallments(
+                    breakdown.total,
+                    pricing.installments
+                  );
+                  if (!plan) return null;
+                  return (
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span>Down payment</span>
+                        <span>{money(plan.downPayment)}</span>
+                      </div>
+                      {plan.plan.map((amt, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between"
+                        >
+                          <span>Installment {i + 1}</span>
+                          <span>{money(amt)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-1">
@@ -1067,8 +1098,8 @@ export function PricingForm({
                   )}
                 </div>
 
-                {/* Installments - only for one_time flat */}
-                {v.model === "one_time" && v.priceBasis === "flat" && (
+                {/* Installments - for all one_time pricing (flat and per_unit) */}
+                {v.model === "one_time" && (
                 <div className="flex items-center gap-6 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Switch
@@ -1502,6 +1533,166 @@ export function PricingForm({
                     onChange={(next) => apply({ tiers: next })}
                     disabled={disabled}
                   />
+
+                  {/* Installments - for one_time per_unit */}
+                  {v.model === "one_time" && (
+                    <div className="border-t pt-4 mt-4 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={v.allowInstallments ?? false}
+                          onCheckedChange={(checked) =>
+                            apply({
+                              allowInstallments: checked,
+                              installments: checked
+                                ? v.installments ?? {
+                                    enabled: true,
+                                    count: 2,
+                                    interval: "month",
+                                    intervalCount: 1,
+                                    downPaymentType: "percent",
+                                    downPaymentValue: 20,
+                                    allowEarlyPayoff: false,
+                                    provider: "in_house",
+                                  }
+                                : undefined,
+                            })
+                          }
+                          disabled={disabled}
+                        />
+                        <Label>Allow Installments</Label>
+                      </div>
+
+                      {v.allowInstallments && v.installments && (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label>Count</Label>
+                              <Input
+                                type="number"
+                                min={2}
+                                value={v.installments.count}
+                                onChange={(e) =>
+                                  apply({
+                                    installments: {
+                                      ...v.installments!,
+                                      count: Math.max(2, Number(e.target.value || 2)),
+                                    },
+                                  })
+                                }
+                                disabled={disabled}
+                                className="w-full rounded-[10px]"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Interval</Label>
+                              <Select
+                                value={v.installments.interval}
+                                onValueChange={(val: Interval) =>
+                                  apply({
+                                    installments: {
+                                      ...v.installments!,
+                                      interval: val,
+                                    },
+                                  })
+                                }
+                                disabled={disabled}
+                              >
+                                <SelectTrigger className="w-full rounded-[10px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white rounded-[10px]">
+                                  <SelectItem value="hour">hour</SelectItem>
+                                  <SelectItem value="day">day</SelectItem>
+                                  <SelectItem value="week">week</SelectItem>
+                                  <SelectItem value="month">month</SelectItem>
+                                  <SelectItem value="year">year</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Interval Count</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                value={v.installments.intervalCount}
+                                onChange={(e) =>
+                                  apply({
+                                    installments: {
+                                      ...v.installments!,
+                                      intervalCount: Number(e.target.value || 1),
+                                    },
+                                  })
+                                }
+                                disabled={disabled}
+                                className="w-full rounded-[10px]"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Down payment type</Label>
+                              <Select
+                                value={v.installments.downPaymentType}
+                                onValueChange={(val: DownPaymentType) =>
+                                  apply({
+                                    installments: {
+                                      ...v.installments!,
+                                      downPaymentType: val,
+                                    },
+                                  })
+                                }
+                                disabled={disabled}
+                              >
+                                <SelectTrigger className="w-full rounded-[10px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white rounded-[10px]">
+                                  <SelectItem value="percent">percent</SelectItem>
+                                  <SelectItem value="amount">amount</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label>
+                                {v.installments.downPaymentType === "percent"
+                                  ? "Down payment (%)"
+                                  : "Down payment amount"}
+                              </Label>
+                              <Input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={v.installments.downPaymentValue}
+                                onChange={(e) =>
+                                  apply({
+                                    installments: {
+                                      ...v.installments!,
+                                      downPaymentValue: Number(e.target.value || 0),
+                                    },
+                                  })
+                                }
+                                disabled={disabled}
+                                className="w-full rounded-[10px]"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={v.installments.allowEarlyPayoff ?? false}
+                                onCheckedChange={(checked) =>
+                                  apply({
+                                    installments: {
+                                      ...v.installments!,
+                                      allowEarlyPayoff: checked,
+                                    },
+                                  })
+                                }
+                                disabled={disabled}
+                              />
+                              <Label>Allow Early Payoff</Label>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
               </CardContent>
             </Card>
           )}
