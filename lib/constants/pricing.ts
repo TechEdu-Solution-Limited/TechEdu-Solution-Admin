@@ -12,7 +12,7 @@ export type Currency =
   | "ngn";
 export type PriceModel = "one_time" | "subscription" | "free";
 export type PriceBasis = "flat" | "per_unit";
-export type Interval = "hour" | "day" | "week" | "month" | "year";
+export type Interval = "day" | "week" | "month" | "year";
 export type TierType = "volume" | "stairstep";
 export type DownPaymentType = "percent" | "amount";
 export type UnitType = "team" | "person";

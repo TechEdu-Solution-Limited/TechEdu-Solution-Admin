@@ -1162,7 +1162,6 @@ export function PricingForm({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-white rounded-[10px]">
-                              <SelectItem value="hour">hour</SelectItem>
                               <SelectItem value="day">day</SelectItem>
                               <SelectItem value="week">week</SelectItem>
                               <SelectItem value="month">month</SelectItem>
@@ -1297,7 +1296,6 @@ export function PricingForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white rounded-[10px]">
-                        <SelectItem value="hour">hour</SelectItem>
                         <SelectItem value="day">day</SelectItem>
                         <SelectItem value="week">week</SelectItem>
                         <SelectItem value="month">month</SelectItem>
@@ -1601,7 +1599,6 @@ export function PricingForm({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-white rounded-[10px]">
-                                  <SelectItem value="hour">hour</SelectItem>
                                   <SelectItem value="day">day</SelectItem>
                                   <SelectItem value="week">week</SelectItem>
                                   <SelectItem value="month">month</SelectItem>
