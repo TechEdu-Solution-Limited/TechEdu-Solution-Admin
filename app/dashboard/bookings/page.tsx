@@ -169,27 +169,98 @@ export default function AdminBookingsPage() {
     }
   };
 
+  // Helper functions to work with both old and new API structures
+  const getBookingId = (b: any) => b?.id || b?._id || "";
+  const getProductName = (b: any) => 
+    b?.product?.name || 
+    b?.productId?.service || 
+    b?.bookingPurpose || 
+    "—";
+  const getProductType = (b: any) => 
+    b?.product?.type || 
+    b?.productType || 
+    "—";
+  const getInstructorName = (b: any) => 
+    b?.instructor?.fullName || 
+    b?.instructorId?.fullName || 
+    "—";
+  const getInstructorEmail = (b: any) => 
+    b?.instructor?.email || 
+    b?.instructorId?.email || 
+    "—";
+  const getBookingStatus = (b: any) => 
+    b?.status?.booking || 
+    b?.status || 
+    "pending";
+  const getPaymentStatus = (b: any) => 
+    b?.status?.payment || 
+    b?.paymentStatus || 
+    "unpaid";
+  const getSchedulingStatus = (b: any) => 
+    b?.status?.scheduling || 
+    b?.schedulingStatus || 
+    null;
+  const getScheduleDate = (b: any) => 
+    b?.schedule?.confirmed?.start || 
+    b?.scheduleAt || 
+    null;
+  const getDuration = (b: any) => 
+    b?.schedule?.minutesPerSession || 
+    b?.durationInMinutes || 
+    0;
+  const getParticipantCount = (b: any) => 
+    b?.participants?.length || 
+    b?.numberOfExpectedParticipants || 
+    0;
+  const getScheduleKind = (b: any) => 
+    (b?.schedule?.kind === "classroom" || 
+    b?.isClassroom) ? "Classroom" : "Session";
+  const isCancelled = (b: any) => 
+    b?.cancellation?.isCancelled || 
+    b?.status === "cancelled" || 
+    getBookingStatus(b) === "cancelled";
+
+  const getCustomerName = (b: any) =>
+    b?.participants?.[0]?.fullName ||
+    b?.audit?.createdBy?.fullName ||
+    b?.fullName || 
+    b?.createdBy?.fullName || 
+    b?.bookingSchedulerFullName || 
+    "—";
+
+  const getCustomerEmail = (b: any) =>
+    b?.participants?.[0]?.email ||
+    b?.audit?.createdBy?.email ||
+    b?.email || 
+    b?.createdBy?.email || 
+    b?.bookingSchedulerEmail || 
+    "—";
+
   const filteredBookings = bookings.filter((booking) => {
     const b: any = booking;
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      (b.bookingSchedulerFullName?.toLowerCase() || "").includes(
-        searchTerm.toLowerCase()
-      ) ||
-      (b.bookingSchedulerEmail?.toLowerCase() || "").includes(
-        searchTerm.toLowerCase()
-      ) ||
-      (b.bookingPurpose?.toLowerCase() || "").includes(
-        searchTerm.toLowerCase()
-      );
+      (getCustomerName(b).toLowerCase() || "").includes(searchLower) ||
+      (getCustomerEmail(b).toLowerCase() || "").includes(searchLower) ||
+      (getProductName(b).toLowerCase() || "").includes(searchLower) ||
+      (getInstructorName(b).toLowerCase() || "").includes(searchLower) ||
+      (getInstructorEmail(b).toLowerCase() || "").includes(searchLower) ||
+      (b.audit?.createdBy?.fullName?.toLowerCase() || "").includes(searchLower) ||
+      (b.audit?.createdBy?.email?.toLowerCase() || "").includes(searchLower) ||
+      (b.createdBy?.fullName?.toLowerCase() || "").includes(searchLower) ||
+      (b.createdBy?.email?.toLowerCase() || "").includes(searchLower) ||
+      (b.bookingSchedulerFullName?.toLowerCase() || "").includes(searchLower) ||
+      (b.bookingSchedulerEmail?.toLowerCase() || "").includes(searchLower) ||
+      (b.bookingPurpose?.toLowerCase() || "").includes(searchLower);
 
     const matchesStatus =
-      statusFilter === "all" || booking.status === statusFilter;
+      statusFilter === "all" || getBookingStatus(b) === statusFilter;
     const matchesType =
-      typeFilter === "all" || booking.productType === typeFilter;
+      typeFilter === "all" || getProductType(b) === typeFilter;
     const matchesSchedulingStatus =
       schedulingStatusFilter === "all" ||
-      (booking.schedulingStatus &&
-        booking.schedulingStatus === schedulingStatusFilter);
+      (getSchedulingStatus(b) &&
+        getSchedulingStatus(b) === schedulingStatusFilter);
 
     return (
       matchesSearch && matchesStatus && matchesType && matchesSchedulingStatus
@@ -262,12 +333,6 @@ export default function AdminBookingsPage() {
     const mins = minutes % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
-
-  const getCustomerName = (b: any) =>
-    b?.fullName || b?.bookingSchedulerFullName || b?.participants?.[0]?.fullName || "—";
-
-  const getCustomerEmail = (b: any) =>
-    b?.email || b?.bookingSchedulerEmail || b?.participants?.[0]?.email || "—";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6 lg:p-8">
@@ -436,52 +501,57 @@ export default function AdminBookingsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-            {filteredBookings.map((booking) => (
-                          <TableRow key={booking._id}>
+            {filteredBookings.map((booking) => {
+              const b: any = booking;
+              const bookingId = getBookingId(b);
+              return (
+                          <TableRow key={bookingId}>
                             <TableCell className="min-w-[200px]">
-                              <div className="font-medium text-slate-900 line-clamp-1">{booking.bookingPurpose}</div>
+                              <div className="font-medium text-slate-900 line-clamp-1">
+                                {getProductName(b)}
+                              </div>
                               <div className="mt-1 flex items-center gap-2 flex-wrap">
                                 <Badge variant={
-                            booking.productType === "Academic Support Services"
+                            getProductType(b) === "Academic Support Services"
                               ? "default"
                               : "secondary"
                                 }>
-                          {booking.productType === "Academic Support Services"
+                          {getProductType(b) === "Academic Support Services"
                             ? "Academic"
-                            : booking.productType === "Training & Certification"
+                            : getProductType(b) === "Training & Certification"
                             ? "Training"
-                            : booking.productType}
+                            : getProductType(b)}
                         </Badge>
                       </div>
                             </TableCell>
                             <TableCell className="min-w-[180px]">
-                              <div className="font-medium">{getCustomerName(booking)}</div>
-                              <div className="text-xs text-slate-500 line-clamp-1">{getCustomerEmail(booking)}</div>
+                              <div className="font-medium">{getCustomerName(b)}</div>
+                              <div className="text-xs text-slate-500 line-clamp-1">{getCustomerEmail(b)}</div>
                             </TableCell>
-                            <TableCell>{booking.productType}</TableCell>
-                            <TableCell className="min-w-[140px]">{getStatusBadge(booking.status)}</TableCell>
-                            <TableCell className="min-w-[120px]">{getPaymentStatusBadge(booking.paymentStatus)}</TableCell>
-                            <TableCell className="min-w-[180px]">{booking.scheduleAt ? formatDateTime(booking.scheduleAt) : "—"}</TableCell>
-                            <TableCell>{getDurationText(booking.durationInMinutes)}</TableCell>
+                            <TableCell>{getProductType(b)}</TableCell>
+                            <TableCell className="min-w-[140px]">{getStatusBadge(getBookingStatus(b))}</TableCell>
+                            <TableCell className="min-w-[120px]">{getPaymentStatusBadge(getPaymentStatus(b))}</TableCell>
+                            <TableCell className="min-w-[180px]">
+                              {getScheduleDate(b) ? formatDateTime(getScheduleDate(b)) : "—"}
+                            </TableCell>
+                            <TableCell>{getDurationText(getDuration(b))}</TableCell>
                             <TableCell>
-                              {typeof booking.numberOfExpectedParticipants === "number"
-                                ? booking.numberOfExpectedParticipants
-                                : (booking.participants?.length ?? 0)}
+                              {getParticipantCount(b)}
                             </TableCell>
                             <TableCell className="min-w-[140px]">
-                              {booking.isClassroom ? "Classroom": "Session"}
+                              {getScheduleKind(b)}
                             </TableCell>
                             <TableCell className="min-w-[160px]">
-                              {booking.instructorId?.fullName || "—"}
+                              {getInstructorName(b)}
                             </TableCell>
                             <TableCell className="text-right min-w-[160px]">
                               <div className="flex justify-end gap-2">
-                    <Link href={`/dashboard/bookings/${booking._id}`}>
+                    <Link href={`/dashboard/bookings/${bookingId}`}>
                                   <Button size="sm" variant="outline">
                                     <Eye className="w-4 h-4" />
                       </Button>
                     </Link>
-                    <Link href={`/dashboard/bookings/${booking._id}/edit`}>
+                    <Link href={`/dashboard/bookings/${bookingId}/edit`}>
                       <Button size="sm" variant="outline">
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -489,11 +559,11 @@ export default function AdminBookingsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleCancelBooking(booking._id)}
-                                  disabled={cancellingId === booking._id || booking.status === "cancelled"}
+                      onClick={() => handleCancelBooking(bookingId)}
+                                  disabled={cancellingId === bookingId || isCancelled(b)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      {cancellingId === booking._id ? (
+                      {cancellingId === bookingId ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
@@ -502,7 +572,8 @@ export default function AdminBookingsPage() {
                   </div>
                             </TableCell>
                           </TableRow>
-            ))}
+            );
+            })}
                       </TableBody>
                     </Table>
           </div>

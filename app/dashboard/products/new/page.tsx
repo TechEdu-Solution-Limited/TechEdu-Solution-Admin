@@ -133,11 +133,20 @@ export default function CreateProductPage() {
   const instructorRequired = isBookable;
 
   const addTag = () => {
-    const trimmedTag = tagInput.trim();
-    if (trimmedTag && !form.tags.includes(trimmedTag)) {
+    const trimmedInput = tagInput.trim();
+    if (!trimmedInput) return;
+
+    // Split by commas and process each tag
+    const tagsToAdd = trimmedInput
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+      .filter((tag) => !form.tags.includes(tag)); // Filter out duplicates
+
+    if (tagsToAdd.length > 0) {
       setForm((prev: any) => ({
         ...prev,
-        tags: [...prev.tags, trimmedTag],
+        tags: [...prev.tags, ...tagsToAdd],
       }));
       setTagInput("");
     }

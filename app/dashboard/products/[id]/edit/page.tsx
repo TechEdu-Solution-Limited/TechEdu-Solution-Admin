@@ -161,7 +161,10 @@ export default function ProductEditPage() {
         
         // Add fields based on priceBasis
         if (priceBasis === "flat") {
-          mappedPricing.basePrice = pricingData.basePrice ?? Number(product.price || 0);
+          // Map subscriptionPrice to basePrice if needed (legacy support)
+          mappedPricing.basePrice = pricingData.basePrice ?? 
+            (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
+            Number(product.price || 0);
         } else if (priceBasis === "per_unit") {
           mappedPricing.unitName = pricingData.unitName || "team";
           mappedPricing.tierType = pricingData.tierType || "volume";
@@ -171,7 +174,10 @@ export default function ProductEditPage() {
         // Add subscription-specific fields
         if (model === "subscription") {
           if (priceBasis === "flat" && mappedPricing.basePrice === undefined) {
-            mappedPricing.basePrice = Number(product.price || 0);
+            // Map subscriptionPrice to basePrice if needed (legacy support)
+            mappedPricing.basePrice = pricingData.basePrice ?? 
+              (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
+              Number(product.price || 0);
           }
           mappedPricing.interval = pricingData.interval || "month";
           mappedPricing.intervalCount = pricingData.intervalCount || 1;
@@ -374,8 +380,15 @@ export default function ProductEditPage() {
       }
 
       // Build root payload and enforce instructor nulling when not required
+      // Explicitly exclude subscriptionPrice, price, currency (legacy fields) - pricing is sent separately
+      const formCopy = { ...form };
+      // Remove legacy pricing fields that shouldn't be in root payload
+      delete (formCopy as any).subscriptionPrice;
+      delete (formCopy as any).price;
+      delete (formCopy as any).currency;
+      
       const rootPayload = {
-        ...form,
+        ...formCopy,
         nonBookableService: !isBookable, // ensure mirrored on send
         instructorId: instructorRequired ? form.instructorId || null : null,
         discountPercentage: Number(form.discountPercentage) || 0,
@@ -414,7 +427,9 @@ export default function ProductEditPage() {
           };
           // Use basePrice for flat pricing, add per_unit fields if needed
           if (p.priceBasis === "flat") {
-            payload.basePrice = Number(p.basePrice ?? p.subscriptionPrice ?? 0);
+            payload.basePrice = Number(p.basePrice ?? 0);
+            // Backend still expects subscriptionPrice field (legacy support)
+            payload.subscriptionPrice = Number(p.basePrice ?? 0);
           } else if (p.priceBasis === "per_unit") {
             const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
             payload.unitName = unitName;
@@ -423,6 +438,8 @@ export default function ProductEditPage() {
             payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
             payload.tierType = p.tierType || "volume";
             payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+            // Backend still expects subscriptionPrice field (legacy support) - set to 0 for per_unit
+            payload.subscriptionPrice = 0;
           }
           // Add tax fields if present
           if (p.taxInclusive !== undefined) payload.taxInclusive = p.taxInclusive;

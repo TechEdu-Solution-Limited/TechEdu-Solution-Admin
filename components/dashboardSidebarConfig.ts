@@ -64,9 +64,14 @@ export const dashboardSidebarConfig = {
             href: "/dashboard/bookings",
           },
           {
-            label: "Booked Services",
+            label: "User Entitlements",
             icon: Calendar,
-            href: "/dashboard/booked-services",
+            href: "/dashboard/entitlements",
+          },
+          {
+            label: "User Subscriptions",
+            icon: Package,
+            href: "/dashboard/subscriptions",
           },
           {
             label: "Onboarding Stuck Users",
