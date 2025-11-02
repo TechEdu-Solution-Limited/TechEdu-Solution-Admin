@@ -530,11 +530,11 @@ export default function CreateProductPage() {
 
     // Duration guards
     if (isBookable) {
-      if (form.durationInMinutes < 1 || form.durationInMinutes > 120) {
+      if (form.durationInMinutes < 1 || form.durationInMinutes > 120000000000000000000) {
         setError("Duration must be between 1 and 120 minutes.");
         return;
       }
-      if (form.minutesPerSession < 1 || form.minutesPerSession > 120) {
+      if (form.minutesPerSession < 1 || form.minutesPerSession > 120000000000000000000) {
         setError("Minutes per session must be between 1 and 120 minutes.");
         return;
       }
