@@ -475,9 +475,23 @@ export default function CreateProductPage() {
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Prevent form submission unless explicitly clicking the submit button
+    // On earlier steps, Enter key will just move to next step
+    if (step !== steps.length - 1) {
+      nextStep();
+      return;
+    }
+    // On final step, do nothing - wait for explicit button click
+  };
+
+  const handleCreateProduct = async () => {
+    // Explicit handler for create button - only callable from step 4
     if (step !== steps.length - 1) return;
+    
+    // Prevent double submission
+    if (loading) return;
 
     // Required fields (baseline)
     const requiredFields = [
@@ -843,7 +857,7 @@ export default function CreateProductPage() {
 
         {/* Form */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
-          <form onSubmit={handleSubmit} className="p-8">
+          <form onSubmit={handleFormSubmit} className="p-8">
             {step === 0 && (
               <div className="space-y-6">
                 <div className="text-center mb-8">
@@ -2168,7 +2182,8 @@ export default function CreateProductPage() {
 
                 {step === steps.length - 1 ? (
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleCreateProduct}
                     className="px-12 py-5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50"
                     disabled={loading}
                   >
