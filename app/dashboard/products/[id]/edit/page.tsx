@@ -166,7 +166,9 @@ export default function ProductEditPage() {
             (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
             Number(product.price || 0);
         } else if (priceBasis === "per_unit") {
-          mappedPricing.unitName = pricingData.unitName || "team";
+          // Map backend unitName to frontend: "participant" -> "person", keep "team" as is
+          const apiUnitName = pricingData.unitName || "team";
+          mappedPricing.unitName = apiUnitName === "participant" ? "person" : apiUnitName;
           mappedPricing.tierType = pricingData.tierType || "volume";
           mappedPricing.tiers = pricingData.tiers || [];
         }
@@ -456,18 +458,23 @@ export default function ProductEditPage() {
 
         const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
         const base = Number(p.basePrice || 0);
+        const priceBasis = p.priceBasis ?? "flat";
         const payload: any = {
           model: "one_time",
-          priceBasis: p.priceBasis ?? "flat", // Default to flat only if missing (preserves "per_unit" if set)
+          priceBasis: priceBasis,
           currency: safeCurrency,
           taxInclusive: p.taxInclusive ?? false,
           vatPercentage: p.vatPercentage ?? 0,
         };
-        // Only send basePrice for flat pricing
-        if (p.priceBasis !== "per_unit") {
+        
+        // Backend requires basePrice for ALL one_time pricing models
+        // For flat pricing: use the actual basePrice value
+        // For per_unit pricing: set to 0 (backend requirement, but actual pricing comes from tiers)
+        if (priceBasis === "flat") {
           payload.basePrice = base;
-        }
-        if (p.priceBasis === "per_unit") {
+        } else if (priceBasis === "per_unit") {
+          // Backend requires basePrice even for per_unit - set to 0
+          payload.basePrice = 0;
           payload.unitName = unitName;
           payload.minQty = p.minQty ?? 1;
           payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
