@@ -542,14 +542,14 @@ export default function CreateProductPage() {
       // Optional: only warn if the user entered a non-zero value out of range
       if (
         form.durationInMinutes > 0 &&
-        (form.durationInMinutes < 1 || form.durationInMinutes > 120)
+        (form.durationInMinutes < 1 || form.durationInMinutes > 120000000000000000000)
       ) {
         setError("Duration must be between 1 and 120 minutes (if provided).");
         return;
       }
       if (
         form.minutesPerSession > 0 &&
-        (form.minutesPerSession < 1 || form.minutesPerSession > 120)
+        (form.minutesPerSession < 1 || form.minutesPerSession > 120000000000000000000)
       ) {
         setError(
           "Minutes per session must be between 1 and 120 (if provided)."
@@ -1611,12 +1611,12 @@ export default function CreateProductPage() {
                       placeholder="Enter total duration in minutes (1-120)"
                       type="number"
                       min={1}
-                      max={120}
+                      max={120000000000000000000}
                       className="rounded-[10px]"
                     />
                     {form.durationInMinutes &&
                       (form.durationInMinutes < 1 ||
-                        form.durationInMinutes > 120) && (
+                        form.durationInMinutes > 120000000000000000000) && (
                         <p className="text-red-500 text-sm mt-1">
                           Duration must be between 1 and 120 minutes.
                         </p>
@@ -1634,12 +1634,12 @@ export default function CreateProductPage() {
                       placeholder="Enter minutes per individual session (1-120)"
                       type="number"
                       min={1}
-                      max={120}
+                      max={120000000000000000000}
                       className="rounded-[10px]"
                     />
                     {form.minutesPerSession &&
                       (form.minutesPerSession < 1 ||
-                        form.minutesPerSession > 120) && (
+                        form.minutesPerSession > 120000000000000000000) && (
                         <p className="text-red-500 text-sm mt-1">
                           Minutes per session must be between 1 and 120 minutes.
                         </p>
