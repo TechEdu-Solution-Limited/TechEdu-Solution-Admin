@@ -539,21 +539,13 @@ export default function CreateProductPage() {
         return;
       }
     } else {
-      // Optional: only warn if the user entered a non-zero value out of range
-      if (
-        form.durationInMinutes > 0 &&
-        (form.durationInMinutes < 1)
-      ) {
+      // Optional: only warn if the user entered a non-zero value less than 1
+      if (form.durationInMinutes > 0 && form.durationInMinutes < 1) {
         setError("Duration must be greater than 1 minutes (if provided).");
         return;
       }
-      if (
-        form.minutesPerSession > 0 &&
-        (form.minutesPerSession < 1)
-      ) {
-        setError(
-          "Minutes per session must be greater than 1 (if provided)."
-        );
+      if (form.minutesPerSession > 0 && form.minutesPerSession < 1) {
+        setError("Minutes per session must be greater than 1 (if provided).");
         return;
       }
     }
@@ -1608,13 +1600,12 @@ export default function CreateProductPage() {
                       name="durationInMinutes"
                       value={form.durationInMinutes}
                       onChange={handleChange}
-                      placeholder="Enter total duration in minutes (1-120)"
+                      placeholder="Enter total duration in minutes"
                       type="number"
                       min={1}
                       className="rounded-[10px]"
                     />
-                    {form.durationInMinutes &&
-                      (form.durationInMinutes < 1) && (
+                    {form.durationInMinutes && form.durationInMinutes < 1 && (
                         <p className="text-red-500 text-sm mt-1">
                           Duration must be greater than 1 minutes.
                         </p>
@@ -1629,13 +1620,12 @@ export default function CreateProductPage() {
                       name="minutesPerSession"
                       value={form.minutesPerSession}
                       onChange={handleChange}
-                      placeholder="Enter minutes per individual session (1-120)"
+                      placeholder="Enter minutes per individual session"
                       type="number"
                       min={1}
                       className="rounded-[10px]"
                     />
-                    {form.minutesPerSession &&
-                      (form.minutesPerSession < 1) && (
+                    {form.minutesPerSession && form.minutesPerSession < 1 && (
                         <p className="text-red-500 text-sm mt-1">
                           Minutes per session must be greater than 1 minutes.
                         </p>

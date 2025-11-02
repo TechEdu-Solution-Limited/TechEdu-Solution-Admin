@@ -336,38 +336,24 @@ export default function ProductEditPage() {
     try {
       // Duration guards — only enforce strictly when bookable
       if (isBookable) {
-        if (
-          (form.durationInMinutes ?? 0) < 1 ||
-          (form.durationInMinutes ?? 0) > 120
-        ) {
-          setError("Duration must be between 1 and 120 minutes.");
+        if ((form.durationInMinutes ?? 0) < 1) {
+          setError("Duration must be greater than 1 minutes.");
           setSaving(false);
           return;
         }
-        if (
-          (form.minutesPerSession ?? 0) < 1 ||
-          (form.minutesPerSession ?? 0) > 120
-        ) {
-          setError("Minutes per session must be between 1 and 120 minutes.");
+        if ((form.minutesPerSession ?? 0) < 1) {
+          setError("Minutes per session must be greater than 1 minutes.");
           setSaving(false);
           return;
         }
       } else {
-        if (
-          form.durationInMinutes &&
-          (form.durationInMinutes < 1 || form.durationInMinutes > 120)
-        ) {
-          setError("Duration must be between 1 and 120 minutes (if provided).");
+        if (form.durationInMinutes && form.durationInMinutes < 1) {
+          setError("Duration must be greater than 1 minutes (if provided).");
           setSaving(false);
           return;
         }
-        if (
-          form.minutesPerSession &&
-          (form.minutesPerSession < 1 || form.minutesPerSession > 120)
-        ) {
-          setError(
-            "Minutes per session must be between 1 and 120 (if provided)."
-          );
+        if (form.minutesPerSession && form.minutesPerSession < 1) {
+          setError("Minutes per session must be greater than 1 (if provided).");
           setSaving(false);
           return;
         }
@@ -1100,16 +1086,13 @@ export default function ProductEditPage() {
                     onChange={handleChange}
                     type="number"
                     min={1}
-                    max={120}
-                    placeholder="Total duration (1-120 minutes)"
+                    placeholder="Total duration in minutes"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     required={isBookable}
                   />
-                  {form.durationInMinutes &&
-                    (form.durationInMinutes < 1 ||
-                      form.durationInMinutes > 120) && (
+                  {form.durationInMinutes && form.durationInMinutes < 1 && (
                       <p className="text-red-500 text-sm mt-1">
-                        Duration must be between 1 and 120 minutes.
+                        Duration must be greater than 1 minutes.
                       </p>
                     )}
                 </div>
@@ -1124,16 +1107,13 @@ export default function ProductEditPage() {
                     onChange={handleChange}
                     type="number"
                     min={1}
-                    max={120}
-                    placeholder="Per session duration (1-120 minutes)"
+                    placeholder="Per session duration in minutes"
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     required={isBookable}
                   />
-                  {form.minutesPerSession &&
-                    (form.minutesPerSession < 1 ||
-                      form.minutesPerSession > 120) && (
+                  {form.minutesPerSession && form.minutesPerSession < 1 && (
                       <p className="text-red-500 text-sm mt-1">
-                        Minutes per session must be between 1 and 120 minutes.
+                        Minutes per session must be greater than 1 minutes.
                       </p>
                     )}
                 </div>
