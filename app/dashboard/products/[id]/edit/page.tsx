@@ -115,6 +115,7 @@ export default function ProductEditPage() {
           iconUrl: product.iconUrl,
           thumbnailUrl: product.thumbnailUrl,
           materialUrl: product.materialUrl,
+          mediaType: product.mediaType || "",
           isAttachmentRequired: product.isAttachmentRequired,
           publicSchedulingUrl: product.publicSchedulingUrl,
           enabled: product.enabled,
@@ -710,6 +711,108 @@ export default function ProductEditPage() {
                     ))}
                   </select>
                 </div>
+
+                {/* Media Type - only for Tools + nonBookableService */}
+                {form.productType === "Tools" && !form.isBookableService && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Media Type *
+                      </label>
+                      <select
+                        name="mediaType"
+                        value={form.mediaType || ""}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        required
+                      >
+                        <option value="">Select Media Type</option>
+                        <option value="file">File</option>
+                        <option value="audio">Audio</option>
+                        <option value="video">Video</option>
+                      </select>
+                    </div>
+
+                    {/* Media upload for Tools */}
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Media File * ({form.mediaType || "Select type first"})
+                      </label>
+                      {form.materialUrl && (
+                        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-green-700 text-sm font-medium">
+                                Current Media File
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleDeleteMaterial}
+                              disabled={saving}
+                              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
+                            >
+                              {saving ? "Deleting..." : "Delete"}
+                            </button>
+                          </div>
+                          <a
+                            href={form.materialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm underline"
+                          >
+                            Preview uploaded media
+                          </a>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept={
+                          form.mediaType === "file"
+                            ? ".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                            : form.mediaType === "audio"
+                            ? "audio/*"
+                            : form.mediaType === "video"
+                            ? "video/*"
+                            : "*"
+                        }
+                        className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSaving(true);
+                            try {
+                              if (form.materialUrl) {
+                                try {
+                                  await deleteFileFromFirebase(form.materialUrl);
+                                } catch (deleteErr) {
+                                  console.warn("Failed to delete old media:", deleteErr);
+                                }
+                              }
+                              const url = await uploadMaterial(file, "tool-media");
+                              setForm((prev: any) => ({
+                                ...prev,
+                                materialUrl: url,
+                              }));
+                              setSuccess("Media uploaded successfully!");
+                            } catch {
+                              setError("Media upload failed");
+                            } finally {
+                              setSaving(false);
+                            }
+                          }
+                        }}
+                        disabled={!form.mediaType || saving}
+                      />
+                      {!form.mediaType && (
+                        <p className="text-slate-500 text-xs mt-1">
+                          Please select a media type first
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Materials for training-typed products */}
                 {form.productType &&
