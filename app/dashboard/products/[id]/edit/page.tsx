@@ -376,6 +376,12 @@ export default function ProductEditPage() {
       delete (formCopy as any).price;
       delete (formCopy as any).currency;
       
+      // Remove mediaType if not needed (only required for Tools + non-bookable)
+      const isToolsNonBookable = form.productType === "Tools" && !form.isBookableService;
+      if (!isToolsNonBookable) {
+        delete (formCopy as any).mediaType;
+      }
+      
       const rootPayload = {
         ...formCopy,
         nonBookableService: !isBookable, // ensure mirrored on send
