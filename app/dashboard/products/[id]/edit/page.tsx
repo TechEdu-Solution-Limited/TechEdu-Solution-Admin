@@ -942,6 +942,28 @@ export default function ProductEditPage() {
                     </div>
                   )}
 
+                  {/* Attachment Required */}
+                    {form.productType && (
+                      <div className="mt-4">
+                        <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="isAttachmentRequired"
+                            checked={!!form.isAttachmentRequired}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-slate-700">
+                            Attachment Required
+                          </span>
+                        </label>
+                        <p className="text-slate-500 text-sm mt-1 ml-2">
+                          Check if users need to submit attachments for this
+                          service.
+                        </p>
+                      </div>
+                    )}
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Description{" "}
