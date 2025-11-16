@@ -15,11 +15,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
-import {
-  uploadAssetImage,
-  uploadMaterial,
-  deleteFileFromFirebase,
-} from "@/lib/firebase";
+// import {
+//   uploadAssetImage,
+//   uploadMaterial,
+//   deleteFileFromFirebase,
+// } from "@/lib/firebase";
 import {
   PRODUCT_TYPE_OPTIONS,
   DELIVERY_MODE_OPTIONS,
@@ -31,6 +31,7 @@ import PricingForm, {
   computePrice,
   formatMoney,
 } from "@/components/PricingForms";
+import { deleteLocalFile, uploadToLocal } from "@/lib/localFileUploads";
 
 const initialForm = {
   productType: "",
@@ -430,7 +431,7 @@ export default function CreateProductPage() {
     if (!form.materialUrl) return;
     setLoading(true);
     try {
-      await deleteFileFromFirebase(form.materialUrl);
+      await deleteLocalFile(form.materialUrl);
       setForm((prev: any) => ({ ...prev, materialUrl: "" }));
       toast.success("Material deleted successfully!");
     } catch {
@@ -1035,12 +1036,12 @@ export default function CreateProductPage() {
                               try {
                                 if (form.materialUrl) {
                                   try {
-                                    await deleteFileFromFirebase(form.materialUrl);
+                                    await deleteLocalFile(form.materialUrl);
                                   } catch (deleteErr) {
                                     console.warn("Failed to delete old media:", deleteErr);
                                   }
                                 }
-                                const url = await uploadMaterial(file, "tool-media");
+                                const url = await uploadToLocal(file, "tool-media");
                                 setForm((prev: any) => ({
                                   ...prev,
                                   materialUrl: url,
@@ -1115,7 +1116,7 @@ export default function CreateProductPage() {
                               try {
                                 if (form.materialUrl) {
                                   try {
-                                    await deleteFileFromFirebase(
+                                    await deleteLocalFile(
                                       form.materialUrl
                                     );
                                   } catch (deleteErr) {
@@ -1125,7 +1126,7 @@ export default function CreateProductPage() {
                                     );
                                   }
                                 }
-                                const url = await uploadMaterial(
+                                const url = await uploadToLocal(
                                   file,
                                   "course-materials"
                                 );
@@ -1764,7 +1765,7 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
-                        const url = await uploadAssetImage(
+                        const url = await uploadToLocal(
                           file,
                           "product-icons"
                         );
@@ -1797,7 +1798,7 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
-                        const url = await uploadAssetImage(
+                        const url = await uploadToLocal(
                           file,
                           "product-thumbnails"
                         );

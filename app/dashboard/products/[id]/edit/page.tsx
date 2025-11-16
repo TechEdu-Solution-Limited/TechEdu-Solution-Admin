@@ -25,6 +25,7 @@ import {
 import { Pricing, defaultPricing, normalizePricingForApi } from "@/lib/constants/pricing";
 import PricingForm from "@/components/PricingForms";
 import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
+import { deleteLocalFile, uploadToLocal } from "@/lib/localFileUploads";
 
 // Helper function to check if product type requires training materials
 const requiresTrainingMaterials = (productType: string) => {
@@ -261,7 +262,7 @@ export default function ProductEditPage() {
     if (!form.materialUrl) return;
     setSaving(true);
     try {
-      await deleteFileFromFirebase(form.materialUrl);
+      await deleteLocalFile(form.materialUrl);
       setForm((prev) => ({ ...prev, materialUrl: "" }));
       setSuccess("Material deleted successfully!");
     } catch {
@@ -277,12 +278,12 @@ export default function ProductEditPage() {
       const currentUrl = type === "icon" ? form.iconUrl : form.thumbnailUrl;
       if (currentUrl) {
         try {
-          await deleteFileFromFirebase(currentUrl);
+          await deleteLocalFile(currentUrl);
         } catch (deleteErr) {
           console.warn(`Failed to delete old ${type}:`, deleteErr);
         }
       }
-      const url = await uploadAssetImage(file, `product-${type}s`);
+      const url = await uploadToLocal(file, `product-${type}s`);
       setForm((prev: any) => ({
         ...prev,
         [type === "icon" ? "iconUrl" : "thumbnailUrl"]: url,
@@ -587,7 +588,7 @@ export default function ProductEditPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6 mb-8">
           <div className="flex items-center gap-4">
             <Link href={`/dashboard/products/${params.id}`}>
-              <button className="p-3 rounded-full hover:bg-slate-100 transition-all duration-300">
+              <button title="productId" className="p-3 rounded-full hover:bg-slate-100 transition-all duration-300">
                 <ArrowLeft className="w-6 h-6 text-slate-600" />
               </button>
             </Link>
@@ -617,6 +618,7 @@ export default function ProductEditPage() {
                     Product Type *
                   </label>
                   <select
+                  title="productType"
                     name="productType"
                     value={form.productType || ""}
                     onChange={handleChange}
@@ -690,6 +692,7 @@ export default function ProductEditPage() {
                     )}
                   </label>
                   <select
+                  title="instructorId"
                     name="instructorId"
                     value={form.instructorId || ""}
                     onChange={handleChange}
@@ -726,6 +729,7 @@ export default function ProductEditPage() {
                         Media Type *
                       </label>
                       <select
+                      title="mediaType"
                         name="mediaType"
                         value={form.mediaType || ""}
                         onChange={handleChange}
@@ -773,6 +777,7 @@ export default function ProductEditPage() {
                         </div>
                       )}
                       <input
+                      title="file"
                         type="file"
                         accept={
                           form.mediaType === "file"
@@ -862,6 +867,7 @@ export default function ProductEditPage() {
                       )}
 
                       <input
+                      title="file"
                         type="file"
                         accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
                         className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -1023,6 +1029,7 @@ export default function ProductEditPage() {
                   )}
 
                   <input
+                  title="file"
                     type="file"
                     accept="image/*"
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -1079,6 +1086,7 @@ export default function ProductEditPage() {
                   )}
 
                   <input
+                  title="file"
                     type="file"
                     accept="image/*"
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
@@ -1119,6 +1127,7 @@ export default function ProductEditPage() {
                     {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <select
+                  title="deliveryMode"
                     name="deliveryMode"
                     value={form.deliveryMode || ""}
                     onChange={handleChange}
@@ -1140,6 +1149,7 @@ export default function ProductEditPage() {
                     {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <select
+                  title="sessionType"
                     name="sessionType"
                     value={form.sessionType || ""}
                     onChange={handleChange}
@@ -1178,6 +1188,7 @@ export default function ProductEditPage() {
                       {isBookable && <span className="text-red-500">*</span>}
                     </label>
                     <select
+                    title="mode"
                       name="mode"
                       value={form.mode || ""}
                       onChange={handleChange}
