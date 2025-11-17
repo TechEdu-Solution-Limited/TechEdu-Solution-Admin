@@ -62,10 +62,8 @@ export async function POST(req: Request) {
       ? `/uploads/${folder}/${fileName}`
       : `/uploads/${fileName}`;
 
-    const baseUrl =
-    "https://www.tech-eduk.com".replace(/\/$/, "") || "";
-
-    const publicUrl = baseUrl ? `${baseUrl}${relativePath}` : relativePath;
+    // ✅ Just return the relative path; Next will serve this from your app domain
+    const publicUrl = relativePath;
 
     return NextResponse.json(
       {
@@ -75,14 +73,22 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error("Upload error:", err);
+
+    // 🔍 TEMP: surface the real error so you can see it in Network tab
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      {
+        error:
+          err?.message ||
+          err?.toString() ||
+          "Failed to upload file (unknown server error)",
+      },
       { status: 500 }
     );
   }
 }
+
 
 /**
  * GET /api/uploads
