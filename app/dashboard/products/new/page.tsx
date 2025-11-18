@@ -15,11 +15,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
-// import {
-//   uploadAssetImage,
-//   uploadMaterial,
-//   deleteFileFromFirebase,
-// } from "@/lib/firebase";
 import {
   PRODUCT_TYPE_OPTIONS,
   DELIVERY_MODE_OPTIONS,
@@ -34,8 +29,8 @@ import {
 import PricingForm, {
   computePrice,
   formatMoney,
-} from "@/components/PricingForms"; 
-import { deleteBackendFile, uploadToBackend } from "@/lib/uploads";
+} from "@/components/PricingForms";
+import { uploadToBackend, deleteToBackend } from "@/lib/uploads";
 
 const initialForm = {
   productType: "",
@@ -435,7 +430,7 @@ export default function CreateProductPage() {
     if (!form.materialUrl) return;
     setLoading(true);
     try {
-      await deleteBackendFile(form.materialUrl);
+      await deleteToBackend(form.materialUrl);
       setForm((prev: any) => ({ ...prev, materialUrl: "" }));
       toast.success("Material deleted successfully!");
     } catch {
@@ -1074,7 +1069,7 @@ export default function CreateProductPage() {
                                 try {
                                   if (form.materialUrl) {
                                     try {
-                                      await deleteBackendFile(form.materialUrl);
+                                      await deleteToBackend(form.materialUrl);
                                     } catch (deleteErr) {
                                       console.warn(
                                         "Failed to delete old media:",
@@ -1160,7 +1155,7 @@ export default function CreateProductPage() {
                               try {
                                 if (form.materialUrl) {
                                   try {
-                                    await deleteBackendFile(form.materialUrl);
+                                    await deleteToBackend(form.materialUrl);
                                   } catch (deleteErr) {
                                     console.warn(
                                       "Failed to delete old material:",
@@ -1806,8 +1801,20 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
+                        // delete old icon if exists
+                        if (form.iconUrl) {
+                          try {
+                            await deleteToBackend(form.iconUrl);
+                          } catch (deleteErr) {
+                            console.warn(
+                              "Failed to delete old icon:",
+                              deleteErr
+                            );
+                          }
+                        }
                         const url = await uploadToBackend(file, "product-icons");
                         setForm((prev: any) => ({ ...prev, iconUrl: url }));
+                        toast.success("Icon uploaded successfully!");
                       } catch {
                         setError("Icon upload failed");
                       } finally {
@@ -1836,6 +1843,17 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
+                        // delete old thumbnail if exists
+                        if (form.thumbnailUrl) {
+                          try {
+                            await deleteToBackend(form.thumbnailUrl);
+                          } catch (deleteErr) {
+                            console.warn(
+                              "Failed to delete old thumbnail:",
+                              deleteErr
+                            );
+                          }
+                        }
                         const url = await uploadToBackend(
                           file,
                           "product-thumbnails"
@@ -1844,6 +1862,7 @@ export default function CreateProductPage() {
                           ...prev,
                           thumbnailUrl: url,
                         }));
+                        toast.success("Thumbnail uploaded successfully!");
                       } catch {
                         setError("Image upload failed");
                       } finally {

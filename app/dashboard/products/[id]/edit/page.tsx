@@ -10,11 +10,6 @@ import { getTokenFromCookies } from "@/lib/cookies";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
-import {
-  uploadAssetImage,
-  uploadMaterial,
-  deleteFileFromFirebase,
-} from "@/lib/firebase";
 import { Product } from "@/types/products";
 import {
   PRODUCT_TYPE_OPTIONS,
@@ -22,11 +17,14 @@ import {
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
-import { Pricing, defaultPricing, normalizePricingForApi } from "@/lib/constants/pricing";
+import {
+  Pricing,
+  defaultPricing,
+  normalizePricingForApi,
+} from "@/lib/constants/pricing";
 import PricingForm from "@/components/PricingForms";
-import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
-import { deleteLocalFile, uploadToLocal } from "@/lib/localFileUploads";
-import { deleteBackendFile } from "@/lib/uploads";
+import { validatePricing } from "@/utils/pricingApi";
+import { uploadToBackend, deleteBackendFile } from "@/lib/uploads";
 import { toast } from "react-toastify";
 
 // Helper function to check if product type requires training materials
@@ -37,8 +35,6 @@ const requiresTrainingMaterials = (productType: string) => {
     "Career Development & Mentorship",
   ].includes(productType);
 };
-
-// Helper functions for form validation
 
 export default function ProductEditPage() {
   const params = useParams();
@@ -76,6 +72,7 @@ export default function ProductEditPage() {
       }
 
       try {
+        setInstructorsLoading(true);
         const [productRes, instructorsRes] = await Promise.all([
           getApiRequest(`/api/products/public/${params.id}`, token),
           getApiRequest("/api/users/admin/instructors", token),
@@ -107,7 +104,7 @@ export default function ProductEditPage() {
           requiresBooking: product.requiresBooking,
           requiresEnrollment: product.requiresEnrollment,
           isBookableService: product.isBookableService,
-          nonBookableService: !product.isBookableService, // ← mirror here
+          nonBookableService: !product.isBookableService, // mirror
           price: product.price,
           currency: product.currency || "gbp",
           discountPercentage: product.discountPercentage,
@@ -127,15 +124,14 @@ export default function ProductEditPage() {
 
         // Pricing - convert from API format to new structure
         const pricingData: any = product.pricing || {};
-        
+
         // Handle legacy format (model="per_unit") or new format
-        let model: "one_time" | "subscription" = pricingData.model || "one_time";
+        let model: "one_time" | "subscription" | "free" =
+          pricingData.model || "one_time";
         let priceBasis: "flat" | "per_unit" = "flat";
-        
+
         // Handle migration from old format (model="per_unit" is no longer valid)
-        // This should only happen if API returns legacy data
         if (pricingData.model === "per_unit") {
-          // Default to one_time with per_unit basis
           model = "one_time";
           priceBasis = "per_unit";
         } else if (pricingData.priceBasis) {
@@ -144,66 +140,81 @@ export default function ProductEditPage() {
           // If tiers exist but no priceBasis, assume per_unit
           priceBasis = "per_unit";
         }
-        
+
         // Safety check: ensure priceBasis is always set for one_time and subscription
         if (!priceBasis && (model === "one_time" || model === "subscription")) {
           priceBasis = "flat";
         }
-        
+
         // Build pricing object with new structure
         const mappedPricing: Pricing = {
-          model,
+          model: model as Pricing["model"],
           priceBasis,
           currency: pricingData.currency || (product.currency || "gbp").toLowerCase(),
           taxInclusive: pricingData.taxInclusive ?? false,
           vatPercentage: pricingData.vatPercentage ?? 0,
-          discountPercentage: pricingData.discountPercentage ?? pricingData.discountPercent ?? 0,
+          discountPercentage:
+            pricingData.discountPercentage ??
+            pricingData.discountPercent ??
+            0,
           minQty: pricingData.minQty ?? 1,
           maxQty: pricingData.maxQty ?? 1000,
           allowInstallments: pricingData.allowInstallments ?? false,
         };
-        
+
         // Add fields based on priceBasis
         if (priceBasis === "flat") {
           // Map subscriptionPrice to basePrice if needed (legacy support)
-          mappedPricing.basePrice = pricingData.basePrice ?? 
-            (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
+          mappedPricing.basePrice =
+            pricingData.basePrice ??
+            (pricingData.subscriptionPrice !== undefined
+              ? Number(pricingData.subscriptionPrice)
+              : undefined) ??
             Number(product.price || 0);
         } else if (priceBasis === "per_unit") {
           // Map backend unitName to frontend: "participant" -> "person", keep "team" as is
           const apiUnitName = pricingData.unitName || "team";
-          mappedPricing.unitName = apiUnitName === "participant" ? "person" : apiUnitName;
+          mappedPricing.unitName =
+            apiUnitName === "participant" ? "person" : apiUnitName;
           mappedPricing.tierType = pricingData.tierType || "volume";
           mappedPricing.tiers = pricingData.tiers || [];
         }
-        
+
         // Add subscription-specific fields
         if (model === "subscription") {
           if (priceBasis === "flat" && mappedPricing.basePrice === undefined) {
-            // Map subscriptionPrice to basePrice if needed (legacy support)
-            mappedPricing.basePrice = pricingData.basePrice ?? 
-              (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
+            mappedPricing.basePrice =
+              pricingData.basePrice ??
+              (pricingData.subscriptionPrice !== undefined
+                ? Number(pricingData.subscriptionPrice)
+                : undefined) ??
               Number(product.price || 0);
           }
           mappedPricing.interval = pricingData.interval || "month";
           mappedPricing.intervalCount = pricingData.intervalCount || 1;
         }
-        
+
         // Add installments if enabled
-        if (model === "one_time" && pricingData.allowInstallments && pricingData.installments) {
+        if (
+          model === "one_time" &&
+          pricingData.allowInstallments &&
+          pricingData.installments
+        ) {
           mappedPricing.allowInstallments = true;
           mappedPricing.installments = {
             enabled: true,
             count: pricingData.installments.count || 2,
             interval: pricingData.installments.interval || "month",
             intervalCount: pricingData.installments.intervalCount || 1,
-            downPaymentType: pricingData.installments.downPaymentType || "percent",
-            downPaymentValue: pricingData.installments.downPaymentValue || 20,
+            downPaymentType:
+              pricingData.installments.downPaymentType || "percent",
+            downPaymentValue:
+              pricingData.installments.downPaymentValue || 20,
             allowEarlyPayoff: pricingData.installments.allowEarlyPayoff,
             provider: pricingData.installments.provider || "in_house",
           };
         }
-        
+
         setPricing(mappedPricing);
 
         // Instructors
@@ -215,6 +226,7 @@ export default function ProductEditPage() {
       } catch (err: any) {
         setError(err.message || "Failed to load product");
       } finally {
+        setInstructorsLoading(false);
         setLoading(false);
       }
     };
@@ -261,32 +273,37 @@ export default function ProductEditPage() {
   };
 
   const handleDeleteMaterial = async () => {
-  if (!form.materialUrl) return;
-  setLoading(true);
-  try {
-    await deleteBackendFile(form.materialUrl);
-    setForm((prev: any) => ({ ...prev, materialUrl: "" }));
-    toast.success("Material deleted successfully!");
-  } catch {
-    toast.error("Failed to delete material. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+    if (!form.materialUrl) return;
+    setLoading(true);
+    try {
+      await deleteBackendFile(form.materialUrl);
+      setForm((prev: any) => ({ ...prev, materialUrl: "" }));
+      toast.success("Material deleted successfully!");
+    } catch {
+      toast.error("Failed to delete material. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageUpload = async (file: File, type: "icon" | "thumbnail") => {
     setSaving(true);
     try {
       const currentUrl = type === "icon" ? form.iconUrl : form.thumbnailUrl;
+
       if (currentUrl) {
         try {
-          await deleteLocalFile(currentUrl);
+          await deleteBackendFile(currentUrl);
         } catch (deleteErr) {
           console.warn(`Failed to delete old ${type}:`, deleteErr);
         }
       }
-      const url = await uploadToLocal(file, `product-${type}s`);
+
+      const folder =
+        type === "icon" ? "product-icons" : "product-thumbnails";
+
+      const url = await uploadToBackend(file, folder);
+
       setForm((prev: any) => ({
         ...prev,
         [type === "icon" ? "iconUrl" : "thumbnailUrl"]: url,
@@ -306,7 +323,7 @@ export default function ProductEditPage() {
     if (!currentUrl) return;
     setSaving(true);
     try {
-      await deleteFileFromFirebase(currentUrl);
+      await deleteBackendFile(currentUrl);
       setForm((prev) => ({
         ...prev,
         [type === "icon" ? "iconUrl" : "thumbnailUrl"]: "",
@@ -379,13 +396,14 @@ export default function ProductEditPage() {
       delete (formCopy as any).subscriptionPrice;
       delete (formCopy as any).price;
       delete (formCopy as any).currency;
-      
+
       // Remove mediaType if not needed (only required for Tools + non-bookable)
-      const isToolsNonBookable = form.productType === "Tools" && !form.isBookableService;
+      const isToolsNonBookable =
+        form.productType === "Tools" && !form.isBookableService;
       if (!isToolsNonBookable) {
         delete (formCopy as any).mediaType;
       }
-      
+
       const rootPayload = {
         ...formCopy,
         nonBookableService: !isBookable, // ensure mirrored on send
@@ -400,15 +418,20 @@ export default function ProductEditPage() {
 
       // Pricing payload - build to backend shape
       const normalized = normalizePricingForApi(pricing);
-      const allowedCurrencies = ["usd", "eur", "gbp", "cad", "aud", "jpy", "inr", "ngn"] as const;
+      const allowedCurrencies = [
+        "usd",
+        "eur",
+        "gbp",
+        "cad",
+        "aud",
+        "jpy",
+        "inr",
+        "ngn",
+      ] as const;
       const currency = (normalized.currency || "gbp").toLowerCase();
-      const safeCurrency = (allowedCurrencies.includes(currency as any)
-        ? currency
-        : "gbp") as typeof allowedCurrencies[number];
-
-      // Debug: show normalized pricing before toBackendPricing
-      console.log("[Edit Product] Raw pricing:", pricing);
-      console.log("[Edit Product] Normalized pricing:", normalized);
+      const safeCurrency = (
+        allowedCurrencies.includes(currency as any) ? currency : "gbp"
+      ) as (typeof allowedCurrencies)[number];
 
       const toBackendPricing = (p: Pricing) => {
         if (p.model === "subscription") {
@@ -424,28 +447,32 @@ export default function ProductEditPage() {
             minTermMonths: p.minTermMonths ?? 0,
             proration: p.proration ?? true,
           };
-          // Use basePrice for flat pricing, add per_unit fields if needed
           if (p.priceBasis === "flat") {
             payload.basePrice = Number(p.basePrice ?? 0);
-            // Backend still expects subscriptionPrice field (legacy support)
             payload.subscriptionPrice = Number(p.basePrice ?? 0);
           } else if (p.priceBasis === "per_unit") {
-            const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+            const unitName =
+              p.unitName === "person"
+                ? "participant"
+                : p.unitName || "participant";
             payload.unitName = unitName;
             payload.allowQuantity = true;
             payload.minQty = p.minQty ?? 1;
             payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
             payload.tierType = p.tierType || "volume";
-            payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
-            // Backend still expects subscriptionPrice field (legacy support) - set to 0 for per_unit
+            payload.tiers = (p.tiers || []).map((t) => ({
+              upTo: Number(t.upTo),
+              unitPrice: Number(t.unitPrice),
+            }));
             payload.subscriptionPrice = 0;
           }
-          // Add tax fields if present
-          if (p.taxInclusive !== undefined) payload.taxInclusive = p.taxInclusive;
-          if (p.vatPercentage !== undefined) payload.vatPercentage = p.vatPercentage ?? 0;
+          if (p.taxInclusive !== undefined)
+            payload.taxInclusive = p.taxInclusive;
+          if (p.vatPercentage !== undefined)
+            payload.vatPercentage = p.vatPercentage ?? 0;
           return payload;
         }
-        
+
         if (p.model === "free") {
           return {
             model: "free",
@@ -453,34 +480,34 @@ export default function ProductEditPage() {
           };
         }
 
-        const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+        const unitName =
+          p.unitName === "person"
+            ? "participant"
+            : p.unitName || "participant";
         const base = Number(p.basePrice || 0);
         const priceBasis = p.priceBasis ?? "flat";
         const payload: any = {
           model: "one_time",
-          priceBasis: priceBasis,
+          priceBasis,
           currency: safeCurrency,
           taxInclusive: p.taxInclusive ?? false,
           vatPercentage: p.vatPercentage ?? 0,
         };
-        
-        // Backend requires basePrice for ALL one_time pricing models
-        // For flat pricing: use the actual basePrice value
-        // For per_unit pricing: set to 0 (backend requirement, but actual pricing comes from tiers)
+
         if (priceBasis === "flat") {
           payload.basePrice = base;
         } else if (priceBasis === "per_unit") {
-          // Backend requires basePrice even for per_unit - set to 0
           payload.basePrice = 0;
           payload.unitName = unitName;
           payload.minQty = p.minQty ?? 1;
           payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
           payload.tierType = p.tierType || "volume";
-          payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+          payload.tiers = (p.tiers || []).map((t) => ({
+            upTo: Number(t.upTo),
+            unitPrice: Number(t.unitPrice),
+          }));
         }
-        // Only include installments if explicitly enabled
-        // Note: p is normalized which deletes installments if allowInstallments is false
-        // So we check original pricing object directly
+
         if (pricing.allowInstallments && pricing.installments) {
           payload.allowInstallments = true;
           payload.installments = {
@@ -489,34 +516,25 @@ export default function ProductEditPage() {
             interval: pricing.installments.interval || "month",
             intervalCount: pricing.installments.intervalCount || 1,
             downPaymentType: pricing.installments.downPaymentType,
-            downPaymentValue: Math.max(0, Number(pricing.installments.downPaymentValue || 0)),
+            downPaymentValue: Math.max(
+              0,
+              Number(pricing.installments.downPaymentValue || 0)
+            ),
             allowEarlyPayoff: pricing.installments.allowEarlyPayoff ?? false,
             provider: pricing.installments.provider || "in_house",
           };
         }
+
         return payload;
       };
 
       const sanitizedPricing = toBackendPricing(normalized);
 
-      // Debug: show payloads being sent (pricing by model)
-      try {
-        console.log("[Edit Product] Pricing model:", normalized.model);
-        console.log("[Edit Product] Pricing payload:", sanitizedPricing);
-        console.log("[Edit Product] Root payload (partial):", {
-          isBookableService: rootPayload.isBookableService,
-          nonBookableService: rootPayload.nonBookableService,
-          productType: rootPayload.productType,
-        });
-      } catch {}
-
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
-        patchApiRequest(
-          `/api/products/${params.id}/pricing`,
-          token,
-          { pricing: sanitizedPricing }
-        ),
+        patchApiRequest(`/api/products/${params.id}/pricing`, token, {
+          pricing: sanitizedPricing,
+        }),
       ]);
 
       if (
@@ -591,7 +609,10 @@ export default function ProductEditPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6 mb-8">
           <div className="flex items-center gap-4">
             <Link href={`/dashboard/products/${params.id}`}>
-              <button title="productId" className="p-3 rounded-full hover:bg-slate-100 transition-all duration-300">
+              <button
+                title="productId"
+                className="p-3 rounded-full hover:bg-slate-100 transition-all duration-300"
+              >
                 <ArrowLeft className="w-6 h-6 text-slate-600" />
               </button>
             </Link>
@@ -621,7 +642,7 @@ export default function ProductEditPage() {
                     Product Type *
                   </label>
                   <select
-                  title="productType"
+                    title="productType"
                     name="productType"
                     value={form.productType || ""}
                     onChange={handleChange}
@@ -695,7 +716,7 @@ export default function ProductEditPage() {
                     )}
                   </label>
                   <select
-                  title="instructorId"
+                    title="instructorId"
                     name="instructorId"
                     value={form.instructorId || ""}
                     onChange={handleChange}
@@ -732,7 +753,7 @@ export default function ProductEditPage() {
                         Media Type *
                       </label>
                       <select
-                      title="mediaType"
+                        title="mediaType"
                         name="mediaType"
                         value={form.mediaType || ""}
                         onChange={handleChange}
@@ -780,7 +801,7 @@ export default function ProductEditPage() {
                         </div>
                       )}
                       <input
-                      title="file"
+                        title="file"
                         type="file"
                         accept={
                           form.mediaType === "file"
@@ -799,12 +820,28 @@ export default function ProductEditPage() {
                             try {
                               if (form.materialUrl) {
                                 try {
-                                  await deleteFileFromFirebase(form.materialUrl);
+                                  await deleteBackendFile(
+                                    form.materialUrl
+                                  );
                                 } catch (deleteErr) {
-                                  console.warn("Failed to delete old media:", deleteErr);
+                                  console.warn(
+                                    "Failed to delete old media:",
+                                    deleteErr
+                                  );
                                 }
                               }
-                              const url = await uploadMaterial(file, "tool-media");
+
+                              const folder =
+                                form.mediaType === "audio"
+                                  ? "tool-media/audio"
+                                  : form.mediaType === "video"
+                                  ? "tool-media/video"
+                                  : "tool-media/files";
+
+                              const url = await uploadToBackend(
+                                file,
+                                folder
+                              );
                               setForm((prev: any) => ({
                                 ...prev,
                                 materialUrl: url,
@@ -870,7 +907,7 @@ export default function ProductEditPage() {
                       )}
 
                       <input
-                      title="file"
+                        title="file"
                         type="file"
                         accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
                         className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -881,7 +918,7 @@ export default function ProductEditPage() {
                             try {
                               if (form.materialUrl) {
                                 try {
-                                  await deleteFileFromFirebase(
+                                  await deleteBackendFile(
                                     form.materialUrl
                                   );
                                 } catch (deleteErr) {
@@ -891,7 +928,7 @@ export default function ProductEditPage() {
                                   );
                                 }
                               }
-                              const url = await uploadMaterial(
+                              const url = await uploadToBackend(
                                 file,
                                 "course-materials"
                               );
@@ -951,27 +988,27 @@ export default function ProductEditPage() {
                     </div>
                   )}
 
-                  {/* Attachment Required */}
-                    {form.productType && (
-                      <div className="mt-4">
-                        <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            name="isAttachmentRequired"
-                            checked={!!form.isAttachmentRequired}
-                            onChange={handleChange}
-                            className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-sm font-medium text-slate-700">
-                            Attachment Required
-                          </span>
-                        </label>
-                        <p className="text-slate-500 text-sm mt-1 ml-2">
-                          Check if users need to submit attachments for this
-                          service.
-                        </p>
-                      </div>
-                    )}
+                {/* Attachment Required */}
+                {form.productType && (
+                  <div className="mt-4">
+                    <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="isAttachmentRequired"
+                        checked={!!form.isAttachmentRequired}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        Attachment Required
+                      </span>
+                    </label>
+                    <p className="text-slate-500 text-sm mt-1 ml-2">
+                      Check if users need to submit attachments for this
+                      service.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -1032,7 +1069,7 @@ export default function ProductEditPage() {
                   )}
 
                   <input
-                  title="file"
+                    title="file"
                     type="file"
                     accept="image/*"
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -1089,7 +1126,7 @@ export default function ProductEditPage() {
                   )}
 
                   <input
-                  title="file"
+                    title="file"
                     type="file"
                     accept="image/*"
                     className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
@@ -1130,7 +1167,7 @@ export default function ProductEditPage() {
                     {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <select
-                  title="deliveryMode"
+                    title="deliveryMode"
                     name="deliveryMode"
                     value={form.deliveryMode || ""}
                     onChange={handleChange}
@@ -1152,7 +1189,7 @@ export default function ProductEditPage() {
                     {isBookable && <span className="text-red-500">*</span>}
                   </label>
                   <select
-                  title="sessionType"
+                    title="sessionType"
                     name="sessionType"
                     value={form.sessionType || ""}
                     onChange={handleChange}
@@ -1191,7 +1228,7 @@ export default function ProductEditPage() {
                       {isBookable && <span className="text-red-500">*</span>}
                     </label>
                     <select
-                    title="mode"
+                      title="mode"
                       name="mode"
                       value={form.mode || ""}
                       onChange={handleChange}
@@ -1216,9 +1253,9 @@ export default function ProductEditPage() {
                 Pricing & Duration
               </h2>
               <div className="grid grid-cols-1 gap-6">
-                <PricingForm 
-                  value={pricing} 
-                  onChange={(next) => setPricing(next)} 
+                <PricingForm
+                  value={pricing}
+                  onChange={(next) => setPricing(next)}
                 />
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -1236,10 +1273,10 @@ export default function ProductEditPage() {
                     required={isBookable}
                   />
                   {form.durationInMinutes && form.durationInMinutes < 1 && (
-                      <p className="text-red-500 text-sm mt-1">
-                        Duration must be greater than 1 minutes.
-                      </p>
-                    )}
+                    <p className="text-red-500 text-sm mt-1">
+                      Duration must be greater than 1 minutes.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -1256,7 +1293,8 @@ export default function ProductEditPage() {
                     className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     required={isBookable}
                   />
-                  {form.minutesPerSession && form.minutesPerSession < 1 && (
+                  {form.minutesPerSession &&
+                    form.minutesPerSession < 1 && (
                       <p className="text-red-500 text-sm mt-1">
                         Minutes per session must be greater than 1 minutes.
                       </p>
@@ -1278,7 +1316,6 @@ export default function ProductEditPage() {
                   { key: "hasSession", label: "Has Session" },
                   { key: "requiresBooking", label: "Requires Booking" },
                   { key: "requiresEnrollment", label: "Requires Enrollment" },
-                  // removed isBookableService from here
                   { key: "isRecurring", label: "Recurring" },
                 ].map(({ key, label }) => (
                   <label
@@ -1375,7 +1412,9 @@ export default function ProductEditPage() {
                   <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
                     <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                   </div>
-                  <span className="text-green-700 font-medium">{success}</span>
+                  <span className="text-green-700 font-medium">
+                    {success}
+                  </span>
                 </div>
               </div>
             )}
