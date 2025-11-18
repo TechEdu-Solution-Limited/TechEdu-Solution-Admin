@@ -1054,7 +1054,7 @@ export default function CreateProductPage() {
                             type="file"
                             accept={
                               form.mediaType === "file"
-                                ? ".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                                ? ".pdf"
                                 : form.mediaType === "audio"
                                 ? "audio/*"
                                 : form.mediaType === "video"
@@ -1146,7 +1146,7 @@ export default function CreateProductPage() {
 
                         <input
                           type="file"
-                          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                          accept=".pdf"
                           className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
