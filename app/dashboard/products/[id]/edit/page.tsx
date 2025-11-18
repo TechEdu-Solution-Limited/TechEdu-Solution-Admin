@@ -26,6 +26,8 @@ import { Pricing, defaultPricing, normalizePricingForApi } from "@/lib/constants
 import PricingForm from "@/components/PricingForms";
 import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
 import { deleteLocalFile, uploadToLocal } from "@/lib/localFileUploads";
+import { deleteBackendFile } from "@/lib/uploads";
+import { toast } from "react-toastify";
 
 // Helper function to check if product type requires training materials
 const requiresTrainingMaterials = (productType: string) => {
@@ -259,18 +261,19 @@ export default function ProductEditPage() {
   };
 
   const handleDeleteMaterial = async () => {
-    if (!form.materialUrl) return;
-    setSaving(true);
-    try {
-      await deleteLocalFile(form.materialUrl);
-      setForm((prev) => ({ ...prev, materialUrl: "" }));
-      setSuccess("Material deleted successfully!");
-    } catch {
-      setError("Failed to delete material. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (!form.materialUrl) return;
+  setLoading(true);
+  try {
+    await deleteBackendFile(form.materialUrl);
+    setForm((prev: any) => ({ ...prev, materialUrl: "" }));
+    toast.success("Material deleted successfully!");
+  } catch {
+    toast.error("Failed to delete material. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleImageUpload = async (file: File, type: "icon" | "thumbnail") => {
     setSaving(true);
