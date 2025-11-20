@@ -429,6 +429,16 @@ export default function ProductEditPage() {
       safeConsole.log("[Edit Product] Normalized pricing:", normalized);
 
       const toBackendPricing = (p: Pricing) => {
+        // FREE
+        if (p.model === "free") {
+          return {
+            model: "free",
+            currency: safeCurrency,
+            // no installments, no allowInstallments
+          };
+        }
+
+        // SUBSCRIPTION
         if (p.model === "subscription") {
           const payload: any = {
             model: "subscription",
@@ -441,19 +451,21 @@ export default function ProductEditPage() {
             autoRenew: p.autoRenew ?? true,
             minTermMonths: p.minTermMonths ?? 0,
             proration: p.proration ?? true,
+            allowInstallments: false, // explicit
           };
-          // Use basePrice for flat pricing, add per_unit fields if needed
-          if (p.priceBasis === "flat") {
+
+          // Flat vs per_unit
+          if (payload.priceBasis === "flat") {
             payload.basePrice = Number(p.basePrice ?? 0);
-            // Backend still expects subscriptionPrice field (legacy support)
-            payload.subscriptionPrice = Number(p.basePrice ?? 0);
-          } else if (p.priceBasis === "per_unit") {
+            // legacy support if backend still expects subscriptionPrice
+            payload.subscriptionPrice = payload.basePrice;
+          } else if (payload.priceBasis === "per_unit") {
             const unitName =
               p.unitName === "person"
                 ? "participant"
                 : p.unitName || "participant";
+            payload.basePrice = 0;
             payload.unitName = unitName;
-            payload.allowQuantity = true;
             payload.minQty = p.minQty ?? 1;
             payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
             payload.tierType = p.tierType || "volume";
@@ -461,44 +473,35 @@ export default function ProductEditPage() {
               upTo: Number(t.upTo),
               unitPrice: Number(t.unitPrice),
             }));
-            // Backend still expects subscriptionPrice field (legacy support) - set to 0 for per_unit
             payload.subscriptionPrice = 0;
           }
-          // Add tax fields if present
+
           if (p.taxInclusive !== undefined)
             payload.taxInclusive = p.taxInclusive;
           if (p.vatPercentage !== undefined)
-            payload.vatPercentage = p.vatPercentage ?? 0;
+            payload.vatPercentage = p.vatPercentage;
+
           return payload;
         }
 
-        if (p.model === "free") {
-          return {
-            model: "free",
-            currency: safeCurrency,
-          };
-        }
-
-        const unitName =
-          p.unitName === "person" ? "participant" : p.unitName || "participant";
-        const base = Number(p.basePrice || 0);
+        // ONE-TIME
         const priceBasis = p.priceBasis ?? "flat";
         const payload: any = {
           model: "one_time",
-          priceBasis: priceBasis,
+          priceBasis,
           currency: safeCurrency,
           taxInclusive: p.taxInclusive ?? false,
           vatPercentage: p.vatPercentage ?? 0,
         };
 
-        // Backend requires basePrice for ALL one_time pricing models
-        // For flat pricing: use the actual basePrice value
-        // For per_unit pricing: set to 0 (backend requirement, but actual pricing comes from tiers)
         if (priceBasis === "flat") {
-          payload.basePrice = base;
+          payload.basePrice = Number(p.basePrice ?? 0);
         } else if (priceBasis === "per_unit") {
-          // Backend requires basePrice even for per_unit - set to 0
-          payload.basePrice = 0;
+          const unitName =
+            p.unitName === "person"
+              ? "participant"
+              : p.unitName || "participant";
+          payload.basePrice = 0; // backend requirement for per_unit
           payload.unitName = unitName;
           payload.minQty = p.minQty ?? 1;
           payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
@@ -508,32 +511,29 @@ export default function ProductEditPage() {
             unitPrice: Number(t.unitPrice),
           }));
         }
-        // Only include installments if explicitly enabled
-        // Note: p is normalized which deletes installments if allowInstallments is false
-        // So we check original pricing object directly
-        // Always be explicit for one_time pricing
-        if (p.model === "one_time") {
-          payload.allowInstallments = !!p.allowInstallments;
 
-          // Only send installments when they're actually enabled
-          if (p.allowInstallments && p.installments) {
-            payload.installments = {
-              enabled: true,
-              count: Math.max(2, Number(p.installments.count || 2)),
-              interval: p.installments.interval || "month",
-              intervalCount: p.installments.intervalCount || 1,
-              downPaymentType: p.installments.downPaymentType,
-              downPaymentValue: Math.max(
-                0,
-                Number(p.installments.downPaymentValue || 0)
-              ),
-              allowEarlyPayoff: p.installments.allowEarlyPayoff ?? false,
-              provider: p.installments.provider || "in_house",
-            };
-          }
+        // 🔐 Installments consistency guard
+        const hasInstallments = !!(p.allowInstallments && p.installments);
+
+        // ALWAYS send allowInstallments for one_time
+        payload.allowInstallments = hasInstallments;
+
+        if (hasInstallments) {
+          payload.installments = {
+            enabled: true,
+            count: Math.max(2, Number(p.installments!.count || 2)),
+            interval: p.installments!.interval || "month",
+            intervalCount: p.installments!.intervalCount || 1,
+            downPaymentType: p.installments!.downPaymentType,
+            downPaymentValue: Math.max(
+              0,
+              Number(p.installments!.downPaymentValue || 0)
+            ),
+            allowEarlyPayoff: p.installments!.allowEarlyPayoff ?? false,
+            provider: p.installments!.provider || "in_house",
+          };
         }
-        // If allowInstallments is false, we simply don't add `installments`
-        // and backend sees: { allowInstallments: false, installments: undefined }
+        // If hasInstallments is false, we do NOT add `installments` at all.
 
         return payload;
       };

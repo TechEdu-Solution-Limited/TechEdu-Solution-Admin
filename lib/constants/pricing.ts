@@ -130,40 +130,42 @@ export const defaultPricing: Pricing = {
 export function normalizePricingForApi(p: Pricing): Pricing {
   const out: Pricing = { ...p };
 
-  // Free model: only keep model and currency (no installments at all)
+  // Free model: only keep model and currency
   if (out.model === "free") {
     return {
       model: "free",
-      priceBasis: "flat", // satisfies the type; you'll strip it when building payload
+      priceBasis: "flat", // just to satisfy the type; not important for backend
       currency: out.currency,
     } as Pricing;
   }
 
-  // Subscriptions never have installments
+  // Subscriptions NEVER have installments
   if (out.model === "subscription") {
     out.allowInstallments = false;
     delete (out as any).installments;
   } else {
-    // one_time (or other non-subscription models)
+    // one_time (and any non-subscription)
     if (!out.allowInstallments || !out.installments) {
-      // Treat as "no installments"
+      // No installments: force a clean state
       out.allowInstallments = false;
       delete (out as any).installments;
     } else {
       // Installments explicitly enabled and configured
+      const inst = out.installments; // <-- now guaranteed non-undefined here
+
       out.allowInstallments = true;
       out.installments = {
         enabled: true,
-        count: Math.max(2, Number(out.installments.count || 2)),
-        interval: out.installments.interval || "month",
-        intervalCount: out.installments.intervalCount || 1,
-        downPaymentType: out.installments.downPaymentType,
+        count: Math.max(2, Number(inst.count || 2)),
+        interval: inst.interval || "month",
+        intervalCount: inst.intervalCount || 1,
+        downPaymentType: inst.downPaymentType,
         downPaymentValue: Math.max(
           0,
-          Number(out.installments.downPaymentValue || 0)
+          Number(inst.downPaymentValue || 0)
         ),
-        allowEarlyPayoff: !!out.installments.allowEarlyPayoff,
-        provider: out.installments.provider || "in_house",
+        allowEarlyPayoff: !!inst.allowEarlyPayoff,
+        provider: inst.provider || "in_house",
       };
     }
   }
@@ -190,3 +192,4 @@ export function normalizePricingForApi(p: Pricing): Pricing {
 
   return out;
 }
+
