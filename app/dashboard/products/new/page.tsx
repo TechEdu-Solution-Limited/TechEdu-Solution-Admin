@@ -16,21 +16,21 @@ import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
 import {
+  uploadAssetImage,
+  uploadMaterial,
+  deleteFileFromFirebase,
+} from "@/lib/firebase";
+import {
   PRODUCT_TYPE_OPTIONS,
   DELIVERY_MODE_OPTIONS,
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
-import {
-  normalizePricingForApi,
-  Pricing,
-  Currency,
-} from "@/lib/constants/pricing";
+import { normalizePricingForApi, Pricing, Currency } from "@/lib/constants/pricing";
 import PricingForm, {
   computePrice,
   formatMoney,
 } from "@/components/PricingForms";
-import { uploadToBackend, deleteToBackend } from "@/lib/uploads";
 
 const initialForm = {
   productType: "",
@@ -430,7 +430,7 @@ export default function CreateProductPage() {
     if (!form.materialUrl) return;
     setLoading(true);
     try {
-      await deleteToBackend(form.materialUrl);
+      await deleteFileFromFirebase(form.materialUrl);
       setForm((prev: any) => ({ ...prev, materialUrl: "" }));
       toast.success("Material deleted successfully!");
     } catch {
@@ -444,8 +444,9 @@ export default function CreateProductPage() {
   const validatePricing = (): string | null => {
     // Validate flat pricing
     if (pricing.priceBasis === "flat") {
-      if ((pricing.basePrice ?? 0) < 0) return "Price cannot be negative.";
-
+      if ((pricing.basePrice ?? 0) < 0)
+        return "Price cannot be negative.";
+      
       // Subscription requires interval
       if (pricing.model === "subscription") {
         if (!pricing.interval) return "Subscription interval is required.";
@@ -453,18 +454,17 @@ export default function CreateProductPage() {
           return "Subscription interval count must be at least 1.";
       }
     }
-
+    
     // Validate per_unit pricing
     if (pricing.priceBasis === "per_unit") {
-      if (!pricing.tierType)
-        return "Tier type is required for per-unit pricing.";
+      if (!pricing.tierType) return "Tier type is required for per-unit pricing.";
       if (!pricing.tiers || pricing.tiers.length === 0)
         return "Please add at least one tier for per-unit pricing.";
       if ((pricing.minQty ?? 1) < 1)
         return "Minimum quantity must be at least 1.";
       if ((pricing.maxQty ?? 1) < (pricing.minQty ?? 1))
         return "Max quantity must be >= min quantity.";
-
+      
       // Subscription per_unit also requires interval
       if (pricing.model === "subscription") {
         if (!pricing.interval) return "Subscription interval is required.";
@@ -489,7 +489,7 @@ export default function CreateProductPage() {
   const handleCreateProduct = async () => {
     // Explicit handler for create button - only callable from step 4
     if (step !== steps.length - 1) return;
-
+    
     // Prevent double submission
     if (loading) return;
 
@@ -503,11 +503,7 @@ export default function CreateProductPage() {
     ];
 
     // Media type and file required for Tools + nonBookableService + mediaType selected
-    if (
-      form.productType === "Tools" &&
-      !form.isBookableService &&
-      form.mediaType
-    ) {
+    if (form.productType === "Tools" && !form.isBookableService && form.mediaType) {
       requiredFields.push(
         { field: "mediaType", label: "Media Type" },
         { field: "materialUrl", label: "Media File" }
@@ -596,20 +592,11 @@ export default function CreateProductPage() {
 
       // Map Pricing -> backend pricing schema
       const normalizedPricing = normalizePricingForApi(pricing);
-      const allowedCurrencies = [
-        "usd",
-        "eur",
-        "gbp",
-        "cad",
-        "aud",
-        "jpy",
-        "inr",
-        "ngn",
-      ] as const;
+      const allowedCurrencies = ["usd", "eur", "gbp", "cad", "aud", "jpy", "inr", "ngn"] as const;
       const currency = (normalizedPricing.currency || "gbp").toLowerCase();
-      const safeCurrency = (
-        allowedCurrencies.includes(currency as any) ? currency : "gbp"
-      ) as (typeof allowedCurrencies)[number];
+      const safeCurrency = (allowedCurrencies.includes(currency as any)
+        ? currency
+        : "gbp") as typeof allowedCurrencies[number];
 
       // Debug: show normalized pricing before toBackendPricing
       console.log("[Create Product] Raw pricing:", pricing);
@@ -633,28 +620,20 @@ export default function CreateProductPage() {
           if (p.priceBasis === "flat") {
             payload.basePrice = Number(p.basePrice ?? p.subscriptionPrice ?? 0);
           } else if (p.priceBasis === "per_unit") {
-            const unitName =
-              p.unitName === "person"
-                ? "participant"
-                : p.unitName || "participant";
+            const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
             payload.unitName = unitName;
             payload.allowQuantity = true;
             payload.minQty = p.minQty ?? 1;
             payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
             payload.tierType = p.tierType || "volume";
-            payload.tiers = (p.tiers || []).map((t) => ({
-              upTo: Number(t.upTo),
-              unitPrice: Number(t.unitPrice),
-            }));
+            payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
           }
           // Add tax fields if present
-          if (p.taxInclusive !== undefined)
-            payload.taxInclusive = p.taxInclusive;
-          if (p.vatPercentage !== undefined)
-            payload.vatPercentage = p.vatPercentage ?? 0;
+          if (p.taxInclusive !== undefined) payload.taxInclusive = p.taxInclusive;
+          if (p.vatPercentage !== undefined) payload.vatPercentage = p.vatPercentage ?? 0;
           return payload;
         }
-
+        
         if (p.model === "free") {
           return {
             model: "free",
@@ -662,8 +641,7 @@ export default function CreateProductPage() {
           };
         }
 
-        const unitName =
-          p.unitName === "person" ? "participant" : p.unitName || "participant";
+        const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
         const payload: any = {
           model: "one_time",
           priceBasis: p.priceBasis ?? "flat", // Default to flat only if missing (preserves "per_unit" if set)
@@ -679,10 +657,7 @@ export default function CreateProductPage() {
           payload.minQty = p.minQty ?? 1;
           payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
           payload.tierType = p.tierType || "volume";
-          payload.tiers = (p.tiers || []).map((t) => ({
-            upTo: Number(t.upTo),
-            unitPrice: Number(t.unitPrice),
-          }));
+          payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
         }
         // Only include installments if explicitly enabled
         // Note: p is normalized which deletes installments if allowInstallments is false
@@ -695,10 +670,7 @@ export default function CreateProductPage() {
             interval: pricing.installments.interval || "month",
             intervalCount: pricing.installments.intervalCount || 1,
             downPaymentType: pricing.installments.downPaymentType,
-            downPaymentValue: Math.max(
-              0,
-              Number(pricing.installments.downPaymentValue || 0)
-            ),
+            downPaymentValue: Math.max(0, Number(pricing.installments.downPaymentValue || 0)),
             allowEarlyPayoff: pricing.installments.allowEarlyPayoff ?? false,
             provider: pricing.installments.provider || "in_house",
           };
@@ -766,11 +738,7 @@ export default function CreateProductPage() {
       };
 
       // Add mediaType for Tools + nonBookableService
-      if (
-        form.productType === "Tools" &&
-        !form.isBookableService &&
-        form.mediaType
-      ) {
+      if (form.productType === "Tools" && !form.isBookableService && form.mediaType) {
         payload.mediaType = form.mediaType;
       }
 
@@ -998,111 +966,103 @@ export default function CreateProductPage() {
                     />
 
                     {/* Media Type - only for Tools + nonBookableService */}
-                    {form.productType === "Tools" &&
-                      !form.isBookableService && (
-                        <>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Media Type *
-                          </label>
-                          <select
-                            name="mediaType"
-                            value={form.mediaType}
-                            onChange={handleChange}
-                            className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                            required
-                          >
-                            <option value="">Select Media Type</option>
-                            <option value="file">File</option>
-                            <option value="audio">Audio</option>
-                            <option value="video">Video</option>
-                          </select>
+                    {form.productType === "Tools" && !form.isBookableService && (
+                      <>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Media Type *
+                        </label>
+                        <select
+                          name="mediaType"
+                          value={form.mediaType}
+                          onChange={handleChange}
+                          className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          required
+                        >
+                          <option value="">Select Media Type</option>
+                          <option value="file">File</option>
+                          <option value="audio">Audio</option>
+                          <option value="video">Video</option>
+                        </select>
 
-                          {/* Media upload for Tools */}
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Media File * (
-                            {form.mediaType || "Select type first"})
-                          </label>
-                          {form.materialUrl && (
-                            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span className="text-green-700 text-sm font-medium">
-                                    Current Media File
-                                  </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={handleDeleteMaterial}
-                                  disabled={loading}
-                                  className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
-                                >
-                                  {loading ? "Deleting..." : "Delete"}
-                                </button>
+                        {/* Media upload for Tools */}
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Media File * ({form.mediaType || "Select type first"})
+                        </label>
+                        {form.materialUrl && (
+                          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-[12px]">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-green-700 text-sm font-medium">
+                                  Current Media File
+                                </span>
                               </div>
-                              <a
-                                href={form.materialUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm underline"
+                              <button
+                                type="button"
+                                onClick={handleDeleteMaterial}
+                                disabled={loading}
+                                className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-[10px] transition-colors duration-200 disabled:opacity-50"
                               >
-                                Preview uploaded media
-                              </a>
+                                {loading ? "Deleting..." : "Delete"}
+                              </button>
                             </div>
-                          )}
-                          <input
-                            type="file"
-                            accept={
-                              form.mediaType === "file"
-                                ? ".pdf"
-                                : form.mediaType === "audio"
-                                ? "audio/*"
-                                : form.mediaType === "video"
-                                ? "video/*"
-                                : "*"
-                            }
-                            className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setLoading(true);
-                                try {
-                                  if (form.materialUrl) {
-                                    try {
-                                      await deleteToBackend(form.materialUrl);
-                                    } catch (deleteErr) {
-                                      console.warn(
-                                        "Failed to delete old media:",
-                                        deleteErr
-                                      );
-                                    }
+                            <a
+                              href={form.materialUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm underline"
+                            >
+                              Preview uploaded media
+                            </a>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept={
+                            form.mediaType === "file"
+                              ? ".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
+                              : form.mediaType === "audio"
+                              ? "audio/*"
+                              : form.mediaType === "video"
+                              ? "video/*"
+                              : "*"
+                          }
+                          className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setLoading(true);
+                              try {
+                                if (form.materialUrl) {
+                                  try {
+                                    await deleteFileFromFirebase(form.materialUrl);
+                                  } catch (deleteErr) {
+                                    console.warn("Failed to delete old media:", deleteErr);
                                   }
-                                  const url = await uploadToBackend(
-                                    file,
-                                    "tool-media"
-                                  );
-                                  setForm((prev: any) => ({
-                                    ...prev,
-                                    materialUrl: url,
-                                  }));
-                                  toast.success("Media uploaded successfully!");
-                                } catch {
-                                  setError("Media upload failed");
-                                } finally {
-                                  setLoading(false);
                                 }
+                                const url = await uploadMaterial(file, "tool-media");
+                                setForm((prev: any) => ({
+                                  ...prev,
+                                  materialUrl: url,
+                                }));
+                                toast.success("Media uploaded successfully!");
+                              } catch {
+                                setError("Media upload failed");
+                              } finally {
+                                setLoading(false);
                               }
-                            }}
-                            required
-                            disabled={!form.mediaType}
-                          />
-                          {!form.mediaType && (
-                            <p className="text-slate-500 text-xs mt-1">
-                              Please select a media type first
-                            </p>
-                          )}
-                        </>
-                      )}
+                            }
+                          }}
+                          required
+                          disabled={!form.mediaType}
+                        />
+                        {!form.mediaType && (
+                          <p className="text-slate-500 text-xs mt-1">
+                            Please select a media type first
+                          </p>
+                        )}
+                      </>
+                    )}
 
                     {/* Training materials */}
                     {requiresTrainingMaterials(form.productType) && (
@@ -1146,7 +1106,7 @@ export default function CreateProductPage() {
 
                         <input
                           type="file"
-                          accept=".pdf"
+                          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
                           className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
@@ -1155,7 +1115,9 @@ export default function CreateProductPage() {
                               try {
                                 if (form.materialUrl) {
                                   try {
-                                    await deleteToBackend(form.materialUrl);
+                                    await deleteFileFromFirebase(
+                                      form.materialUrl
+                                    );
                                   } catch (deleteErr) {
                                     console.warn(
                                       "Failed to delete old material:",
@@ -1163,7 +1125,7 @@ export default function CreateProductPage() {
                                     );
                                   }
                                 }
-                                const url = await uploadToBackend(
+                                const url = await uploadMaterial(
                                   file,
                                   "course-materials"
                                 );
@@ -1212,7 +1174,8 @@ export default function CreateProductPage() {
                                 program.
                               </p>
                               <p className="text-blue-600 text-xs mt-1">
-                                Supported formats: PDF
+                                Supported formats: PDF, DOC, DOCX, PPT, PPTX,
+                                TXT, ZIP, RAR, XLSX, CSV
                               </p>
                               {form.materialUrl && (
                                 <p className="text-blue-600 text-xs mt-2 font-medium">
@@ -1643,10 +1606,10 @@ export default function CreateProductPage() {
                       className="rounded-[10px]"
                     />
                     {form.durationInMinutes && form.durationInMinutes < 1 && (
-                      <p className="text-red-500 text-sm mt-1">
-                        Duration must be greater than 1 minutes.
-                      </p>
-                    )}
+                        <p className="text-red-500 text-sm mt-1">
+                          Duration must be greater than 1 minutes.
+                        </p>
+                      )}
                   </div>
 
                   <div>
@@ -1663,10 +1626,10 @@ export default function CreateProductPage() {
                       className="rounded-[10px]"
                     />
                     {form.minutesPerSession && form.minutesPerSession < 1 && (
-                      <p className="text-red-500 text-sm mt-1">
-                        Minutes per session must be greater than 1 minutes.
-                      </p>
-                    )}
+                        <p className="text-red-500 text-sm mt-1">
+                          Minutes per session must be greater than 1 minutes.
+                        </p>
+                      )}
                   </div>
 
                   <div>
@@ -1801,20 +1764,11 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
-                        // delete old icon if exists
-                        if (form.iconUrl) {
-                          try {
-                            await deleteToBackend(form.iconUrl);
-                          } catch (deleteErr) {
-                            console.warn(
-                              "Failed to delete old icon:",
-                              deleteErr
-                            );
-                          }
-                        }
-                        const url = await uploadToBackend(file, "product-icons");
+                        const url = await uploadAssetImage(
+                          file,
+                          "product-icons"
+                        );
                         setForm((prev: any) => ({ ...prev, iconUrl: url }));
-                        toast.success("Icon uploaded successfully!");
                       } catch {
                         setError("Icon upload failed");
                       } finally {
@@ -1843,18 +1797,7 @@ export default function CreateProductPage() {
                     if (file) {
                       setLoading(true);
                       try {
-                        // delete old thumbnail if exists
-                        if (form.thumbnailUrl) {
-                          try {
-                            await deleteToBackend(form.thumbnailUrl);
-                          } catch (deleteErr) {
-                            console.warn(
-                              "Failed to delete old thumbnail:",
-                              deleteErr
-                            );
-                          }
-                        }
-                        const url = await uploadToBackend(
+                        const url = await uploadAssetImage(
                           file,
                           "product-thumbnails"
                         );
@@ -1862,7 +1805,6 @@ export default function CreateProductPage() {
                           ...prev,
                           thumbnailUrl: url,
                         }));
-                        toast.success("Thumbnail uploaded successfully!");
                       } catch {
                         setError("Image upload failed");
                       } finally {
