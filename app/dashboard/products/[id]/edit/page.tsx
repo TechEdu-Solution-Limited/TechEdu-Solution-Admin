@@ -22,7 +22,11 @@ import {
   SESSION_TYPE_OPTIONS,
   MODE_OPTIONS,
 } from "@/lib/constants/products";
-import { Pricing, defaultPricing, normalizePricingForApi } from "@/lib/constants/pricing";
+import {
+  Pricing,
+  defaultPricing,
+  normalizePricingForApi,
+} from "@/lib/constants/pricing";
 import PricingForm from "@/components/PricingForms";
 import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
 import safeConsole from "@/lib/console";
@@ -124,11 +128,12 @@ export default function ProductEditPage() {
 
         // Pricing - convert from API format to new structure
         const pricingData: any = product.pricing || {};
-        
+
         // Handle legacy format (model="per_unit") or new format
-        let model: "one_time" | "subscription" = pricingData.model || "one_time";
+        let model: "one_time" | "subscription" =
+          pricingData.model || "one_time";
         let priceBasis: "flat" | "per_unit" = "flat";
-        
+
         // Handle migration from old format (model="per_unit" is no longer valid)
         // This should only happen if API returns legacy data
         if (pricingData.model === "per_unit") {
@@ -141,66 +146,80 @@ export default function ProductEditPage() {
           // If tiers exist but no priceBasis, assume per_unit
           priceBasis = "per_unit";
         }
-        
+
         // Safety check: ensure priceBasis is always set for one_time and subscription
         if (!priceBasis && (model === "one_time" || model === "subscription")) {
           priceBasis = "flat";
         }
-        
+
         // Build pricing object with new structure
         const mappedPricing: Pricing = {
           model,
           priceBasis,
-          currency: pricingData.currency || (product.currency || "gbp").toLowerCase(),
+          currency:
+            pricingData.currency || (product.currency || "gbp").toLowerCase(),
           taxInclusive: pricingData.taxInclusive ?? false,
           vatPercentage: pricingData.vatPercentage ?? 0,
-          discountPercentage: pricingData.discountPercentage ?? pricingData.discountPercent ?? 0,
+          discountPercentage:
+            pricingData.discountPercentage ?? pricingData.discountPercent ?? 0,
           minQty: pricingData.minQty ?? 1,
           maxQty: pricingData.maxQty ?? 1000,
           allowInstallments: pricingData.allowInstallments ?? false,
         };
-        
+
         // Add fields based on priceBasis
         if (priceBasis === "flat") {
           // Map subscriptionPrice to basePrice if needed (legacy support)
-          mappedPricing.basePrice = pricingData.basePrice ?? 
-            (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
+          mappedPricing.basePrice =
+            pricingData.basePrice ??
+            (pricingData.subscriptionPrice !== undefined
+              ? Number(pricingData.subscriptionPrice)
+              : undefined) ??
             Number(product.price || 0);
         } else if (priceBasis === "per_unit") {
           // Map backend unitName to frontend: "participant" -> "person", keep "team" as is
           const apiUnitName = pricingData.unitName || "team";
-          mappedPricing.unitName = apiUnitName === "participant" ? "person" : apiUnitName;
+          mappedPricing.unitName =
+            apiUnitName === "participant" ? "person" : apiUnitName;
           mappedPricing.tierType = pricingData.tierType || "volume";
           mappedPricing.tiers = pricingData.tiers || [];
         }
-        
+
         // Add subscription-specific fields
         if (model === "subscription") {
           if (priceBasis === "flat" && mappedPricing.basePrice === undefined) {
             // Map subscriptionPrice to basePrice if needed (legacy support)
-            mappedPricing.basePrice = pricingData.basePrice ?? 
-              (pricingData.subscriptionPrice !== undefined ? Number(pricingData.subscriptionPrice) : undefined) ??
+            mappedPricing.basePrice =
+              pricingData.basePrice ??
+              (pricingData.subscriptionPrice !== undefined
+                ? Number(pricingData.subscriptionPrice)
+                : undefined) ??
               Number(product.price || 0);
           }
           mappedPricing.interval = pricingData.interval || "month";
           mappedPricing.intervalCount = pricingData.intervalCount || 1;
         }
-        
+
         // Add installments if enabled
-        if (model === "one_time" && pricingData.allowInstallments && pricingData.installments) {
+        if (
+          model === "one_time" &&
+          pricingData.allowInstallments &&
+          pricingData.installments
+        ) {
           mappedPricing.allowInstallments = true;
           mappedPricing.installments = {
             enabled: true,
             count: pricingData.installments.count || 2,
             interval: pricingData.installments.interval || "month",
             intervalCount: pricingData.installments.intervalCount || 1,
-            downPaymentType: pricingData.installments.downPaymentType || "percent",
+            downPaymentType:
+              pricingData.installments.downPaymentType || "percent",
             downPaymentValue: pricingData.installments.downPaymentValue || 20,
             allowEarlyPayoff: pricingData.installments.allowEarlyPayoff,
             provider: pricingData.installments.provider || "in_house",
           };
         }
-        
+
         setPricing(mappedPricing);
 
         // Instructors
@@ -375,7 +394,7 @@ export default function ProductEditPage() {
       delete (formCopy as any).subscriptionPrice;
       delete (formCopy as any).price;
       delete (formCopy as any).currency;
-      
+
       const rootPayload = {
         ...formCopy,
         nonBookableService: !isBookable, // ensure mirrored on send
@@ -390,11 +409,20 @@ export default function ProductEditPage() {
 
       // Pricing payload - build to backend shape
       const normalized = normalizePricingForApi(pricing);
-      const allowedCurrencies = ["usd", "eur", "gbp", "cad", "aud", "jpy", "inr", "ngn"] as const;
+      const allowedCurrencies = [
+        "usd",
+        "eur",
+        "gbp",
+        "cad",
+        "aud",
+        "jpy",
+        "inr",
+        "ngn",
+      ] as const;
       const currency = (normalized.currency || "gbp").toLowerCase();
-      const safeCurrency = (allowedCurrencies.includes(currency as any)
-        ? currency
-        : "gbp") as typeof allowedCurrencies[number];
+      const safeCurrency = (
+        allowedCurrencies.includes(currency as any) ? currency : "gbp"
+      ) as (typeof allowedCurrencies)[number];
 
       // Debug: show normalized pricing before toBackendPricing
       safeConsole.log("[Edit Product] Raw pricing:", pricing);
@@ -420,22 +448,30 @@ export default function ProductEditPage() {
             // Backend still expects subscriptionPrice field (legacy support)
             payload.subscriptionPrice = Number(p.basePrice ?? 0);
           } else if (p.priceBasis === "per_unit") {
-            const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+            const unitName =
+              p.unitName === "person"
+                ? "participant"
+                : p.unitName || "participant";
             payload.unitName = unitName;
             payload.allowQuantity = true;
             payload.minQty = p.minQty ?? 1;
             payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
             payload.tierType = p.tierType || "volume";
-            payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+            payload.tiers = (p.tiers || []).map((t) => ({
+              upTo: Number(t.upTo),
+              unitPrice: Number(t.unitPrice),
+            }));
             // Backend still expects subscriptionPrice field (legacy support) - set to 0 for per_unit
             payload.subscriptionPrice = 0;
           }
           // Add tax fields if present
-          if (p.taxInclusive !== undefined) payload.taxInclusive = p.taxInclusive;
-          if (p.vatPercentage !== undefined) payload.vatPercentage = p.vatPercentage ?? 0;
+          if (p.taxInclusive !== undefined)
+            payload.taxInclusive = p.taxInclusive;
+          if (p.vatPercentage !== undefined)
+            payload.vatPercentage = p.vatPercentage ?? 0;
           return payload;
         }
-        
+
         if (p.model === "free") {
           return {
             model: "free",
@@ -443,7 +479,8 @@ export default function ProductEditPage() {
           };
         }
 
-        const unitName = p.unitName === "person" ? "participant" : p.unitName || "participant";
+        const unitName =
+          p.unitName === "person" ? "participant" : p.unitName || "participant";
         const base = Number(p.basePrice || 0);
         const priceBasis = p.priceBasis ?? "flat";
         const payload: any = {
@@ -453,7 +490,7 @@ export default function ProductEditPage() {
           taxInclusive: p.taxInclusive ?? false,
           vatPercentage: p.vatPercentage ?? 0,
         };
-        
+
         // Backend requires basePrice for ALL one_time pricing models
         // For flat pricing: use the actual basePrice value
         // For per_unit pricing: set to 0 (backend requirement, but actual pricing comes from tiers)
@@ -466,7 +503,10 @@ export default function ProductEditPage() {
           payload.minQty = p.minQty ?? 1;
           payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
           payload.tierType = p.tierType || "volume";
-          payload.tiers = (p.tiers || []).map((t) => ({ upTo: Number(t.upTo), unitPrice: Number(t.unitPrice) }));
+          payload.tiers = (p.tiers || []).map((t) => ({
+            upTo: Number(t.upTo),
+            unitPrice: Number(t.unitPrice),
+          }));
         }
         // Only include installments if explicitly enabled
         // Note: p is normalized which deletes installments if allowInstallments is false
@@ -479,7 +519,10 @@ export default function ProductEditPage() {
             interval: pricing.installments.interval || "month",
             intervalCount: pricing.installments.intervalCount || 1,
             downPaymentType: pricing.installments.downPaymentType,
-            downPaymentValue: Math.max(0, Number(pricing.installments.downPaymentValue || 0)),
+            downPaymentValue: Math.max(
+              0,
+              Number(pricing.installments.downPaymentValue || 0)
+            ),
             allowEarlyPayoff: pricing.installments.allowEarlyPayoff ?? false,
             provider: pricing.installments.provider || "in_house",
           };
@@ -502,11 +545,9 @@ export default function ProductEditPage() {
 
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
-        patchApiRequest(
-          `/api/products/${params.id}/pricing`,
-          token,
-          { pricing: sanitizedPricing }
-        ),
+        patchApiRequest(`/api/products/${params.id}/pricing`, token, {
+          pricing: sanitizedPricing,
+        }),
       ]);
 
       if (
@@ -834,6 +875,28 @@ export default function ProductEditPage() {
                     </div>
                   )}
 
+                {/* Attachment Required */}
+                {form.productType && (
+                  <div className="mt-4">
+                    <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="isAttachmentRequired"
+                        checked={!!form.isAttachmentRequired}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        Attachment Required
+                      </span>
+                    </label>
+                    <p className="text-slate-500 text-sm mt-1 ml-2">
+                      Check if users need to submit attachments for this
+                      service.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Description{" "}
@@ -1072,9 +1135,9 @@ export default function ProductEditPage() {
                 Pricing & Duration
               </h2>
               <div className="grid grid-cols-1 gap-6">
-                <PricingForm 
-                  value={pricing} 
-                  onChange={(next) => setPricing(next)} 
+                <PricingForm
+                  value={pricing}
+                  onChange={(next) => setPricing(next)}
                 />
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -1092,10 +1155,10 @@ export default function ProductEditPage() {
                     required={isBookable}
                   />
                   {form.durationInMinutes && form.durationInMinutes < 1 && (
-                      <p className="text-red-500 text-sm mt-1">
-                        Duration must be greater than 1 minutes.
-                      </p>
-                    )}
+                    <p className="text-red-500 text-sm mt-1">
+                      Duration must be greater than 1 minutes.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -1113,10 +1176,10 @@ export default function ProductEditPage() {
                     required={isBookable}
                   />
                   {form.minutesPerSession && form.minutesPerSession < 1 && (
-                      <p className="text-red-500 text-sm mt-1">
-                        Minutes per session must be greater than 1 minutes.
-                      </p>
-                    )}
+                    <p className="text-red-500 text-sm mt-1">
+                      Minutes per session must be greater than 1 minutes.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
