@@ -511,22 +511,30 @@ export default function ProductEditPage() {
         // Only include installments if explicitly enabled
         // Note: p is normalized which deletes installments if allowInstallments is false
         // So we check original pricing object directly
-        if (pricing.allowInstallments && pricing.installments) {
-          payload.allowInstallments = true;
-          payload.installments = {
-            enabled: true,
-            count: Math.max(2, Number(pricing.installments.count || 2)),
-            interval: pricing.installments.interval || "month",
-            intervalCount: pricing.installments.intervalCount || 1,
-            downPaymentType: pricing.installments.downPaymentType,
-            downPaymentValue: Math.max(
-              0,
-              Number(pricing.installments.downPaymentValue || 0)
-            ),
-            allowEarlyPayoff: pricing.installments.allowEarlyPayoff ?? false,
-            provider: pricing.installments.provider || "in_house",
-          };
+        // Always be explicit for one_time pricing
+        if (p.model === "one_time") {
+          payload.allowInstallments = !!p.allowInstallments;
+
+          // Only send installments when they're actually enabled
+          if (p.allowInstallments && p.installments) {
+            payload.installments = {
+              enabled: true,
+              count: Math.max(2, Number(p.installments.count || 2)),
+              interval: p.installments.interval || "month",
+              intervalCount: p.installments.intervalCount || 1,
+              downPaymentType: p.installments.downPaymentType,
+              downPaymentValue: Math.max(
+                0,
+                Number(p.installments.downPaymentValue || 0)
+              ),
+              allowEarlyPayoff: p.installments.allowEarlyPayoff ?? false,
+              provider: p.installments.provider || "in_house",
+            };
+          }
         }
+        // If allowInstallments is false, we simply don't add `installments`
+        // and backend sees: { allowInstallments: false, installments: undefined }
+
         return payload;
       };
 
@@ -652,6 +660,7 @@ export default function ProductEditPage() {
                     Product Type *
                   </label>
                   <select
+                    title="productType"
                     name="productType"
                     value={form.productType || ""}
                     onChange={handleChange}

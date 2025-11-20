@@ -130,26 +130,28 @@ export const defaultPricing: Pricing = {
 export function normalizePricingForApi(p: Pricing): Pricing {
   const out: Pricing = { ...p };
 
-  // Free model: only keep model and currency
+  // Free model: only keep model and currency (no installments at all)
   if (out.model === "free") {
     return {
       model: "free",
-      priceBasis: "flat", // Required by interface but won't be sent to API
+      priceBasis: "flat", // satisfies the type; you'll strip it when building payload
       currency: out.currency,
     } as Pricing;
   }
 
-  // Never send installments for subscriptions
+  // Subscriptions never have installments
   if (out.model === "subscription") {
-    delete out.allowInstallments;
-    delete out.installments;
+    out.allowInstallments = false;
+    delete (out as any).installments;
   } else {
-    // Only send installments if allowInstallments is true and installments is configured
+    // one_time (or other non-subscription models)
     if (!out.allowInstallments || !out.installments) {
-      delete out.allowInstallments;
-      delete out.installments;
+      // Treat as "no installments"
+      out.allowInstallments = false;
+      delete (out as any).installments;
     } else {
-      // Ensure installments has required fields
+      // Installments explicitly enabled and configured
+      out.allowInstallments = true;
       out.installments = {
         enabled: true,
         count: Math.max(2, Number(out.installments.count || 2)),
@@ -160,24 +162,22 @@ export function normalizePricingForApi(p: Pricing): Pricing {
           0,
           Number(out.installments.downPaymentValue || 0)
         ),
-        allowEarlyPayoff: out.installments.allowEarlyPayoff,
+        allowEarlyPayoff: !!out.installments.allowEarlyPayoff,
         provider: out.installments.provider || "in_house",
       };
-      // DO NOT include allowInstallments - backend rejects it when installments is present
-      delete out.allowInstallments;
     }
   }
 
   // Clean up fields based on priceBasis
   if (out.priceBasis === "flat") {
     // Remove per_unit specific fields
-    delete out.unitName;
-    delete out.tierType;
-    delete out.tiers;
+    delete (out as any).unitName;
+    delete (out as any).tierType;
+    delete (out as any).tiers;
   } else if (out.priceBasis === "per_unit") {
     // Remove flat-specific basePrice if empty
     if (!out.basePrice) {
-      delete out.basePrice;
+      delete (out as any).basePrice;
     }
     // Ensure tierType and tiers are present
     if (!out.tierType) {
