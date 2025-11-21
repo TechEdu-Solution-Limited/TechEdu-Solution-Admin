@@ -1,14 +1,16 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   getApiRequest,
   patchApiRequest,
   updateApiRequest,
+  postApiRequest,
 } from "@/lib/apiFetch";
 import { getTokenFromCookies } from "@/lib/cookies";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import {
   uploadAssetImage,
@@ -28,9 +30,19 @@ import {
   normalizePricingForApi,
 } from "@/lib/constants/pricing";
 import PricingForm from "@/components/PricingForms";
-import { pickPricingForApi, validatePricing } from "@/utils/pricingApi";
+import { validatePricing } from "@/utils/pricingApi";
 import safeConsole from "@/lib/console";
 import { toast } from "react-toastify";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 // Helper function to check if product type requires training materials
 const requiresTrainingMaterials = (productType: string) => {
@@ -41,10 +53,30 @@ const requiresTrainingMaterials = (productType: string) => {
   ].includes(productType);
 };
 
-// Helper functions for form validation
+type CategoryOption = {
+  _id: string;
+  title: string;
+  productType?: string;
+  isDeleted?: boolean;
+};
+
+type SubcategoryOption = {
+  _id: string;
+  name: string;
+  isDeleted?: boolean;
+};
+
+type ProductFormState = Partial<Product> & {
+  nonBookableService?: boolean;
+  productCategoryTitle?: string;
+  productSubcategoryName?: string;
+  category?: string; // UI field
+  subcategory?: string; // UI field
+  mediaType?: string;
+};
 
 export default function ProductEditPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -52,200 +84,284 @@ export default function ProductEditPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Allow an extra field "nonBookableService" alongside Product fields
-  const [form, setForm] = useState<
-    Partial<Product> & { nonBookableService?: boolean }
-  >({});
+  const [form, setForm] = useState<ProductFormState>({});
 
   const [instructors, setInstructors] = useState<any[]>([]);
   const [instructorsLoading, setInstructorsLoading] = useState(false);
+  const [instructorsError, setInstructorsError] = useState<string | null>(null);
 
   const [pricing, setPricing] = useState<Pricing>(defaultPricing);
 
+  // Category creation dialog state
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [newCategoryTitle, setNewCategoryTitle] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
+
+  // Subcategory creation dialog state
+  const [showSubcategoryDialog, setShowSubcategoryDialog] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [creatingSubcategory, setCreatingSubcategory] = useState(false);
+
+  const [subcategoryOptions, setSubcategoryOptions] = useState<
+    SubcategoryOption[]
+  >([]);
+  const [subcategoryLoading, setSubcategoryLoading] = useState(false);
+  const [subcategoryError, setSubcategoryError] = useState<string | null>(null);
+
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+
   // Derived flags
   const isBookable = !!form.isBookableService;
-  const instructorRequired = isBookable; // Tools included when bookable
+  const instructorRequired = isBookable;
 
+  // Fetch categories + instructors on mount
   useEffect(() => {
-    const fetchProduct = async () => {
-      setLoading(true);
-      setError(null);
-
+    const fetchCategoriesAndInstructors = async () => {
       const token = getTokenFromCookies();
       if (!token) {
         setError("Authentication required. Please log in.");
-        setLoading(false);
         return;
       }
 
       try {
-        const [productRes, instructorsRes] = await Promise.all([
-          getApiRequest(`/api/products/public/${params.id}`, token),
-          getApiRequest("/api/users/admin/instructors", token),
+        setCategoryLoading(true);
+        setInstructorsLoading(true);
+        setCategoryError(null);
+        setInstructorsError(null);
+
+        const [categoriesResponse, instructorsResponse] = await Promise.all([
+          getApiRequest(`/api/product-categories`, token),
+          getApiRequest(`/api/users/admin/instructors`, token),
         ]);
 
-        if (!productRes?.data?.success) {
-          throw new Error(
-            productRes?.data?.message || "Failed to load product"
-          );
-        }
-
-        const product = productRes.data.data;
-
-        // Form — set with mirrored nonBookableService
-        setForm({
-          productType: product.productType,
-          service: product.service,
-          deliveryMode: product.deliveryMode,
-          sessionType: product.sessionType,
-          isRecurring: product.isRecurring,
-          programLength: product.programLength,
-          mode: product.mode,
-          durationInMinutes: product.durationInMinutes,
-          minutesPerSession: product.minutesPerSession,
-          hasClassroom: product.hasClassroom,
-          hasSession: product.hasSession,
-          hasAssessment: product.hasAssessment,
-          hasCertificate: product.hasCertificate,
-          requiresBooking: product.requiresBooking,
-          requiresEnrollment: product.requiresEnrollment,
-          isBookableService: product.isBookableService,
-          nonBookableService: !product.isBookableService, // ← mirror here
-          price: product.price,
-          currency: product.currency || "gbp",
-          discountPercentage: product.discountPercentage,
-          maxParticipants: product.maxParticipants || 1,
-          description: product.description,
-          tags: product.tags || [],
-          slug: product.slug,
-          iconUrl: product.iconUrl,
-          thumbnailUrl: product.thumbnailUrl,
-          materialUrl: product.materialUrl,
-          isAttachmentRequired: product.isAttachmentRequired,
-          publicSchedulingUrl: product.publicSchedulingUrl,
-          enabled: product.enabled,
-          instructorId: product.instructorId,
-          mediaType: product.mediaType || "",
-        });
-
-        // Pricing - convert from API format to new structure
-        const pricingData: any = product.pricing || {};
-
-        // Handle legacy format (model="per_unit") or new format
-        let model: "one_time" | "subscription" =
-          pricingData.model || "one_time";
-        let priceBasis: "flat" | "per_unit" = "flat";
-
-        // Handle migration from old format (model="per_unit" is no longer valid)
-        // This should only happen if API returns legacy data
-        if (pricingData.model === "per_unit") {
-          // Default to one_time with per_unit basis
-          model = "one_time";
-          priceBasis = "per_unit";
-        } else if (pricingData.priceBasis) {
-          priceBasis = pricingData.priceBasis;
-        } else if (pricingData.tiers && pricingData.tiers.length > 0) {
-          // If tiers exist but no priceBasis, assume per_unit
-          priceBasis = "per_unit";
-        }
-
-        // Safety check: ensure priceBasis is always set for one_time and subscription
-        if (!priceBasis && (model === "one_time" || model === "subscription")) {
-          priceBasis = "flat";
-        }
-
-        // Build pricing object with new structure
-        const mappedPricing: Pricing = {
-          model,
-          priceBasis,
-          currency:
-            pricingData.currency || (product.currency || "gbp").toLowerCase(),
-          taxInclusive: pricingData.taxInclusive ?? false,
-          vatPercentage: pricingData.vatPercentage ?? 0,
-          discountPercentage:
-            pricingData.discountPercentage ?? pricingData.discountPercent ?? 0,
-          minQty: pricingData.minQty ?? 1,
-          maxQty: pricingData.maxQty ?? 1000,
-          allowInstallments: pricingData.allowInstallments ?? false,
-        };
-
-        // Add fields based on priceBasis
-        if (priceBasis === "flat") {
-          // Map subscriptionPrice to basePrice if needed (legacy support)
-          mappedPricing.basePrice =
-            pricingData.basePrice ??
-            (pricingData.subscriptionPrice !== undefined
-              ? Number(pricingData.subscriptionPrice)
-              : undefined) ??
-            Number(product.price || 0);
-        } else if (priceBasis === "per_unit") {
-          // Map backend unitName to frontend: "participant" -> "person", keep "team" as is
-          const apiUnitName = pricingData.unitName || "team";
-          mappedPricing.unitName =
-            apiUnitName === "participant" ? "person" : apiUnitName;
-          mappedPricing.tierType = pricingData.tierType || "volume";
-          mappedPricing.tiers = pricingData.tiers || [];
-        }
-
-        // Add subscription-specific fields
-        if (model === "subscription") {
-          if (priceBasis === "flat" && mappedPricing.basePrice === undefined) {
-            // Map subscriptionPrice to basePrice if needed (legacy support)
-            mappedPricing.basePrice =
-              pricingData.basePrice ??
-              (pricingData.subscriptionPrice !== undefined
-                ? Number(pricingData.subscriptionPrice)
-                : undefined) ??
-              Number(product.price || 0);
-          }
-          mappedPricing.interval = pricingData.interval || "month";
-          mappedPricing.intervalCount = pricingData.intervalCount || 1;
-        }
-
-        // Add installments if enabled
-        if (
-          model === "one_time" &&
-          pricingData.allowInstallments &&
-          pricingData.installments
-        ) {
-          mappedPricing.allowInstallments = true;
-          mappedPricing.installments = {
-            enabled: true,
-            count: pricingData.installments.count || 2,
-            interval: pricingData.installments.interval || "month",
-            intervalCount: pricingData.installments.intervalCount || 1,
-            downPaymentType:
-              pricingData.installments.downPaymentType || "percent",
-            downPaymentValue: pricingData.installments.downPaymentValue || 20,
-            allowEarlyPayoff: pricingData.installments.allowEarlyPayoff,
-            provider: pricingData.installments.provider || "in_house",
-          };
-        }
-
-        setPricing(mappedPricing);
+        // Categories
+        const categoriesData =
+          categoriesResponse?.data?.data || categoriesResponse?.data || [];
+        const activeCategories = (categoriesData as any[]).filter(
+          (cat) => !cat.isDeleted
+        );
+        setCategoryOptions(activeCategories);
 
         // Instructors
-        if (instructorsRes?.data?.success) {
-          setInstructors(instructorsRes.data.data.instructors || []);
+        if (instructorsResponse?.data?.success) {
+          const instructorData =
+            instructorsResponse.data.data?.instructors || [];
+          setInstructors(instructorData);
         } else {
           setInstructors([]);
+          setInstructorsError("Failed to fetch instructors");
         }
       } catch (err: any) {
-        setError(err.message || "Failed to load product");
+        setCategoryError(err.message || "Failed to fetch categories");
+        setInstructorsError(err.message || "Failed to fetch instructors");
       } finally {
-        setLoading(false);
+        setCategoryLoading(false);
+        setInstructorsLoading(false);
       }
     };
 
-    if (params.id) fetchProduct();
-  }, [params.id]);
+    fetchCategoriesAndInstructors();
+  }, []);
 
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    if (!form.category) {
+      setSubcategoryOptions([]);
+      setForm((prev) => ({ ...prev, subcategory: "" }));
+      return;
+    }
+
+    const selectedCategory = categoryOptions.find(
+      (cat) => cat.title === form.category
+    );
+    if (!selectedCategory) {
+      setSubcategoryOptions([]);
+      return;
+    }
+
+    const fetchSubcategories = async () => {
+      setSubcategoryLoading(true);
+      setSubcategoryError(null);
+      try {
+        const token = getTokenFromCookies() || "";
+        const res = await getApiRequest(
+          `/api/product-subcategories/category/${selectedCategory._id}`,
+          token
+        );
+        const data = res?.data?.data || res?.data || [];
+        const activeSubcategories = (data as any[]).filter(
+          (sub) => !sub.isDeleted
+        );
+        setSubcategoryOptions(activeSubcategories);
+
+        // Ensure current subcategory is valid
+        setForm((prev) => ({
+          ...prev,
+          subcategory: activeSubcategories.some(
+            (subcat: any) => subcat.name === prev.subcategory
+          )
+            ? prev.subcategory
+            : "",
+        }));
+      } catch (err: any) {
+        setSubcategoryError(err.message || "Failed to fetch subcategories");
+        setSubcategoryOptions([]);
+      } finally {
+        setSubcategoryLoading(false);
+      }
+    };
+    fetchSubcategories();
+  }, [form.category, categoryOptions]);
+
+  // Create new category
+  const handleCreateCategory = async () => {
+    if (!newCategoryTitle.trim() || !form.productType) {
+      toast.error("Please enter a category title and select a product type");
+      return;
+    }
+
+    setCreatingCategory(true);
+    try {
+      const token = getTokenFromCookies();
+      if (!token) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await postApiRequest(
+        "/api/product-categories",
+        token,
+        {
+          title: newCategoryTitle.trim(),
+          productType: form.productType,
+        }
+      );
+
+      if (response.status === 201 || response.status === 200) {
+        toast.success("Category created successfully!");
+
+        // Refresh categories for this product type
+        const res = await getApiRequest(
+          `/api/product-categories/type/${encodeURIComponent(
+            form.productType as string
+          )}`,
+          token
+        );
+        const data = res?.data?.data || res?.data || [];
+        const activeCategories = (data as any[]).filter(
+          (cat) => !cat.isDeleted
+        );
+        setCategoryOptions(activeCategories);
+
+        setForm((prev) => ({
+          ...prev,
+          category: response.data?.title || newCategoryTitle.trim(),
+        }));
+
+        setNewCategoryTitle("");
+        setShowCategoryDialog(false);
+      } else {
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to create category"
+            : response.message || "Failed to create category"
+        );
+      }
+    } catch {
+      toast.error("Failed to create category");
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  // Create new subcategory
+  const handleCreateSubcategory = async () => {
+    if (!newSubcategoryName.trim() || !form.category || !form.productType) {
+      toast.error(
+        "Please enter a subcategory name, select a category, and ensure product type is set"
+      );
+      return;
+    }
+
+    setCreatingSubcategory(true);
+    try {
+      const token = getTokenFromCookies();
+      if (!token) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const selectedCategory = categoryOptions.find(
+        (cat) => cat.title === form.category
+      );
+      if (!selectedCategory) {
+        toast.error("Selected category not found");
+        return;
+      }
+
+      const response = await postApiRequest(
+        "/api/product-subcategories",
+        token,
+        {
+          name: newSubcategoryName.trim(),
+          categoryTitle: form.category,
+          categoryId: selectedCategory._id,
+          productType: form.productType,
+        }
+      );
+
+      if (response.status === 201 || response.status === 200) {
+        toast.success("Subcategory created successfully!");
+
+        const res = await getApiRequest(
+          `/api/product-subcategories/category/${selectedCategory._id}`,
+          token
+        );
+        const data = res?.data?.data || res?.data || [];
+        const activeSubcategories = (data as any[]).filter(
+          (sub) => !sub.isDeleted
+        );
+        setSubcategoryOptions(activeSubcategories);
+
+        setForm((prev) => ({
+          ...prev,
+          subcategory: response.data?.name || newSubcategoryName.trim(),
+        }));
+
+        setNewSubcategoryName("");
+        setShowSubcategoryDialog(false);
+      } else {
+        toast.error(
+          process.env.NEXT_PUBLIC_NODE_ENV === "production"
+            ? "Failed to create subcategory"
+            : response.message || "Failed to create subcategory"
+        );
+      }
+    } catch {
+      toast.error("Failed to create subcategory");
+    } finally {
+      setCreatingSubcategory(false);
+    }
+  };
+
+  // Unified handleChange
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value, type } = e.target;
+
+    if (name === "category" && value === "__create_new__") {
+      setShowCategoryDialog(true);
+      return;
+    }
+    if (name === "subcategory" && value === "__create_new__") {
+      setShowSubcategoryDialog(true);
+      return;
+    }
 
     // Keep nonBookableService mirrored to the inverse of isBookableService
     if (name === "isBookableService") {
@@ -254,7 +370,6 @@ export default function ProductEditPage() {
         ...prev,
         isBookableService: checked,
         nonBookableService: !checked,
-        // Optional: when turning OFF bookable, clear scheduling/instructor
         ...(checked
           ? {}
           : {
@@ -278,6 +393,167 @@ export default function ProductEditPage() {
     }));
   };
 
+  // Fetch product
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      setError(null);
+
+      const token = getTokenFromCookies();
+      if (!token) {
+        setError("Authentication required. Please log in.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const productRes = await getApiRequest(
+          `/api/products/public/${params.id}`,
+          token
+        );
+
+        if (!productRes?.data?.success) {
+          throw new Error(
+            productRes?.data?.message || "Failed to load product"
+          );
+        }
+
+        const product = productRes.data.data;
+
+        // Map product to form state, including category/subcategory UI fields
+        setForm((prev) => ({
+          ...prev,
+          productType: product.productType,
+          service: product.service,
+          productCategoryTitle: product.productCategoryTitle,
+          productSubcategoryName: product.productSubcategoryName,
+          category: product.productCategoryTitle || "",
+          subcategory: product.productSubcategoryName || "",
+          deliveryMode: product.deliveryMode,
+          sessionType: product.sessionType,
+          isRecurring: product.isRecurring,
+          programLength: product.programLength,
+          mode: product.mode,
+          durationInMinutes: product.durationInMinutes,
+          minutesPerSession: product.minutesPerSession,
+          hasClassroom: product.hasClassroom,
+          hasSession: product.hasSession,
+          hasAssessment: product.hasAssessment,
+          hasCertificate: product.hasCertificate,
+          requiresBooking: product.requiresBooking,
+          requiresEnrollment: product.requiresEnrollment,
+          isBookableService: product.isBookableService,
+          nonBookableService: !product.isBookableService,
+          price: product.price,
+          currency: product.currency || "gbp",
+          discountPercentage: product.discountPercentage,
+          maxParticipants: product.maxParticipants || 1,
+          description: product.description,
+          tags: product.tags || [],
+          slug: product.slug,
+          iconUrl: product.iconUrl,
+          thumbnailUrl: product.thumbnailUrl,
+          materialUrl: product.materialUrl,
+          isAttachmentRequired: product.isAttachmentRequired,
+          publicSchedulingUrl: product.publicSchedulingUrl,
+          enabled: product.enabled,
+          instructorId: product.instructorId,
+          mediaType: product.mediaType || "",
+        }));
+
+        // Pricing - convert from API format to new structure
+        const pricingData: any = product.pricing || {};
+
+        let model: "one_time" | "subscription" | "free" =
+          pricingData.model || "one_time";
+        let priceBasis: "flat" | "per_unit" = "flat";
+
+        // Legacy: model="per_unit"
+        if (pricingData.model === "per_unit") {
+          model = "one_time";
+          priceBasis = "per_unit";
+        } else if (pricingData.priceBasis) {
+          priceBasis = pricingData.priceBasis;
+        } else if (pricingData.tiers && pricingData.tiers.length > 0) {
+          priceBasis = "per_unit";
+        }
+
+        if (!priceBasis && (model === "one_time" || model === "subscription")) {
+          priceBasis = "flat";
+        }
+
+        const mappedPricing: Pricing = {
+          model,
+          priceBasis,
+          currency:
+            pricingData.currency || (product.currency || "gbp").toLowerCase(),
+          taxInclusive: pricingData.taxInclusive ?? false,
+          vatPercentage: pricingData.vatPercentage ?? 0,
+          discountPercentage:
+            pricingData.discountPercentage ?? pricingData.discountPercent ?? 0,
+          minQty: pricingData.minQty ?? 1,
+          maxQty: pricingData.maxQty ?? 1000,
+          allowInstallments: pricingData.allowInstallments ?? false,
+        };
+
+        if (priceBasis === "flat") {
+          mappedPricing.basePrice =
+            pricingData.basePrice ??
+            (pricingData.subscriptionPrice !== undefined
+              ? Number(pricingData.subscriptionPrice)
+              : undefined) ??
+            Number(product.price || 0);
+        } else if (priceBasis === "per_unit") {
+          const apiUnitName = pricingData.unitName || "team";
+          mappedPricing.unitName =
+            apiUnitName === "participant" ? "person" : apiUnitName;
+          mappedPricing.tierType = pricingData.tierType || "volume";
+          mappedPricing.tiers = pricingData.tiers || [];
+        }
+
+        if (model === "subscription") {
+          if (priceBasis === "flat" && mappedPricing.basePrice === undefined) {
+            mappedPricing.basePrice =
+              pricingData.basePrice ??
+              (pricingData.subscriptionPrice !== undefined
+                ? Number(pricingData.subscriptionPrice)
+                : undefined) ??
+              Number(product.price || 0);
+          }
+          mappedPricing.interval = pricingData.interval || "month";
+          mappedPricing.intervalCount = pricingData.intervalCount || 1;
+        }
+
+        if (
+          model === "one_time" &&
+          pricingData.allowInstallments &&
+          pricingData.installments
+        ) {
+          mappedPricing.allowInstallments = true;
+          mappedPricing.installments = {
+            enabled: true,
+            count: pricingData.installments.count || 2,
+            interval: pricingData.installments.interval || "month",
+            intervalCount: pricingData.installments.intervalCount || 1,
+            downPaymentType:
+              pricingData.installments.downPaymentType || "percent",
+            downPaymentValue: pricingData.installments.downPaymentValue || 20,
+            allowEarlyPayoff: pricingData.installments.allowEarlyPayoff,
+            provider: pricingData.installments.provider || "in_house",
+          };
+        }
+
+        setPricing(mappedPricing);
+      } catch (err: any) {
+        setError(err.message || "Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.id) fetchProduct();
+  }, [params.id]);
+
   const handleDeleteMaterial = async () => {
     if (!form.materialUrl) return;
     setSaving(true);
@@ -287,7 +563,6 @@ export default function ProductEditPage() {
     try {
       await deleteFileFromFirebase(form.materialUrl);
     } catch (err: any) {
-      // If it's just "object not found", treat as success
       const msg = err?.message || "";
       const code = err?.code || "";
 
@@ -299,7 +574,6 @@ export default function ProductEditPage() {
           "[Product Edit] Material already deleted in storage:",
           err
         );
-        // fall through to clearing state
       } else {
         setError("Failed to delete material. Please try again.");
         setSaving(false);
@@ -307,7 +581,6 @@ export default function ProductEditPage() {
       }
     }
 
-    // Whether it existed or not, we now clear the reference
     setForm((prev) => ({ ...prev, materialUrl: "" }));
     setSuccess("Material deleted successfully!");
     setSaving(false);
@@ -325,7 +598,7 @@ export default function ProductEditPage() {
         }
       }
       const url = await uploadAssetImage(file, `product-${type}s`);
-      setForm((prev: any) => ({
+      setForm((prev) => ({
         ...prev,
         [type === "icon" ? "iconUrl" : "thumbnailUrl"]: url,
       }));
@@ -410,17 +683,24 @@ export default function ProductEditPage() {
         return;
       }
 
-      // Build root payload and enforce instructor nulling when not required
-      // Explicitly exclude subscriptionPrice, price, currency (legacy fields) - pricing is sent separately
-      const formCopy = { ...form };
-      // Remove legacy pricing fields that shouldn't be in root payload
+      // Build root payload
+      const formCopy: ProductFormState = { ...form };
+
+      // Remove legacy pricing fields from root
       delete (formCopy as any).subscriptionPrice;
       delete (formCopy as any).price;
       delete (formCopy as any).currency;
 
+      const { category, subcategory, ...restForm } = formCopy;
+
       const rootPayload = {
-        ...formCopy,
-        nonBookableService: !isBookable, // ensure mirrored on send
+        ...restForm,
+        // Map UI fields to API fields
+        productCategoryTitle:
+          category || restForm.productCategoryTitle || undefined,
+        productSubcategoryName:
+          subcategory || restForm.productSubcategoryName || undefined,
+        nonBookableService: !isBookable,
         instructorId: instructorRequired ? form.instructorId || null : null,
         discountPercentage: Number(form.discountPercentage) || 0,
         maxParticipants: Number(form.maxParticipants) || 1,
@@ -447,17 +727,12 @@ export default function ProductEditPage() {
         allowedCurrencies.includes(currency as any) ? currency : "gbp"
       ) as (typeof allowedCurrencies)[number];
 
-      // Debug: show normalized pricing before toBackendPricing
-      safeConsole.log("[Edit Product] Raw pricing:", pricing);
-      safeConsole.log("[Edit Product] Normalized pricing:", normalized);
-
       const toBackendPricing = (p: Pricing) => {
         // FREE
         if (p.model === "free") {
           return {
             model: "free",
             currency: safeCurrency,
-            // no installments, no allowInstallments
           };
         }
 
@@ -474,13 +749,11 @@ export default function ProductEditPage() {
             autoRenew: p.autoRenew ?? true,
             minTermMonths: p.minTermMonths ?? 0,
             proration: p.proration ?? true,
-            allowInstallments: false, // explicit
+            allowInstallments: false,
           };
 
-          // Flat vs per_unit
           if (payload.priceBasis === "flat") {
             payload.basePrice = Number(p.basePrice ?? 0);
-            // legacy support if backend still expects subscriptionPrice
             payload.subscriptionPrice = payload.basePrice;
           } else if (payload.priceBasis === "per_unit") {
             const unitName =
@@ -524,7 +797,7 @@ export default function ProductEditPage() {
             p.unitName === "person"
               ? "participant"
               : p.unitName || "participant";
-          payload.basePrice = 0; // backend requirement for per_unit
+          payload.basePrice = 0;
           payload.unitName = unitName;
           payload.minQty = p.minQty ?? 1;
           payload.maxQty = p.maxQty ?? Math.max(payload.minQty, 1000);
@@ -535,10 +808,7 @@ export default function ProductEditPage() {
           }));
         }
 
-        // 🔐 Installments consistency guard
         const hasInstallments = !!(p.allowInstallments && p.installments);
-
-        // ALWAYS send allowInstallments for one_time
         payload.allowInstallments = hasInstallments;
 
         if (hasInstallments) {
@@ -556,14 +826,12 @@ export default function ProductEditPage() {
             provider: p.installments!.provider || "in_house",
           };
         }
-        // If hasInstallments is false, we do NOT add `installments` at all.
 
         return payload;
       };
 
       const sanitizedPricing = toBackendPricing(normalized);
 
-      // Debug: show payloads being sent (pricing by model)
       try {
         safeConsole.log("[Edit Product] Pricing model:", normalized.model);
         safeConsole.log("[Edit Product] Pricing payload:", sanitizedPricing);
@@ -571,6 +839,8 @@ export default function ProductEditPage() {
           isBookableService: rootPayload.isBookableService,
           nonBookableService: rootPayload.nonBookableService,
           productType: rootPayload.productType,
+          productCategoryTitle: rootPayload.productCategoryTitle,
+          productSubcategoryName: rootPayload.productSubcategoryName,
         });
       } catch {}
 
@@ -626,7 +896,7 @@ export default function ProductEditPage() {
     );
   }
 
-  if (error) {
+  if (error && !success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -716,7 +986,227 @@ export default function ProductEditPage() {
                   />
                 </div>
 
-                {/* Bookable toggle (moved up from Features) */}
+                {/* Product Category & Subcategory */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    name="category"
+                    title="category"
+                    value={form.category || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    required
+                    disabled={!form.productType || categoryLoading}
+                  >
+                    <option value="">
+                      {categoryLoading
+                        ? "Loading categories..."
+                        : "Select Category"}
+                    </option>
+                    {categoryOptions
+                      .filter(
+                        (cat) =>
+                          !form.productType ||
+                          !cat.productType ||
+                          cat.productType === form.productType
+                      )
+                      .map((cat) => (
+                        <option key={cat._id} value={cat.title}>
+                          {cat.title}
+                        </option>
+                      ))}
+                    {form.productType && (
+                      <option value="__create_new__">
+                        ➕ Create New Category
+                      </option>
+                    )}
+                  </select>
+                  {categoryError && (
+                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-[12px] border border-red-200">
+                      {categoryError}
+                    </div>
+                  )}
+
+                  {/* Category Dialog */}
+                  <Dialog
+                    open={showCategoryDialog}
+                    onOpenChange={setShowCategoryDialog}
+                  >
+                    <DialogContent className="sm:max-w-md bg-white">
+                      <DialogHeader>
+                        <DialogTitle>Create New Category</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="productType">Product Type</Label>
+                          <Input
+                            id="productType"
+                            value={form.productType || ""}
+                            disabled
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="categoryTitle">
+                            Category Title *
+                          </Label>
+                          <Input
+                            id="categoryTitle"
+                            value={newCategoryTitle}
+                            onChange={(e) =>
+                              setNewCategoryTitle(e.target.value)
+                            }
+                            placeholder="Enter category title (e.g., Academic Mentoring)"
+                            className="mt-1"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowCategoryDialog(false)}
+                          disabled={creatingCategory}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleCreateCategory}
+                          disabled={
+                            creatingCategory || !newCategoryTitle.trim()
+                          }
+                          className="hover:bg-blue-600 text-white"
+                        >
+                          {creatingCategory ? "Creating..." : "Create Category"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Subcategory *
+                  </label>
+                  <select
+                    name="subcategory"
+                    title="subcategory"
+                    value={form.subcategory || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    disabled={!form.category || subcategoryLoading}
+                    required
+                  >
+                    <option value="">Select Subcategory</option>
+                    {subcategoryOptions.map((sub) => (
+                      <option key={sub._id} value={sub.name}>
+                        {sub.name}
+                      </option>
+                    ))}
+                    {form.category && (
+                      <option value="__create_new__">
+                        ➕ Create New Subcategory
+                      </option>
+                    )}
+                  </select>
+                  {subcategoryLoading && (
+                    <div className="text-blue-600 text-sm bg-blue-50 p-3 rounded-[12px] border border-blue-200">
+                      Loading subcategories...
+                    </div>
+                  )}
+                  {!form.category && subcategoryOptions.length === 0 && (
+                    <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-[12px] border border-slate-200">
+                      Select a category first to see available subcategories.
+                    </div>
+                  )}
+                  {form.category &&
+                    subcategoryOptions.length === 0 &&
+                    !subcategoryLoading && (
+                      <div className="text-slate-500 text-sm bg-slate-50 p-3 rounded-[12px] border border-slate-200">
+                        No subcategories available for this category.
+                      </div>
+                    )}
+                  {subcategoryError && (
+                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-[12px] border border-red-200">
+                      {subcategoryError}
+                    </div>
+                  )}
+
+                  {/* Subcategory Dialog */}
+                  <Dialog
+                    open={showSubcategoryDialog}
+                    onOpenChange={setShowSubcategoryDialog}
+                  >
+                    <DialogContent className="sm:max-w-md bg-white">
+                      <DialogHeader>
+                        <DialogTitle>Create New Subcategory</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="dialogProductType">
+                            Product Type
+                          </Label>
+                          <Input
+                            id="dialogProductType"
+                            value={form.productType || ""}
+                            disabled
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="dialogCategory">Category</Label>
+                          <Input
+                            id="dialogCategory"
+                            value={form.category || ""}
+                            disabled
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="subcategoryName">
+                            Subcategory Name *
+                          </Label>
+                          <Input
+                            id="subcategoryName"
+                            value={newSubcategoryName}
+                            onChange={(e) =>
+                              setNewSubcategoryName(e.target.value)
+                            }
+                            placeholder="Enter subcategory name (e.g., Natural Language Processing)"
+                            className="mt-1"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowSubcategoryDialog(false)}
+                          disabled={creatingSubcategory}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleCreateSubcategory}
+                          disabled={
+                            creatingSubcategory || !newSubcategoryName.trim()
+                          }
+                          className="hover:bg-blue-600 text-white"
+                        >
+                          {creatingSubcategory
+                            ? "Creating..."
+                            : "Create Subcategory"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Bookable toggle */}
                 <div className="mt-2">
                   <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all duration-300 cursor-pointer">
                     <input
@@ -752,6 +1242,7 @@ export default function ProductEditPage() {
                   />
                 </div>
 
+                {/* Instructor assign (single place) */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Assign Instructor{" "}
@@ -787,6 +1278,11 @@ export default function ProductEditPage() {
                       </option>
                     ))}
                   </select>
+                  {instructorsError && (
+                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-[12px] border border-red-200 mt-2">
+                      {instructorsError}
+                    </div>
+                  )}
                 </div>
 
                 {/* Media Type - only for Tools + nonBookableService */}
@@ -798,9 +1294,9 @@ export default function ProductEditPage() {
                     <select
                       title="mediaType"
                       name="mediaType"
-                      value={form.mediaType}
+                      value={form.mediaType || ""}
                       onChange={handleChange}
-                      className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       required
                     >
                       <option value="">Select Media Type</option>
@@ -810,7 +1306,7 @@ export default function ProductEditPage() {
                     </select>
 
                     {/* Media upload for Tools */}
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2 mt-4">
                       Media File * ({form.mediaType || "Select type first"})
                     </label>
                     {form.materialUrl && (
@@ -853,7 +1349,7 @@ export default function ProductEditPage() {
                           ? "video/*"
                           : "*"
                       }
-                      className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
@@ -873,7 +1369,7 @@ export default function ProductEditPage() {
                               file,
                               "tool-media"
                             );
-                            setForm((prev: any) => ({
+                            setForm((prev) => ({
                               ...prev,
                               materialUrl: url,
                             }));
@@ -883,12 +1379,10 @@ export default function ProductEditPage() {
                           } finally {
                             setLoading(false);
                           }
-
-                          // OPTIONAL: allow re-uploading the *same* file again by clearing the input value
                           e.target.value = "";
                         }
                       }}
-                      required={!form.materialUrl} // ⬅️ only required if no media is stored yet
+                      required={!form.materialUrl}
                       disabled={!form.mediaType}
                     />
 
@@ -967,7 +1461,7 @@ export default function ProductEditPage() {
                                 file,
                                 "course-materials"
                               );
-                              setForm((prev: any) => ({
+                              setForm((prev) => ({
                                 ...prev,
                                 materialUrl: url,
                               }));
@@ -1014,7 +1508,7 @@ export default function ProductEditPage() {
                             {form.materialUrl && (
                               <p className="text-blue-600 text-xs mt-2 font-medium">
                                 💡 Uploading a new file will replace the current
-                                material
+                                material.
                               </p>
                             )}
                           </div>
@@ -1337,7 +1831,7 @@ export default function ProductEditPage() {
               </div>
             </div>
 
-            {/* Features (minus Bookable Service, since it's now in Basic Info) */}
+            {/* Features */}
             <div className="mt-8 pt-8 border-t border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">
                 Features
@@ -1350,7 +1844,6 @@ export default function ProductEditPage() {
                   { key: "hasSession", label: "Has Session" },
                   { key: "requiresBooking", label: "Requires Booking" },
                   { key: "requiresEnrollment", label: "Requires Enrollment" },
-                  // removed isBookableService from here
                   { key: "isRecurring", label: "Recurring" },
                 ].map(({ key, label }) => (
                   <label
@@ -1360,7 +1853,7 @@ export default function ProductEditPage() {
                     <input
                       type="checkbox"
                       name={key}
-                      checked={!!form[key as keyof typeof form]}
+                      checked={!!(form as any)[key]}
                       onChange={handleChange}
                       className="w-4 h-4 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500"
                     />
