@@ -90,7 +90,7 @@ export default function ProductEditPage() {
   const [instructorsLoading, setInstructorsLoading] = useState(false);
   const [instructorsError, setInstructorsError] = useState<string | null>(null);
 
-  const [pricing, setPricing] = useState<Pricing>(defaultPricing);
+  const [pricing, setPricing] = useState<Pricing>(null as any);
 
   // Category creation dialog state
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -458,7 +458,7 @@ export default function ProductEditPage() {
           publicSchedulingUrl: product.publicSchedulingUrl,
           enabled: product.enabled,
           instructorId: product.instructorId,
-          mediaType: product.mediaType || "",
+          mediaType: product.mediaType,
         }));
 
         // Pricing - convert from API format to new structure
@@ -1294,7 +1294,7 @@ export default function ProductEditPage() {
                     <select
                       title="mediaType"
                       name="mediaType"
-                      value={form.mediaType || ""}
+                      value={form.mediaType}
                       onChange={handleChange}
                       className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       required
