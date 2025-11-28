@@ -177,9 +177,10 @@ export const putApiRequest = async <T = any>(
 
 export const deleteApiRequest = async <T = any>(
   endpoint: string,
-  token: string
+  token: string,
+  body?: any
 ): Promise<ApiResponse<T>> => {
-  return apiRequest<T>(endpoint, "DELETE", undefined, token);
+  return apiRequest<T>(endpoint, "DELETE", body, token);
 };
 
 export const patchApiRequest = async <T = any>(

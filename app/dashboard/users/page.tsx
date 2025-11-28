@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getApiRequest, patchApiRequest } from "@/lib/apiFetch";
+import { getApiRequest, deleteApiRequest } from "@/lib/apiFetch";
 import { useTokenManagement } from "@/hooks/useTokenManagement";
 import { toast } from "react-toastify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,7 +114,7 @@ export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [isVerifiedFilter, setIsVerifiedFilter] = useState("all");
-  const [isLockedFilter, setIsLockedFilter] = useState("all");
+  const [isLockedFilter, setIsLockedFilter] = useState("false");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [sortField, setSortField] = useState<keyof User>("fullName");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -296,15 +296,8 @@ export default function UserManagementPage() {
 
       try {
         const promises = selectedUsers.map((userId) =>
-          fetch(`/api/users/${userId}`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              reason: "Admin requested bulk account deletion",
-            }),
+          deleteApiRequest(`/api/users/${userId}`, accessToken, {
+            reason: "Admin requested bulk account deletion",
           })
         );
 
@@ -314,7 +307,7 @@ export default function UserManagementPage() {
         fetchUsers(currentPage, true); // Refresh the list
       } catch (error: any) {
         console.error("Error in bulk delete:", error);
-        toast.error("Failed to delete users");
+        toast.error(error.message || "Failed to delete users");
       }
     }
   };
@@ -336,29 +329,24 @@ export default function UserManagementPage() {
     }
 
     try {
-      const response = await fetch(`/api/users/${user._id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await deleteApiRequest(
+        `/api/users/${user._id}`,
+        accessToken,
+        {
           reason: "Admin requested account deletion",
-        }),
-      });
+        }
+      );
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success(`User ${user.fullName} deleted successfully`);
         // Refresh the users list
         fetchUsers(currentPage, true);
       } else {
-        toast.error(data.message || "Failed to delete user");
+        toast.error(response.message || "Failed to delete user");
       }
     } catch (error: any) {
       console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
+      toast.error(error.message || "Failed to delete user");
     }
   };
 
