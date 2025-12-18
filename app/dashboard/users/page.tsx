@@ -114,7 +114,7 @@ export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [isVerifiedFilter, setIsVerifiedFilter] = useState("all");
-  const [isLockedFilter, setIsLockedFilter] = useState("false");
+  const [isLockedFilter, setIsLockedFilter] = useState("all");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [sortField, setSortField] = useState<keyof User>("fullName");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");

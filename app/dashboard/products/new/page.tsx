@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
@@ -116,6 +116,16 @@ export default function CreateProductPage() {
 
   // Tag input state
   const [tagInput, setTagInput] = useState("");
+
+  // Rich text editor state for description
+  const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
+  const [descriptionFormats, setDescriptionFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    bullet: false,
+    numbered: false,
+  });
 
   // 🧮 Pricing state (controlled by PricingForm)
   const [pricing, setPricing] = useState<Pricing>({
@@ -440,10 +450,10 @@ export default function CreateProductPage() {
         type === "checkbox" && "checked" in e.target
           ? (e.target as HTMLInputElement).checked
           : type === "number"
-          ? value === ""
-            ? 0
-            : Number(value)
-          : value,
+            ? value === ""
+              ? 0
+              : Number(value)
+            : value,
     }));
   };
 
@@ -733,7 +743,7 @@ export default function CreateProductPage() {
       try {
         console.log("[Create Product] Pricing model:", normalizedPricing.model);
         console.log("[Create Product] Pricing payload:", backendPricing);
-      } catch {}
+      } catch { }
 
       const rootDiscountPercentage = Math.max(
         0,
@@ -803,7 +813,7 @@ export default function CreateProductPage() {
           isBookableService: payload.isBookableService,
           nonBookableService: payload.nonBookableService,
         });
-      } catch {}
+      } catch { }
 
       const response = await postApiRequest("/api/products", token, payload);
 
@@ -858,13 +868,12 @@ export default function CreateProductPage() {
                   <div className="absolute top-4 left-1/2 w-full h-0.5 bg-slate-200 -z-10"></div>
                 )}
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-                    idx < step
-                      ? "bg-gradient-to-r from-green-500 to-emerald-500 border-green-500 text-white shadow-lg"
-                      : idx === step
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${idx < step
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 border-green-500 text-white shadow-lg"
+                    : idx === step
                       ? "bg-gradient-to-r from-blue-500 to-purple-500 border-blue-500 text-white shadow-lg animate-pulse"
                       : "bg-white border-slate-300 text-slate-500"
-                  } font-bold text-sm`}
+                    } font-bold text-sm`}
                 >
                   {idx < step ? (
                     <svg
@@ -885,13 +894,12 @@ export default function CreateProductPage() {
                   )}
                 </div>
                 <span
-                  className={`mt-3 hidden lg:block text-sm font-semibold transition-all duration-300 ${
-                    idx === step
-                      ? "text-blue-600"
-                      : idx < step
+                  className={`mt-3 hidden lg:block text-sm font-semibold transition-all duration-300 ${idx === step
+                    ? "text-blue-600"
+                    : idx < step
                       ? "text-green-600"
                       : "text-slate-500"
-                  }`}
+                    }`}
                 >
                   {label}
                 </span>
@@ -942,22 +950,19 @@ export default function CreateProductPage() {
                     {/* Product Types */}
                     {form.productType && (
                       <div
-                        className={`p-4 rounded-2xl border-2 ${
-                          isBookable
-                            ? "bg-blue-50 border-blue-200"
-                            : "bg-green-50 border-green-200"
-                        }`}
+                        className={`p-4 rounded-2xl border-2 ${isBookable
+                          ? "bg-blue-50 border-blue-200"
+                          : "bg-green-50 border-green-200"
+                          }`}
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <div
-                            className={`w-3 h-3 rounded-full ${
-                              isBookable ? "bg-blue-500" : "bg-green-500"
-                            }`}
+                            className={`w-3 h-3 rounded-full ${isBookable ? "bg-blue-500" : "bg-green-500"
+                              }`}
                           ></div>
                           <span
-                            className={`font-semibold text-sm ${
-                              isBookable ? "text-blue-700" : "text-green-700"
-                            }`}
+                            className={`font-semibold text-sm ${isBookable ? "text-blue-700" : "text-green-700"
+                              }`}
                           >
                             {isBookable
                               ? "Bookable Service"
@@ -965,9 +970,8 @@ export default function CreateProductPage() {
                           </span>
                         </div>
                         <p
-                          className={`text-sm ${
-                            isBookable ? "text-blue-600" : "text-green-600"
-                          }`}
+                          className={`text-sm ${isBookable ? "text-blue-600" : "text-green-600"
+                            }`}
                         >
                           {getServiceTypeDescription()}
                         </p>
@@ -1081,10 +1085,10 @@ export default function CreateProductPage() {
                               form.mediaType === "file"
                                 ? ".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.xlsx,.csv"
                                 : form.mediaType === "audio"
-                                ? "audio/*"
-                                : form.mediaType === "video"
-                                ? "video/*"
-                                : "*"
+                                  ? "audio/*"
+                                  : form.mediaType === "video"
+                                    ? "video/*"
+                                    : "*"
                             }
                             className="w-full px-4 py-6 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             onChange={async (e) => {
@@ -1449,11 +1453,10 @@ export default function CreateProductPage() {
                       title="instructorId"
                       value={form.instructorId}
                       onChange={handleChange}
-                      className={`w-full px-4 py-6 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                        instructorRequired && !form.instructorId
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-slate-200"
-                      }`}
+                      className={`w-full px-4 py-6 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${instructorRequired && !form.instructorId
+                        ? "border-red-300 focus:ring-red-500"
+                        : "border-slate-200"
+                        }`}
                       disabled={!isBookable || instructorsLoading}
                       required={instructorRequired}
                     >
@@ -1461,10 +1464,10 @@ export default function CreateProductPage() {
                         {instructorsLoading
                           ? "Loading instructors..."
                           : !isBookable
-                          ? "Select Instructor (Disabled for non-bookable)"
-                          : instructorRequired
-                          ? "Select Instructor (Required)"
-                          : "Select Instructor (Optional)"}
+                            ? "Select Instructor (Disabled for non-bookable)"
+                            : instructorRequired
+                              ? "Select Instructor (Required)"
+                              : "Select Instructor (Optional)"}
                       </option>
                       {instructors.map((instructor) => (
                         <option
@@ -1732,14 +1735,118 @@ export default function CreateProductPage() {
                 <label className="block text-sm font-medium mb-1">
                   Description
                 </label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  placeholder="Enter a detailed description of your product or service..."
-                  className="w-full border rounded-[10px] p-2"
-                  rows={4}
-                />
+                <div className="bg-white/50 border border-slate-200 rounded-2xl overflow-hidden">
+                  {/* Simple formatting toolbar */}
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-200 text-xs text-slate-600">
+                    <span className="mr-2 font-medium">Format:</span>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-md font-semibold ${descriptionFormats.bold
+                          ? "bg-blue-100 text-blue-700"
+                          : "hover:bg-slate-100"
+                        }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        descriptionEditorRef.current?.focus();
+                        document.execCommand("bold");
+                        setDescriptionFormats((prev) => ({
+                          ...prev,
+                          bold: !prev.bold,
+                        }));
+                      }}
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-md italic ${descriptionFormats.italic
+                          ? "bg-blue-100 text-blue-700"
+                          : "hover:bg-slate-100"
+                        }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        descriptionEditorRef.current?.focus();
+                        document.execCommand("italic");
+                        setDescriptionFormats((prev) => ({
+                          ...prev,
+                          italic: !prev.italic,
+                        }));
+                      }}
+                    >
+                      I
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-md underline ${descriptionFormats.underline
+                          ? "bg-blue-100 text-blue-700"
+                          : "hover:bg-slate-100"
+                        }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        descriptionEditorRef.current?.focus();
+                        document.execCommand("underline");
+                        setDescriptionFormats((prev) => ({
+                          ...prev,
+                          underline: !prev.underline,
+                        }));
+                      }}
+                    >
+                      U
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-md ${descriptionFormats.bullet
+                          ? "bg-blue-100 text-blue-700"
+                          : "hover:bg-slate-100"
+                        }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        descriptionEditorRef.current?.focus();
+                        document.execCommand("insertUnorderedList");
+                        setDescriptionFormats((prev) => ({
+                          ...prev,
+                          bullet: !prev.bullet,
+                        }));
+                      }}
+                    >
+                      Bullets
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-md ${descriptionFormats.numbered
+                          ? "bg-blue-100 text-blue-700"
+                          : "hover:bg-slate-100"
+                        }`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        descriptionEditorRef.current?.focus();
+                        document.execCommand("insertOrderedList");
+                        setDescriptionFormats((prev) => ({
+                          ...prev,
+                          numbered: !prev.numbered,
+                        }));
+                      }}
+                    >
+                      Numbered
+                    </button>
+                  </div>
+                  <div
+                    ref={descriptionEditorRef}
+                    className="px-4 py-3 min-h-[120px] max-h-[320px] overflow-y-auto focus:outline-none text-sm text-slate-800"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={(e) => {
+                      const html =
+                        (e.currentTarget as HTMLDivElement | null)
+                          ?.innerHTML || "";
+                      setForm((prev: any) => ({
+                        ...prev,
+                        description: html,
+                      }));
+                    }}
+                    aria-label="Product description"
+                  />
+                </div>
 
                 {/* Tags */}
                 <label className="block text-sm font-medium mb-1">Tags</label>
@@ -1945,9 +2052,8 @@ export default function CreateProductPage() {
                     <div>
                       <span className="font-medium">Service Type:</span>{" "}
                       <span
-                        className={`font-semibold ${
-                          isBookable ? "text-blue-600" : "text-green-600"
-                        }`}
+                        className={`font-semibold ${isBookable ? "text-blue-600" : "text-green-600"
+                          }`}
                       >
                         {isBookable
                           ? "Bookable Service"
@@ -1998,11 +2104,11 @@ export default function CreateProductPage() {
                         <span className="font-medium">Instructor:</span>{" "}
                         {form.instructorId
                           ? instructors.find(
-                              (i) => i.userId === form.instructorId
-                            )?.fullName || "Selected"
+                            (i) => i.userId === form.instructorId
+                          )?.fullName || "Selected"
                           : instructorRequired
-                          ? "Not assigned"
-                          : "Optional"}
+                            ? "Not assigned"
+                            : "Optional"}
                       </div>
                     )}
                   </div>
@@ -2098,9 +2204,8 @@ export default function CreateProductPage() {
                         <span>
                           Subtotal
                           {pricing.priceBasis === "per_unit"
-                            ? ` (${reviewQty} ${
-                                pricing.unitName || "participant"
-                              }${reviewQty > 1 ? "s" : ""})`
+                            ? ` (${reviewQty} ${pricing.unitName || "participant"
+                            }${reviewQty > 1 ? "s" : ""})`
                             : ""}
                         </span>
                         <span>{money(breakdown.subtotal)}</span>
@@ -2167,7 +2272,10 @@ export default function CreateProductPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="sm:col-span-2">
                       <span className="font-medium">Description:</span>{" "}
-                      {form.description}
+                      <div
+                  className="prose prose-slate max-w-none text-slate-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: form.description }}
+                ></div>
                     </div>
                     <div>
                       <span className="font-medium">Tags:</span>{" "}

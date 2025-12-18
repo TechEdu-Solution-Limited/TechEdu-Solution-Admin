@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   getApiRequest,
@@ -112,9 +112,29 @@ export default function ProductEditPage() {
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
+  // Rich text editor state for description
+  const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
+  const [hasInitializedDescription, setHasInitializedDescription] =
+    useState(false);
+  const [descriptionFormats, setDescriptionFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    bullet: false,
+    numbered: false,
+  });
+
   // Derived flags
   const isBookable = !!form.isBookableService;
   const instructorRequired = isBookable;
+
+  // Initialize description editor content once with existing HTML
+  useEffect(() => {
+    if (!hasInitializedDescription && descriptionEditorRef.current) {
+      descriptionEditorRef.current.innerHTML = form.description || "";
+      setHasInitializedDescription(true);
+    }
+  }, [hasInitializedDescription, form.description]);
 
   // Fetch categories + instructors on mount
   useEffect(() => {
@@ -373,9 +393,9 @@ export default function ProductEditPage() {
         ...(checked
           ? {}
           : {
-              publicSchedulingUrl: "",
-              instructorId: "",
-            }),
+            publicSchedulingUrl: "",
+            instructorId: "",
+          }),
       }));
       return;
     }
@@ -386,10 +406,10 @@ export default function ProductEditPage() {
         type === "checkbox" && "checked" in e.target
           ? (e.target as HTMLInputElement).checked
           : type === "number"
-          ? value === ""
-            ? 0
-            : Number(value)
-          : value,
+            ? value === ""
+              ? 0
+              : Number(value)
+            : value,
     }));
   };
 
@@ -627,8 +647,7 @@ export default function ProductEditPage() {
       );
     } catch {
       setError(
-        `Failed to delete ${
-          type === "icon" ? "icon" : "thumbnail"
+        `Failed to delete ${type === "icon" ? "icon" : "thumbnail"
         }. Please try again.`
       );
     } finally {
@@ -842,7 +861,7 @@ export default function ProductEditPage() {
           productCategoryTitle: rootPayload.productCategoryTitle,
           productSubcategoryName: rootPayload.productSubcategoryName,
         });
-      } catch {}
+      } catch { }
 
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
@@ -1255,11 +1274,10 @@ export default function ProductEditPage() {
                     name="instructorId"
                     value={form.instructorId || ""}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                      instructorRequired && !form.instructorId
+                    className={`w-full px-4 py-3 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${instructorRequired && !form.instructorId
                         ? "border-red-300 focus:ring-red-500"
                         : "border-slate-200"
-                    }`}
+                      }`}
                     disabled={!isBookable || instructorsLoading}
                     required={instructorRequired}
                   >
@@ -1267,10 +1285,10 @@ export default function ProductEditPage() {
                       {instructorsLoading
                         ? "Loading instructors..."
                         : !isBookable
-                        ? "Select Instructor (Disabled for non-bookable)"
-                        : instructorRequired
-                        ? "Select Instructor (Required)"
-                        : "Select Instructor (Optional)"}
+                          ? "Select Instructor (Disabled for non-bookable)"
+                          : instructorRequired
+                            ? "Select Instructor (Required)"
+                            : "Select Instructor (Optional)"}
                     </option>
                     {instructors.map((instructor) => (
                       <option key={instructor._id} value={instructor.userId}>
@@ -1344,10 +1362,10 @@ export default function ProductEditPage() {
                         form.mediaType === "file"
                           ? ".pdf"
                           : form.mediaType === "audio"
-                          ? "audio/*"
-                          : form.mediaType === "video"
-                          ? "video/*"
-                          : "*"
+                            ? "audio/*"
+                            : form.mediaType === "video"
+                              ? "video/*"
+                              : "*"
                       }
                       className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       onChange={async (e) => {
@@ -1544,15 +1562,123 @@ export default function ProductEditPage() {
                     Description{" "}
                     {isBookable && <span className="text-red-500">*</span>}
                   </label>
-                  <textarea
-                    name="description"
-                    value={form.description || ""}
-                    onChange={handleChange}
-                    placeholder="Enter product description"
-                    rows={4}
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
-                    required={isBookable}
-                  />
+                  <div className="bg-white/50 border border-slate-200 rounded-2xl overflow-hidden">
+                    {/* Simple formatting toolbar */}
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-200 text-xs text-slate-600">
+                      <span className="mr-2 font-medium">Format:</span>
+                      <button
+                        type="button"
+                        className={`px-2 py-1 rounded-md font-semibold ${
+                          descriptionFormats.bold
+                            ? "bg-blue-100 text-blue-700"
+                            : "hover:bg-slate-100"
+                        }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          descriptionEditorRef.current?.focus();
+                          document.execCommand("bold");
+                          setDescriptionFormats((prev) => ({
+                            ...prev,
+                            bold: !prev.bold,
+                          }));
+                        }}
+                      >
+                        B
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-2 py-1 rounded-md italic ${
+                          descriptionFormats.italic
+                            ? "bg-blue-100 text-blue-700"
+                            : "hover:bg-slate-100"
+                        }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          descriptionEditorRef.current?.focus();
+                          document.execCommand("italic");
+                          setDescriptionFormats((prev) => ({
+                            ...prev,
+                            italic: !prev.italic,
+                          }));
+                        }}
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-2 py-1 rounded-md underline ${
+                          descriptionFormats.underline
+                            ? "bg-blue-100 text-blue-700"
+                            : "hover:bg-slate-100"
+                        }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          descriptionEditorRef.current?.focus();
+                          document.execCommand("underline");
+                          setDescriptionFormats((prev) => ({
+                            ...prev,
+                            underline: !prev.underline,
+                          }));
+                        }}
+                      >
+                        U
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-2 py-1 rounded-md ${
+                          descriptionFormats.bullet
+                            ? "bg-blue-100 text-blue-700"
+                            : "hover:bg-slate-100"
+                        }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          descriptionEditorRef.current?.focus();
+                          document.execCommand("insertUnorderedList");
+                          setDescriptionFormats((prev) => ({
+                            ...prev,
+                            bullet: !prev.bullet,
+                          }));
+                        }}
+                      >
+                        Bullets
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-2 py-1 rounded-md ${
+                          descriptionFormats.numbered
+                            ? "bg-blue-100 text-blue-700"
+                            : "hover:bg-slate-100"
+                        }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          descriptionEditorRef.current?.focus();
+                          document.execCommand("insertOrderedList");
+                          setDescriptionFormats((prev) => ({
+                            ...prev,
+                            numbered: !prev.numbered,
+                          }));
+                        }}
+                      >
+                        Numbered
+                      </button>
+                    </div>
+                    <div
+                      ref={descriptionEditorRef}
+                      className="px-4 py-3 min-h-[120px] max-h-[320px] overflow-y-auto focus:outline-none text-sm text-slate-800"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={(e) => {
+                        const html =
+                          (e.currentTarget as HTMLDivElement | null)
+                            ?.innerHTML || "";
+                        setForm((prev) => ({
+                          ...prev,
+                          description: html,
+                        }));
+                      }}
+                      aria-label="Product description"
+                    />
+                  </div>
                 </div>
 
                 {/* Icon Upload */}

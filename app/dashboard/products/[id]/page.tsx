@@ -471,10 +471,16 @@ export default function ProductViewPage() {
               <h2 className="text-2xl font-bold text-slate-900 mb-4">
                 Description
               </h2>
-              <p className="text-slate-700 leading-relaxed">
-                {product.description ||
-                  "No description available for this product."}
-              </p>
+              {product.description && product.description.trim() ? (
+                <div
+                  className="prose prose-slate max-w-none text-slate-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                />
+              ) : (
+                <p className="text-slate-500 italic">
+                  No description available for this product.
+                </p>
+              )}
             </div>
 
             {/* Training Materials */}
