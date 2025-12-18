@@ -85,7 +85,8 @@ export default function QuillTextEditor({
       // initial content from prop
       externalPasteRef.current = true;
       programmaticRef.current = true;
-      const initialDelta = quill.clipboard.convert(value || "");
+      // Use object form to satisfy Quill v2 typings ({ html, text })
+      const initialDelta = quill.clipboard.convert({ html: value || "" });
       quill.setContents(initialDelta, "silent");
       programmaticRef.current = false;
       lastAppliedHtmlRef.current = (value || "").trim();
@@ -99,7 +100,7 @@ export default function QuillTextEditor({
 
           programmaticRef.current = true;
 
-          const incoming = q.clipboard.convert(html || "");
+          const incoming = q.clipboard.convert({ html: html || "" });
           if (mode === "replace") {
             q.setContents(incoming, "silent");
           } else {
@@ -170,7 +171,7 @@ export default function QuillTextEditor({
 
     const sel = q.getSelection(); // remember caret
     programmaticRef.current = true;
-    const delta = q.clipboard.convert(incomingHtml);
+    const delta = q.clipboard.convert({ html: incomingHtml });
     q.setContents(delta, "silent");
     if (sel) {
       const end = Math.max(0, Math.min(sel.index, q.getLength() - 1));
