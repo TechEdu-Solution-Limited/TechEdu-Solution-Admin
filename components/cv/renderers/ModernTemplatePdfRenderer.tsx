@@ -10,7 +10,7 @@ import {
   Svg,
   Path,
 } from "@react-pdf/renderer";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import { TemplateLayout } from "@/types/cv/template";
 import {
   formatSectionContent,
@@ -23,6 +23,7 @@ import {
   LAYOUT,
   SECTION_ORDER,
   FONTS,
+  // ... (imports remain the same)
 } from "@/utils/cv/templateConstants";
 import RichPdf from "../RichPdf";
 
@@ -160,7 +161,7 @@ export function ModernTemplatePdfRenderer({
 
   const styles = StyleSheet.create({
     page: {
-      padding: 0,
+      padding: 24,
       fontSize: 10, // Reduced from 12 for PDF
       fontFamily: FONTS.pdf.default,
       lineHeight: 1.3,
@@ -208,7 +209,7 @@ export function ModernTemplatePdfRenderer({
       gap: 4,
     },
     contactItem: {
-      fontSize: 9, // Reduced from 14 for PDF
+      fontSize: 10,
       color: "#ffffff",
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
       width: "45%",
@@ -279,6 +280,11 @@ export function ModernTemplatePdfRenderer({
       color: template.styles.colors.text,
       // marginBottom: 3,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
+    },
+    itemHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 2,
     },
     itemSubtitle: {
       fontSize: 9, // Reduced from 12 for PDF
@@ -552,7 +558,7 @@ export function ModernTemplatePdfRenderer({
         {/* Main Content - Two Column Layout */}
         <View style={styles.mainContent}>
           <View style={styles.twoColumnLayout}>
-            {/* Left Column - 33% (Summary, Skills, Languages, Awards, Certificates) */}
+            {/* Left Column - 35% (Skills, Languages, Awards, Certificates) */}
             <View style={styles.leftColumn}>
               {otherSections
                 .filter((section) => leftColumnSections.includes(section.type))
@@ -601,13 +607,29 @@ export function ModernTemplatePdfRenderer({
                         </View>
                       )}
 
-                      {/* Other left column sections - Individual items */}
+                      {/* Custom Sections - Render content directly */}
+                      {(section.type as string) === "custom" && (
+                        <View style={{ marginBottom: 10 }}>
+                          {Array.isArray(items) &&
+                            items.map((item: any, i: number) => (
+                              <View key={i} style={{ marginBottom: 8 }}>
+                                <RichPdf
+                                  html={item.content || ""}
+                                  template={template}
+                                />
+                              </View>
+                            ))}
+                        </View>
+                      )}
+
+                      {/* Other left column sections - Individual items (Awards, Certifications) */}
                       {Array.isArray(items) &&
                         (section.type as string) !== "skills" &&
                         (section.type as string) !== "languages" &&
+                        (section.type as string) !== "custom" &&
                         items.map((item: any, i: number) => (
                           <View key={i} style={styles.itemContainer}>
-                            {/* Professional Summary */}
+                            {/* Professional Summary (should ideally be in the right column/main content, but checking for it here just in case based on the original code's structure) */}
                             {item.summary &&
                               section.type === "professional-summary" && (
                                 <View style={styles.summaryBox}>
@@ -619,22 +641,30 @@ export function ModernTemplatePdfRenderer({
                               )}
 
                             {/* Certifications */}
-                            {item.name &&
-                              item.issuer &&
-                              section.type === "certifications" && (
-                                <View style={styles.borderedItem}>
+                            {item.name && section.type === "certifications" && (
+                              <View style={styles.borderedItem}>
+                                <View style={styles.itemHeader}>
                                   <Text style={styles.itemTitle}>
-                                    {item.name} — {item.issuer}
+                                    {item.name}
                                   </Text>
-                                  {item.date && (
-                                    <Text style={styles.itemDate}>
-                                      {item.date}
-                                      {item.credentialId &&
-                                        ` • ID: ${item.credentialId}`}
-                                    </Text>
-                                  )}
+                                  <Text style={styles.itemDate}>
+                                    {item.date}
+                                  </Text>
                                 </View>
-                              )}
+                                {item.issuer && (
+                                  <Text style={styles.itemSubtitle}>
+                                    Issued by: {item.issuer}
+                                  </Text>
+                                )}
+                                {item.url && (
+                                  <Text style={styles.itemDescription}>
+                                    <Text style={{ color: "#2563eb" }}>
+                                      Link: {item.url}
+                                    </Text>
+                                  </Text>
+                                )}
+                              </View>
+                            )}
 
                             {/* Awards */}
                             {item.title &&
@@ -664,7 +694,7 @@ export function ModernTemplatePdfRenderer({
                 })}
             </View>
 
-            {/* Right Column - 67% (Other sections) */}
+            {/* Right Column - 65% (Summary, Work Experience, Education, Projects) */}
             <View style={styles.rightColumn}>
               {otherSections
                 .filter((section) => !leftColumnSections.includes(section.type))
@@ -681,7 +711,23 @@ export function ModernTemplatePdfRenderer({
                         {displayName}
                       </Text>
 
+                      {/* Custom Sections - Render content directly */}
+                      {(section.type as string) === "custom" && (
+                        <View style={{ marginBottom: 10 }}>
+                          {Array.isArray(items) &&
+                            items.map((item: any, i: number) => (
+                              <View key={i} style={{ marginBottom: 8 }}>
+                                <RichPdf
+                                  html={item.content || ""}
+                                  template={template}
+                                />
+                              </View>
+                            ))}
+                        </View>
+                      )}
+
                       {Array.isArray(items) &&
+                        (section.type as string) !== "custom" &&
                         items.map((item: any, i: number) => (
                           <View key={i} style={styles.itemContainer}>
                             {/* Professional Summary */}
@@ -696,67 +742,64 @@ export function ModernTemplatePdfRenderer({
                               )}
 
                             {/* Work Experience */}
-                            {item.title && item.company && (
+                            {(item.title || item.jobTitle) && item.company && (
                               <View style={styles.borderedItem}>
                                 <View style={styles.workExperienceHeader}>
                                   <Text style={styles.itemTitle}>
-                                    {item.title} —{" "}
+                                    {(item.title || item.jobTitle) as string} —{" "}
                                     <Text style={{ fontStyle: "italic" }}>
                                       {item.company}
                                     </Text>
                                   </Text>
-                                  {item.startDate && (
+
+                                  {item.startDate ? (
                                     <Text style={styles.itemDate}>
-                                      {item.startDate} – {item.endDate}
+                                      {item.startDate} –{" "}
+                                      {item.endDate ||
+                                        (item.current ? "Present" : "")}
                                     </Text>
-                                  )}
+                                  ) : null}
                                 </View>
+
                                 {item.location && (
                                   <Text style={styles.itemDate}>
                                     {item.location}
                                   </Text>
                                 )}
 
-                                {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
-                                {item.description ? (
+                                {/* ✅ merged HTML (paragraphs + lists) */}
+                                {typeof item.description === "string" &&
+                                item.description.trim() ? (
                                   <RichPdf
                                     html={item.description}
                                     template={template}
                                   />
                                 ) : null}
 
-                                {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
-                                {item.bullets?.length > 0 && (
-                                  <View style={styles.bulletList}>
-                                    {item.bullets.map(
-                                      (bullet: string, j: number) => {
-                                        const paragraphs = bullet
-                                          .split(/<\/p>\s*<p[^>]*>/i)
-                                          .map((p) =>
-                                            p
-                                              .replace(/<p[^>]*>|<\/p>/gi, "")
-                                              .trim()
-                                          )
-                                          .filter((p) => p.length > 0);
-
-                                        return paragraphs.map(
-                                          (paragraph, k) => (
-                                            <Text
-                                              key={`${j}-${k}`}
-                                              style={styles.bullet}
-                                            >
-                                              •{" "}
-                                              {paragraph.replace(
-                                                /<[^>]*>/g,
-                                                ""
-                                              )}
+                                {/* 🔁 Legacy bullets shown ONLY if description has no <li> */}
+                                {(() => {
+                                  const hasList =
+                                    typeof item.description === "string" &&
+                                    /<li[\s>]/i.test(item.description);
+                                  if (
+                                    !hasList &&
+                                    Array.isArray(item.bullets) &&
+                                    item.bullets.length > 0
+                                  ) {
+                                    return (
+                                      <View style={styles.bulletList}>
+                                        {item.bullets.map(
+                                          (bullet: string, j: number) => (
+                                            <Text key={j} style={styles.bullet}>
+                                              • {convertHtmlToPdfText(bullet)}
                                             </Text>
                                           )
-                                        );
-                                      }
-                                    )}
-                                  </View>
-                                )}
+                                        )}
+                                      </View>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </View>
                             )}
 

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import { TemplateLayout } from "@/types/cv/template";
 import {
   formatSectionContent,
@@ -364,10 +364,36 @@ export function ModernTemplateHtmlRenderer({
                       </div>
                     )}
 
+                    {/* Custom Sections - Render content directly */}
+                    {(section.type as string) === "custom" && (
+                      <div className="space-y-4">
+                        {Array.isArray(items) &&
+                          items.map((item: any, i: number) => (
+                            <div
+                              key={i}
+                              className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
+                              style={{
+                                color: template.styles.colors.text,
+                                fontFamily: mapFontFamily(
+                                  template.styles.typography.fontFamily
+                                ),
+                                fontSize: "12px",
+                                lineHeight:
+                                  template.styles.typography.lineHeight,
+                              }}
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeHtml(item.content || ""),
+                              }}
+                            />
+                          ))}
+                      </div>
+                    )}
+
                     {/* Other left column sections - Individual items */}
                     {Array.isArray(items) &&
                       (section.type as string) !== "skills" &&
                       (section.type as string) !== "languages" &&
+                      (section.type as string) !== "custom" &&
                       items.map((item: any, i: number) => (
                         <div
                           key={i}
@@ -540,7 +566,33 @@ export function ModernTemplateHtmlRenderer({
                       {displayName}
                     </h2>
 
+                    {/* Custom Sections - Render content directly */}
+                    {(section.type as string) === "custom" && (
+                      <div className="space-y-4">
+                        {Array.isArray(items) &&
+                          items.map((item: any, i: number) => (
+                            <div
+                              key={i}
+                              className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
+                              style={{
+                                color: template.styles.colors.text,
+                                fontFamily: mapFontFamily(
+                                  template.styles.typography.fontFamily
+                                ),
+                                fontSize: `${template.styles.typography.bodySize}px`,
+                                lineHeight:
+                                  template.styles.typography.lineHeight,
+                              }}
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeHtml(item.content || ""),
+                              }}
+                            />
+                          ))}
+                      </div>
+                    )}
+
                     {Array.isArray(items) &&
+                      (section.type as string) !== "custom" &&
                       items.map((item: any, i: number) => (
                         <div
                           key={i}
@@ -573,7 +625,7 @@ export function ModernTemplateHtmlRenderer({
                             )}
 
                           {/* Work Experience */}
-                          {item.title && item.company && (
+                          {(item.title || item.jobTitle) && item.company && (
                             <div
                               className="border-l-4 pl-4"
                               style={{
@@ -592,9 +644,10 @@ export function ModernTemplateHtmlRenderer({
                                     fontSize: `${template.styles.typography.bodySize}px`,
                                   }}
                                 >
-                                  {item.title} —{" "}
+                                  {(item.title || item.jobTitle) as string} —{" "}
                                   <span className="italic">{item.company}</span>
                                 </p>
+
                                 {item.startDate && (
                                   <p
                                     className="text-xs text-gray-500"
@@ -605,10 +658,13 @@ export function ModernTemplateHtmlRenderer({
                                       ),
                                     }}
                                   >
-                                    {item.startDate} – {item.endDate}
+                                    {item.startDate} –{" "}
+                                    {item.endDate ||
+                                      (item.current ? "Present" : "")}
                                   </p>
                                 )}
                               </div>
+
                               {item.location && (
                                 <p
                                   className="text-md text-gray-500"
@@ -623,53 +679,56 @@ export function ModernTemplateHtmlRenderer({
                                 </p>
                               )}
 
-                              {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
-                              {item.description && (
-                                <RichHtml
-                                  html={item.description}
-                                  template={template}
-                                  sizeOffset={-1}
-                                />
-                              )}
+                              {/* ✅ description carries <p>/<ul><li> */}
+                              {typeof item.description === "string" &&
+                                item.description.trim() && (
+                                  <RichHtml
+                                    html={item.description}
+                                    template={template}
+                                    sizeOffset={-1}
+                                  />
+                                )}
 
-                              {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
-                              {item.bullets?.length > 0 && (
-                                <ul className="list-disc pl-6 mt-2">
-                                  {item.bullets.map(
-                                    (bullet: string, j: number) => {
-                                      const paragraphs = bullet
-                                        .split(/<\/p>\s*<p[^>]*>/i)
-                                        .map((p) =>
-                                          p
-                                            .replace(/<p[^>]*>|<\/p>/gi, "")
-                                            .trim()
+                              {/* 🔁 Legacy bullets shown ONLY if description has no <li> */}
+                              {(() => {
+                                const hasList =
+                                  typeof item.description === "string" &&
+                                  /<li[\s>]/i.test(item.description);
+                                if (
+                                  !hasList &&
+                                  Array.isArray(item.bullets) &&
+                                  item.bullets.length > 0
+                                ) {
+                                  return (
+                                    <ul className="list-disc pl-6 mt-2">
+                                      {item.bullets.map(
+                                        (bullet: string, j: number) => (
+                                          <li
+                                            key={j}
+                                            className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
+                                            style={{
+                                              color:
+                                                template.styles.colors.text,
+                                              fontFamily: mapFontFamily(
+                                                template.styles.typography
+                                                  .fontFamily
+                                              ),
+                                              fontSize: `${
+                                                template.styles.typography
+                                                  .bodySize - 1
+                                              }px`,
+                                            }}
+                                            dangerouslySetInnerHTML={{
+                                              __html: sanitizeHtml(bullet),
+                                            }}
+                                          />
                                         )
-                                        .filter((p) => p.length > 0);
-
-                                      return paragraphs.map((paragraph, k) => (
-                                        <li
-                                          key={`${j}-${k}`}
-                                          className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
-                                          style={{
-                                            color: template.styles.colors.text,
-                                            fontFamily: mapFontFamily(
-                                              template.styles.typography
-                                                .fontFamily
-                                            ),
-                                            fontSize: `${
-                                              template.styles.typography
-                                                .bodySize - 1
-                                            }px`,
-                                          }}
-                                          dangerouslySetInnerHTML={{
-                                            __html: sanitizeHtml(paragraph),
-                                          }}
-                                        />
-                                      ));
-                                    }
-                                  )}
-                                </ul>
-                              )}
+                                      )}
+                                    </ul>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           )}
 

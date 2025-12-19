@@ -5,7 +5,7 @@ import Link from "next/link";
 import { sanitizeHtml } from "@/utils/cv/richText";
 import RichHtml from "../RichHtml";
 
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import { ColumnSectionType, TemplateLayout } from "@/types/cv/template";
 import {
   formatSectionContent,
@@ -448,6 +448,24 @@ export function TwoColumnTemplateHtmlRenderer({
                               }}
                             />
                           )}
+
+                        {/* Custom Sections */}
+                        {item.content && section.type === "custom" && (
+                          <div
+                            className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
+                            style={{
+                              color: leftText,
+                              fontFamily: mapFontFamily(
+                                template.styles.typography.fontFamily
+                              ),
+                              fontSize: `${template.styles.typography.bodySize}px`,
+                              lineHeight: template.styles.typography.lineHeight,
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: sanitizeHtml(item.content),
+                            }}
+                          />
+                        )}
                       </div>
                     ))}
                 </div>
@@ -528,8 +546,26 @@ export function TwoColumnTemplateHtmlRenderer({
                             />
                           )}
 
+                        {/* Custom Sections */}
+                        {item.content && section.type === "custom" && (
+                          <div
+                            className="prose prose-sm max-w-none [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-sm [&_a]:text-blue-600 [&_a]:underline"
+                            style={{
+                              color: rightText,
+                              fontFamily: mapFontFamily(
+                                template.styles.typography.fontFamily
+                              ),
+                              fontSize: `${template.styles.typography.bodySize}px`,
+                              lineHeight: template.styles.typography.lineHeight,
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: sanitizeHtml(item.content),
+                            }}
+                          />
+                        )}
+
                         {/* Work Experience */}
-                        {item.title && item.company && (
+                        {(item.title || item.jobTitle) && item.company && (
                           <div className="mb-4">
                             <div className="flex justify-between items-start">
                               <h3
@@ -544,8 +580,9 @@ export function TwoColumnTemplateHtmlRenderer({
                                   }px`,
                                 }}
                               >
-                                {item.title}
+                                {(item.title || item.jobTitle) as string}
                               </h3>
+
                               {item.startDate && (
                                 <span
                                   className="text-sm font-medium"
@@ -559,10 +596,13 @@ export function TwoColumnTemplateHtmlRenderer({
                                     }px`,
                                   }}
                                 >
-                                  {item.startDate} – {item.endDate || "Present"}
+                                  {item.startDate} –{" "}
+                                  {item.endDate ||
+                                    (item.current ? "Present" : "")}
                                 </span>
                               )}
                             </div>
+
                             <div className="flex justify-between items-start mb-2">
                               <p
                                 className="text-lg italic font-medium"
@@ -576,6 +616,7 @@ export function TwoColumnTemplateHtmlRenderer({
                               >
                                 {item.company}
                               </p>
+
                               {item.location && (
                                 <p
                                   className="text-sm"
@@ -594,7 +635,7 @@ export function TwoColumnTemplateHtmlRenderer({
                               )}
                             </div>
 
-                            {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                            {/* ✅ description already includes <p> and possibly <ul><li> */}
                             {item.description && (
                               <RichHtml
                                 html={item.description}
@@ -603,7 +644,7 @@ export function TwoColumnTemplateHtmlRenderer({
                               />
                             )}
 
-                            {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
+                            {/* Optional legacy bullets */}
                             {item.bullets?.length > 0 && (
                               <ul className="list-disc pl-6 mt-2 space-y-1">
                                 {item.bullets.map(

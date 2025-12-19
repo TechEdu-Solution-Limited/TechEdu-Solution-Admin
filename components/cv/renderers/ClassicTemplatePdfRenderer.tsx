@@ -2,6 +2,8 @@
  * Classic Template PDF Renderer
  *
  * Renders the classic template for PDF using shared section logic
+ * Page break logic refined to keep item headers together, but allow content to break.
+ * HEADER IS NOW CORRECTLY RENDERED ONLY ON THE FIRST PAGE.
  */
 
 import React from "react";
@@ -13,7 +15,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import { TemplateLayout } from "@/types/cv/template";
 import {
   formatSectionContent,
@@ -36,25 +38,25 @@ import {
 } from "@/utils/cv/pdfScaling";
 import RichPdf from "../RichPdf";
 
-// Helper function to convert HTML to PDF-friendly text with enhanced formatting
+// Helper function to convert HTML to PDF-friendly text (kept as is)
 function convertHtmlToPdfText(html: string): string {
   if (!html) return "";
 
   let result = html;
 
   // Handle headers with emphasis
-  result = result.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "**$1**\n"); // H1 as bold
-  result = result.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "**$1**\n"); // H2 as bold
-  result = result.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "**$1**\n"); // H3 as bold
+  result = result.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "**$1**\n");
+  result = result.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "**$1**\n");
+  result = result.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "**$1**\n");
 
   // Handle text formatting
-  result = result.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**"); // Bold
-  result = result.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**"); // Bold
-  result = result.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*"); // Italic
-  result = result.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*"); // Italic
-  result = result.replace(/<u[^>]*>(.*?)<\/u>/gi, "_$1_"); // Underline
-  result = result.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~"); // Strikethrough
-  result = result.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~"); // Strikethrough
+  result = result.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
+  result = result.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
+  result = result.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*");
+  result = result.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*");
+  result = result.replace(/<u[^>]*>(.*?)<\/u>/gi, "_$1_");
+  result = result.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~");
+  result = result.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~");
 
   // Handle lists
   result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
@@ -86,9 +88,6 @@ function convertHtmlToPdfText(html: string): string {
     }
     return "";
   });
-
-  // Handle individual list items (only if not part of a proper list)
-  // Note: This is handled by the <ul> and <ol> processing above
 
   // Handle blockquotes
   result = result.replace(
@@ -165,10 +164,10 @@ export function ClassicTemplatePdfRenderer({
 
   const styles = StyleSheet.create({
     page: {
-      padding: 20, // Reduced padding to match web preview better
-      fontSize: 10, // Smaller base font size to match web preview
+      padding: 24,
+      fontSize: 10,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-      lineHeight: 1.4, // Tighter line height
+      lineHeight: 1.4,
       color: template.styles.colors.text,
     },
     header: {
@@ -178,94 +177,98 @@ export function ClassicTemplatePdfRenderer({
       backgroundColor: template.styles.colors.headerBackground || "#f8fafc",
       borderBottomWidth: 2,
       borderBottomColor: template.styles.colors.primary || "#dc2626",
-      paddingHorizontal: 16, // p-4 = 16px (match HTML)
-      paddingVertical: 16, // p-4 = 16px (match HTML)
+      paddingHorizontal: 16,
+      paddingVertical: 16,
       marginBottom: 0,
       lineHeight: 1.0,
     },
     headerLeft: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 16, // space-x-4 = 16px
+      gap: 16,
       lineHeight: 1,
     },
     profileImage: {
-      width: 96, // w-24 = 96px (match HTML)
-      height: 96, // h-24 = 96px (match HTML)
-      borderRadius: 48, // rounded-full
+      width: 96,
+      height: 96,
+      borderRadius: 48,
       objectFit: "cover",
     },
     nameTitle: {
       flexDirection: "column",
     },
     name: {
-      fontSize: 28, // text-4xl = 36px (match HTML)
+      fontSize: 28,
       fontWeight: "bold",
       color: template.styles.colors.text,
-      marginBottom: 8, // mb-2 = 8px (match HTML)
+      marginBottom: 8,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     title: {
-      fontSize: 16, // text-xl = 20px (match HTML)
+      fontSize: 16,
       fontStyle: "italic",
       color: template.styles.colors.secondary,
-      marginTop: 8, // mt-1 = 4px
-      marginBottom: 8, // mb-4 = 16px (match HTML)
-      fontWeight: "500", // font-medium (match HTML)
+      marginTop: 8,
+      marginBottom: 8,
+      fontWeight: "500",
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     contactInfo: {
       flexDirection: "column",
       alignItems: "flex-end",
-      gap: 8, // space-y-2 = 8px
+      gap: 8,
     },
     contactItem: {
-      fontSize: 10, // text-sm = 14px (match HTML)
+      fontSize: 10,
       color: template.styles.colors.text,
       fontWeight: "normal",
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     socialLinks: {
       flexDirection: "column",
-      marginTop: 8, // mt-2 = 8px
-      gap: 4, // space-y-1 = 4px
+      marginTop: 8,
+      gap: 4,
     },
     socialLink: {
-      fontSize: 10, // text-sm = 14px (match HTML)
+      fontSize: 10,
       color: template.styles.colors.text,
       fontWeight: "normal",
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     mainContent: {
-      // paddingHorizontal: 32, // p-8 = 32px (match HTML)
-      paddingVertical: 12, // p-8 = 32px (match HTML)
+      // paddingHorizontal: 32,
+      paddingVertical: 12,
     },
     sectionContainer: {
-      marginBottom: 14, // space-y-6 = 18px
+      marginBottom: 14,
     },
     sectionTitle: {
-      fontSize: 10, // text-sm = 14px (match HTML)
+      fontSize: 10,
       fontWeight: "bold",
-      marginBottom: 6, // space-y-3 = 12px (match HTML)
-      backgroundColor: "#f3f4f6", // bg-gray-100 (match HTML)
-      paddingVertical: 8, // p-3 = 12px (match HTML)
-      paddingHorizontal: 12, // p-3 = 12px (match HTML)
+      marginBottom: 6,
+      backgroundColor: "#f3f4f6",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
       textTransform: "uppercase",
-      letterSpacing: 0.05, // tracking-wide
+      letterSpacing: 0.05,
       color: template.styles.colors.text,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
-      borderLeftWidth: 4, // border-l-4 (match HTML)
-      borderLeftColor: "#dc2626", // border-red-600 (match HTML)
+      borderLeftWidth: 4,
+      borderLeftColor: "#dc2626",
     },
     sectionContent: {
-      marginBottom: 6, // space-y-3 = 12px
+      marginBottom: 6,
     },
     itemContainer: {
-      marginBottom: 10, // space-y-1 = 4px
+      marginBottom: 10,
+    },
+    // Style for the Unbreakable Header Block
+    itemHeaderBlock: {
+      marginBottom: 4,
     },
     itemTitle: {
       fontSize: template.styles.typography.bodySize || 10,
-      fontWeight: "bold", // font-semibold
+      fontWeight: "bold",
       color: template.styles.colors.text,
       marginBottom: 2,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
@@ -277,7 +280,7 @@ export function ClassicTemplatePdfRenderer({
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     itemDate: {
-      fontSize: (template.styles.typography.bodySize || 10) - 1, // text-xs
+      fontSize: (template.styles.typography.bodySize || 10) - 1,
       color: template.styles.colors.secondary,
       marginBottom: 6,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
@@ -289,30 +292,24 @@ export function ClassicTemplatePdfRenderer({
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     bullet: {
-      marginLeft: 6, // pl-6 = 24px
+      marginLeft: 6,
       fontSize: (template.styles.typography.bodySize || 10) - 1,
       color: template.styles.colors.text,
       fontFamily: mapFontFamily(template.styles.typography.fontFamily),
     },
     bulletList: {
-      marginTop: 2, // mt-2 = 8px
+      marginTop: 2,
     },
   });
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header - The 'fixed' prop has been removed to ensure it only appears on the first page. */}
         {personalInfo && (
           <View style={styles.header}>
             {/* Left Side - Image, Name, Title, Contact */}
             <View style={styles.headerLeft}>
-              {/* {personalInfo.data.image && (
-                <Image
-                  src={personalInfo.data.image}
-                  style={styles.profileImage}
-                />
-              )} */}
               <View style={styles.nameTitle}>
                 <Text style={styles.name}>
                   {personalInfo.data.firstName} {personalInfo.data.lastName}
@@ -322,7 +319,6 @@ export function ClassicTemplatePdfRenderer({
                     {personalInfo.data.targetedJobTitle}
                   </Text>
                 )}
-
                 {personalInfo.data.email && (
                   <Text style={styles.contactItem}>
                     <Text style={{ fontWeight: "600" }}>Email: </Text>
@@ -344,9 +340,8 @@ export function ClassicTemplatePdfRenderer({
               </View>
             </View>
 
-            {/* Right Side - Location and Social Links */}
+            {/* Right Side - Social Links */}
             <View style={styles.contactInfo}>
-              {/* Social Links */}
               <View style={styles.socialLinks}>
                 {personalInfo.data.linkedin && (
                   <Text style={styles.socialLink}>
@@ -358,6 +353,12 @@ export function ClassicTemplatePdfRenderer({
                   <Text style={styles.socialLink}>
                     <Text style={{ fontWeight: "600" }}>GitHub: </Text>
                     {personalInfo.data.github}
+                  </Text>
+                )}
+                {personalInfo.data.website && (
+                  <Text style={styles.socialLink}>
+                    <Text style={{ fontWeight: "600" }}>Website: </Text>
+                    {personalInfo.data.website}
                   </Text>
                 )}
                 {personalInfo.data.twitter && (
@@ -372,12 +373,6 @@ export function ClassicTemplatePdfRenderer({
                     {personalInfo.data.instagram}
                   </Text>
                 )}
-                {personalInfo.data.website && (
-                  <Text style={styles.socialLink}>
-                    <Text style={{ fontWeight: "600" }}>Website: </Text>
-                    {personalInfo.data.website}
-                  </Text>
-                )}
               </View>
             </View>
           </View>
@@ -388,57 +383,41 @@ export function ClassicTemplatePdfRenderer({
           {otherSections.map((section) => {
             const items = formatSectionContent(section);
             const displayName = getSectionDisplayName(section.type, section);
+            const isUnorderedSection =
+              (section.type as string) === "skills" ||
+              (section.type as string) === "languages";
+            const isCustomSection = (section.type as string) === "custom";
 
+            // Section container is splittable
             return (
               <View key={section.id} style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>{displayName}</Text>
+                {/* Section Title - wrap={false} ensures it stays with the first item's header if space is tight */}
+                <Text style={styles.sectionTitle} wrap={false}>
+                  {displayName}
+                </Text>
 
-                {/* Skills - Render once for the entire section */}
-                {(section.type as string) === "skills" && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: 3, // gap-6 = 24px (match HTML)
-                      marginBottom: 10,
-                    }}
-                  >
+                {/* Custom Sections - Render content directly */}
+                {isCustomSection && (
+                  <View style={{ marginBottom: 10 }}>
                     {Array.isArray(items) &&
                       items.map((item: any, i: number) => (
-                        <View
-                          key={i}
-                          style={{
-                            backgroundColor: "#2563eb", // bg-blue-600
-                            paddingHorizontal: 8, // px-2 = 8px
-                            paddingVertical: 4, // py-1 = 4px
-                            borderRadius: 4, // rounded = 4px (match HTML)
-                            marginBottom: 4,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "#ffffff", // text-white
-                              fontFamily: mapFontFamily(
-                                template.styles.typography.fontFamily
-                              ),
-                              fontSize:
-                                template.styles.typography.bodySize || 10,
-                            }}
-                          >
-                            {item.name}
-                          </Text>
+                        <View key={i} style={{ marginBottom: 8 }}>
+                          <RichPdf
+                            html={item.content || ""}
+                            template={template}
+                          />
                         </View>
                       ))}
                   </View>
                 )}
 
-                {/* Languages - Render once for the entire section */}
-                {(section.type as string) === "languages" && (
+                {/* Skills/Languages - Render as one block */}
+                {isUnorderedSection && (
                   <View
                     style={{
                       flexDirection: "row",
                       flexWrap: "wrap",
-                      gap: 3, // gap-6 = 24px (match HTML)
+                      gap: 3,
                       marginBottom: 10,
                     }}
                   >
@@ -447,16 +426,16 @@ export function ClassicTemplatePdfRenderer({
                         <View
                           key={i}
                           style={{
-                            backgroundColor: "#2563eb", // bg-blue-600
-                            paddingHorizontal: 8, // px-2 = 8px
-                            paddingVertical: 4, // py-1 = 4px
-                            borderRadius: 4, // rounded = 4px (match HTML)
+                            backgroundColor: "#2563eb",
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 4,
                             marginBottom: 4,
                           }}
                         >
                           <Text
                             style={{
-                              color: "#ffffff", // text-white
+                              color: "#ffffff",
                               fontFamily: mapFontFamily(
                                 template.styles.typography.fontFamily
                               ),
@@ -473,101 +452,79 @@ export function ClassicTemplatePdfRenderer({
 
                 {/* Other sections - Individual items */}
                 {Array.isArray(items) &&
-                  (section.type as string) !== "skills" &&
-                  (section.type as string) !== "languages" &&
+                  !isUnorderedSection &&
+                  !isCustomSection &&
                   items.map((item: any, i: number) => (
                     <View key={i} style={styles.itemContainer}>
-                      {/* Work Experience */}
-                      {item.title && item.company && (
-                        <View>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <Text style={styles.itemTitle}>
-                              {item.title} —{" "}
-                              <Text style={{ fontStyle: "italic" }}>
-                                {item.company}
+                      {/* Unbreakable Header Block: This ensures the title, company, and dates stay on one page. */}
+                      <View style={styles.itemHeaderBlock} wrap={false}>
+                        {/* Work Experience Header */}
+                        {(item.title || item.jobTitle) && item.company && (
+                          <View>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <Text style={styles.itemTitle}>
+                                {(item.title || item.jobTitle) as string} —{" "}
+                                <Text style={{ fontStyle: "italic" }}>
+                                  {item.company}
+                                </Text>
                               </Text>
-                            </Text>
-                            {item.startDate && (
-                              <Text style={styles.itemDate}>
-                                {item.startDate} – {item.endDate}
-                              </Text>
-                            )}
-                          </View>
-                          {item.location && (
-                            <Text style={styles.itemDate}>{item.location}</Text>
-                          )}
 
-                          {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
-                          {item.description ? (
-                            <RichPdf
-                              html={item.description}
-                              template={template}
-                            />
-                          ) : null}
-
-                          {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
-                          {item.bullets?.length > 0 && (
-                            <View style={styles.bulletList}>
-                              {item.bullets.map((bullet: string, j: number) => {
-                                // Split by paragraph breaks and render each as a bullet
-                                const paragraphs = bullet
-                                  .split(/<\/p>\s*<p[^>]*>/i)
-                                  .map((p) =>
-                                    p.replace(/<p[^>]*>|<\/p>/gi, "").trim()
-                                  )
-                                  .filter((p) => p.length > 0);
-
-                                return paragraphs.map((paragraph, k) => (
-                                  <Text key={`${j}-${k}`} style={styles.bullet}>
-                                    • {convertHtmlToPdfText(paragraph)}
-                                  </Text>
-                                ));
-                              })}
+                              {item.startDate ? (
+                                <Text style={styles.itemDate}>
+                                  {item.startDate} –{" "}
+                                  {item.endDate ||
+                                    (item.current ? "Present" : "")}
+                                </Text>
+                              ) : null}
                             </View>
-                          )}
-                        </View>
-                      )}
 
-                      {/* Education */}
-                      {item.degree && item.school && (
-                        <View>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <Text style={styles.itemTitle}>
-                              {item.degree} —{" "}
-                              <Text style={{ fontStyle: "italic" }}>
-                                {item.field}
-                              </Text>
-                            </Text>
-                            {item.startDate && (
+                            {item.location && (
                               <Text style={styles.itemDate}>
-                                {item.startDate} – {item.endDate}
+                                {item.location}
                               </Text>
                             )}
                           </View>
-                          {item.location && (
-                            <Text style={styles.itemDate}>
-                              {item.school}
-                              {item.gpa && ` • GPA: ${item.gpa}`}
-                            </Text>
-                          )}
-                        </View>
-                      )}
+                        )}
 
-                      {/* Projects */}
-                      {item.name && section.type === "projects" && (
-                        <View>
+                        {/* Education Header */}
+                        {item.degree && item.school && (
+                          <View>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <Text style={styles.itemTitle}>
+                                {item.degree} —{" "}
+                                <Text style={{ fontStyle: "italic" }}>
+                                  {item.field}
+                                </Text>
+                              </Text>
+                              {item.startDate && (
+                                <Text style={styles.itemDate}>
+                                  {item.startDate} – {item.endDate}
+                                </Text>
+                              )}
+                            </View>
+                            {item.location && (
+                              <Text style={styles.itemDate}>
+                                {item.school}
+                                {item.gpa && ` • GPA: ${item.gpa}`}
+                              </Text>
+                            )}
+                          </View>
+                        )}
+
+                        {/* Projects Header */}
+                        {item.name && section.type === "projects" && (
                           <Text style={styles.itemTitle}>
                             {item.name}
                             {item.url && (
@@ -577,70 +534,87 @@ export function ClassicTemplatePdfRenderer({
                               </Text>
                             )}
                           </Text>
+                        )}
+
+                        {/* Certifications Header */}
+                        {item.name &&
+                          item.issuer &&
+                          section.type === "certifications" && (
+                            <Text style={styles.itemTitle}>
+                              {item.name} — {item.issuer}
+                            </Text>
+                          )}
+
+                        {/* Awards Header */}
+                        {item.title &&
+                          item.issuer &&
+                          section.type === "awards" && (
+                            <Text style={styles.itemTitle}>
+                              {item.title} — {item.issuer}
+                            </Text>
+                          )}
+
+                        {/* Interests Header/Content (small enough to be unbreakable) */}
+                        {item.name && section.type === "interests" && (
+                          <Text style={styles.itemDescription}>
+                            {item.name}
+                            {item.description && ` - ${item.description}`}
+                          </Text>
+                        )}
+
+                        {/* Professional Summary (Content is typically small and is the full block) */}
+                        {item.summary &&
+                        section.type === "professional-summary" ? (
+                          <RichPdf html={item.summary} template={template} />
+                        ) : null}
+                      </View>
+
+                      {/* Splittable Content: This content is allowed to break across pages. */}
+
+                      {/* Description/Bullets for Work Experience & Projects */}
+                      {((item.title || item.jobTitle) && item.company) ||
+                      (item.name && section.type === "projects") ? (
+                        <>
                           {item.description ? (
                             <RichPdf
                               html={item.description}
                               template={template}
                             />
-                          ) : null}
-                          {item.technologies?.length > 0 && (
-                            <Text style={styles.itemDate}>
-                              Technologies: {item.technologies.join(", ")}
-                            </Text>
+                          ) : (
+                            Array.isArray(item.bullets) &&
+                            item.bullets.length > 0 && (
+                              <View style={styles.bulletList}>
+                                {item.bullets.map((b: string, idx: number) => (
+                                  <Text key={idx} style={styles.bullet}>
+                                    • {b}
+                                  </Text>
+                                ))}
+                              </View>
+                            )
                           )}
-                        </View>
-                      )}
 
-                      {/* Certifications */}
-                      {item.name &&
-                        item.issuer &&
-                        section.type === "certifications" && (
-                          <View>
-                            <Text style={styles.itemTitle}>
-                              {item.name} — {item.issuer}
-                            </Text>
-                            {item.date && (
+                          {/* Project/Work Techs */}
+                          {Array.isArray(item.technologies) &&
+                            item.technologies.length > 0 && (
                               <Text style={styles.itemDate}>
-                                {item.date}
-                                {item.credentialId &&
-                                  ` • ID: ${item.credentialId}`}
+                                Technologies: {item.technologies.join(", ")}
                               </Text>
                             )}
-                          </View>
-                        )}
+                        </>
+                      ) : null}
 
-                      {/* Awards */}
-                      {item.title &&
-                        item.issuer &&
-                        section.type === "awards" && (
-                          <View>
-                            <Text style={styles.itemTitle}>
-                              {item.title} — {item.issuer}
-                            </Text>
-                            {item.date && (
-                              <Text style={styles.itemDate}>{item.date}</Text>
-                            )}
-                            {item.description ? (
-                              <RichPdf
-                                html={item.description}
-                                template={template}
-                              />
-                            ) : null}
-                          </View>
-                        )}
-
-                      {/* Interests */}
-                      {item.name && section.type === "interests" && (
-                        <Text style={styles.itemDescription}>
-                          {item.name}
-                          {item.description && ` - ${item.description}`}
+                      {/* Remaining detail text for Certifications and Awards */}
+                      {item.date && section.type === "certifications" && (
+                        <Text style={styles.itemDate}>
+                          {item.date}
+                          {item.credentialId && ` • ID: ${item.credentialId}`}
                         </Text>
                       )}
-
-                      {/* Professional Summary */}
-                      {item.summary &&
-                      section.type === "professional-summary" ? (
-                        <RichPdf html={item.summary} template={template} />
+                      {item.date && section.type === "awards" && (
+                        <Text style={styles.itemDate}>{item.date}</Text>
+                      )}
+                      {item.description && section.type === "awards" ? (
+                        <RichPdf html={item.description} template={template} />
                       ) : null}
                     </View>
                   ))}

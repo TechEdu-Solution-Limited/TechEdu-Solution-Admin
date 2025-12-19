@@ -10,7 +10,7 @@ import {
   Path,
   Font,
 } from "@react-pdf/renderer";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import { ColumnSectionType, TemplateLayout } from "@/types/cv/template";
 import {
   formatSectionContent,
@@ -653,11 +653,16 @@ export function TwoColumnTemplatePdfRenderer({
                           section.type === "professional-summary" ? (
                             <RichPdf html={item.summary} template={template} />
                           ) : null}
+
+                          {/* Custom Sections (left) */}
+                          {item.content && section.type === "custom" && (
+                            <RichPdf html={item.content} template={template} />
+                          )}
                         </View>
                       ))}
-                  </View>
-                );
-              })}
+                    </View>
+                  );
+                })}
             </View>
 
             {/* RIGHT COLUMN */}
@@ -686,8 +691,13 @@ export function TwoColumnTemplatePdfRenderer({
                             <RichPdf html={item.summary} template={template} />
                           ) : null}
 
+                          {/* Custom Sections (right) */}
+                          {item.content && section.type === "custom" && (
+                            <RichPdf html={item.content} template={template} />
+                          )}
+
                           {/* Work Experience */}
-                          {item.title && item.company && (
+                          {(item.title || item.jobTitle) && item.company && (
                             <View>
                               <View
                                 style={{
@@ -702,15 +712,18 @@ export function TwoColumnTemplatePdfRenderer({
                                     { color: "#000000" },
                                   ]}
                                 >
-                                  {item.title}
+                                  {(item.title || item.jobTitle) as string}
                                 </Text>
-                                {item.startDate && (
+
+                                {item.startDate ? (
                                   <Text style={styles.itemDate}>
                                     {item.startDate} –{" "}
-                                    {item.endDate || "Present"}
+                                    {item.endDate ||
+                                      (item.current ? "Present" : "")}
                                   </Text>
-                                )}
+                                ) : null}
                               </View>
+
                               <View
                                 style={{
                                   flexDirection: "row",
@@ -729,7 +742,7 @@ export function TwoColumnTemplatePdfRenderer({
                                 )}
                               </View>
 
-                              {/* 🟦 Quill HTML (paragraphs, inline styles, lists…) */}
+                              {/* ✅ merged HTML */}
                               {item.description ? (
                                 <RichPdf
                                   html={item.description}
@@ -737,7 +750,7 @@ export function TwoColumnTemplatePdfRenderer({
                                 />
                               ) : null}
 
-                              {/* 🟩 Optional explicit bullets array (kept for backwards-compat) */}
+                              {/* Optional legacy bullets */}
                               {item.bullets?.length > 0 && (
                                 <View>
                                   {item.bullets.map(
