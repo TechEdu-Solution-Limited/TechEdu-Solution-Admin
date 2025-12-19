@@ -216,6 +216,17 @@ function normalizeExperienceV2(
 ): ExperienceAIResult {
   const payload = raw?.data?.data ?? raw?.data ?? raw;
 
+  // New shape: { ok: true, workExperience: { description, achievements, ... } }
+  if (payload?.workExperience) {
+    const workExp = payload.workExperience;
+    return {
+      description: String(workExp?.description ?? "").trim(),
+      achievements: Array.isArray(workExp?.achievements)
+        ? workExp.achievements.map((s: any) => String(s).trim()).filter(Boolean)
+        : [],
+    };
+  }
+
   // New shape: { ok, items: [...] }
   if (Array.isArray(payload?.items) && payload.items.length) {
     const chosen = pickBestItem(payload.items, sel) || payload.items[0];
