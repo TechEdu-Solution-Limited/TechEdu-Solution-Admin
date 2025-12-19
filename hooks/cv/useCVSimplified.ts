@@ -243,19 +243,19 @@ export function useCVSimplified() {
 
   // Generate AI Experience
   const generateExperience = useCallback(
-    async (context: {
-      targetRole: string;
-      industry: string;
-      // startDate: string;
-      // endDate: string;
-      // position: string;
+    async (params: {
+      startDate: string;
+      endDate?: string;
+      targetJobTitle: string;
+      targetCompany: string;
+      targetIndustry: string;
     }): Promise<ExperienceAIResult | null> => {
       if (!cvId) {
         console.warn("⚠️ No cvId available for AI experience generation");
         return null;
       }
       try {
-        const res = await cvService.generateExperience(cvId, context);
+        const res = await cvService.generateExperience(cvId, params);
         return res; // { description, achievements } (and legacy fields if present)
       } catch (error) {
         console.error("Failed to generate experience:", error);

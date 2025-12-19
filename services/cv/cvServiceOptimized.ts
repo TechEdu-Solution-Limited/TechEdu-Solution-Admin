@@ -679,19 +679,38 @@ class OptimizedCVService {
   // EXPERIENCE: returns normalized { description, achievements } (and legacy fields if present)
   async generateExperience(
     cvId: string,
-    context: { targetRole?: string; industry?: string },
-    extra?: { jobTitle?: string; company?: string; preferCurrent?: boolean }
+    params: {
+      startDate: string;
+      endDate?: string;
+      targetJobTitle: string;
+      targetCompany: string;
+      targetIndustry: string;
+    }
   ): Promise<ExperienceAIResult> {
     if (!cvId) throw new Error("CV must be created first");
+
+    const body: {
+      startDate: string;
+      endDate?: string;
+      targetJobTitle: string;
+      targetCompany: string;
+      targetIndustry: string;
+    } = {
+      startDate: params.startDate,
+      targetJobTitle: params.targetJobTitle,
+      targetCompany: params.targetCompany,
+      targetIndustry: params.targetIndustry,
+    };
+
+    // Only include endDate if provided (it's optional)
+    if (params.endDate) {
+      body.endDate = params.endDate;
+    }
 
     const res = await this.apiRequest<any>(
       `/api/cv/ai/work-entry-generate?cvId=${encodeURIComponent(cvId)}`,
       "POST",
-      {
-        cvId,
-        context,
-        ...(extra || {}),
-      }
+      body
     );
 
     // Surface server-side failure reasons
@@ -704,7 +723,7 @@ class OptimizedCVService {
       throw new Error(reason);
     }
 
-    return normalizeExperienceV2(res, extra);
+    return normalizeExperienceV2(res);
   }
 
   /**

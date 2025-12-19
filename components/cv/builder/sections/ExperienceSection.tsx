@@ -183,18 +183,37 @@ export default function ExperienceSection({
 
     try {
       const exp = experiences.find((e) => e.id === expId);
-      const targetRole = (
+      if (!exp) {
+        alert("Experience entry not found.");
+        return;
+      }
+
+      if (!exp.startDate) {
+        alert("Please set a start date for this experience entry.");
+        return;
+      }
+
+      const targetJobTitle = (
         jobTitle ||
+        exp.position ||
         personalInfo?.targetedJobTitle ||
         ""
       ).trim();
-      const industry = (personalInfo?.industry || "").trim();
+      const targetCompany = (company || exp.company || "").trim();
+      const targetIndustry = (personalInfo?.industry || "").trim();
 
-      const data = await cvService.generateExperience(
-        String(cvId),
-        { targetRole, industry },
-        { jobTitle, company, preferCurrent: !!exp?.current } // ⬅️ helps pick the right item
-      );
+      if (!targetJobTitle || !targetCompany || !targetIndustry) {
+        alert("Please ensure job title, company, and industry are set.");
+        return;
+      }
+
+      const data = await cvService.generateExperience(String(cvId), {
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        targetJobTitle,
+        targetCompany,
+        targetIndustry,
+      });
 
       const hasDesc = !!data?.description && data.description.trim().length > 0;
       const hasAch =
