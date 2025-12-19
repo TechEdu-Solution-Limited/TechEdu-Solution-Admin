@@ -4,7 +4,7 @@ import { Eye, EyeOff, Lock, CheckCircle, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/lib/apiFetch";
 import { toast } from "react-toastify";
 
@@ -28,6 +28,8 @@ const ResetPassword = () => {
   const [isPasswordReset, setIsPasswordReset] = useState(false);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   const toggleVisibility = (field: "showPassword" | "showConfirmPassword") => {
     setFormData((prev) => ({
@@ -125,8 +127,13 @@ const ResetPassword = () => {
   };
 
   const handleResetPassword = async () => {
+    if (!token) {
+      toast.error("Reset token is missing. Please use the link from your email.");
+      return;
+    }
+
     try {
-      const { data, status, message } = await resetPassword(formData.password);
+      const { data, status, message } = await resetPassword(token, formData.password);
       toast.success(
         "Password reset successfully! You can now log in with your new password."
       );
@@ -249,6 +256,15 @@ const ResetPassword = () => {
                 strong and unique.
               </p>
 
+              {!token && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-[10px]">
+                  <p className="text-red-700 text-sm">
+                    Reset token is missing. Please use the link from your email
+                    to reset your password.
+                  </p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                   <input
@@ -366,8 +382,8 @@ const ResetPassword = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-700 text-white py-2 rounded-[10px] font-semibold hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-[#011F72] flex items-center justify-center gap-2"
-                  disabled={isLoading}
+                  className="w-full bg-blue-700 text-white py-2 rounded-[10px] font-semibold hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-[#011F72] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading || !token}
                 >
                   {isLoading && (
                     <svg

@@ -312,12 +312,16 @@ export const forgotPassword = async (
 };
 
 /**
- * Reset password with new password
+ * Reset password with token and new password
  */
 export const resetPassword = async (
-  password: string
+  token: string,
+  newPassword: string
 ): Promise<ApiResponse<any>> => {
-  return apiRequest("/api/auth/reset-password", "POST", { password });
+  return apiRequest("/api/auth/reset-password", "POST", {
+    token,
+    newPassword,
+  });
 };
 
 /**
