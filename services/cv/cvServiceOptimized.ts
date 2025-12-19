@@ -685,7 +685,7 @@ class OptimizedCVService {
     if (!cvId) throw new Error("CV must be created first");
 
     const res = await this.apiRequest<any>(
-      `/api/cv/ai/experience?cvId=${encodeURIComponent(cvId)}`,
+      `/api/cv/ai/work-entry-generate?cvId=${encodeURIComponent(cvId)}`,
       "POST",
       {
         cvId,
