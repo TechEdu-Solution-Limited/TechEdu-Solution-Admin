@@ -3,11 +3,19 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   cvService,
-  CreateCVRequest,
   AiSummary,
   SkillsAssessment,
   ExperienceAIResult,
 } from "@/services/cv/cvServiceOptimized";
+
+// Optional: define a UI-facing context type
+type ExperienceGenContext = {
+  targetRole: string;
+  industry: string;
+  startDate?: string; // "YYYY-MM" or "YYYY-MM-DD"
+  endDate?: string; // omit if still current
+  targetCompany?: string;
+};
 
 export function useCVSimplified() {
   const [cvId, setCvId] = useState<string | undefined>(undefined);
@@ -132,16 +140,15 @@ export function useCVSimplified() {
       sections: any[],
       providedCvId?: string,
       template?: string
-    ): Promise<string> => {
+    ): Promise<void> => {
       const currentCvId = providedCvId || cvId;
-
       try {
         console.log("🔄 saveDraft called with:", {
           cvId: currentCvId,
           draftId,
           hasSections: sections.length,
           providedCvId: !!providedCvId,
-          template,
+          template: template,
         });
 
         // Ensure we have a cvId before saving draft
@@ -154,36 +161,27 @@ export function useCVSimplified() {
           cvId: currentCvId,
           working: sections,
           isDirty: true,
-          template,
-          draftId, // Include existing draftId to update instead of create
+          template: template,
+          draftId: draftId, // Include existing draftId to update instead of create
         };
 
         console.log("📤 Sending draft data:", draftData);
         console.log("🔧 Will use PATCH endpoint:", !!draftId);
-
-        // cvService.createOrUpdateDraft returns the draft id
         const newDraftId = await cvService.createOrUpdateDraft(draftData);
         console.log("📥 Received draft ID:", newDraftId);
 
-        // Keep state/storage in sync every time
-        if (newDraftId !== draftId) {
-          console.log("💾 Setting draftId:", newDraftId);
+        // Store the draftId for future updates
+        if (!draftId) {
+          console.log("💾 Setting new draftId:", newDraftId);
           setDraftId(newDraftId);
-        }
-
-        // Persist for refresh/restore
-        try {
-          sessionStorage.setItem(`cvDraftId:${currentCvId}`, newDraftId);
-        } catch {}
-        try {
+          // Save to localStorage for persistence across page reloads
           localStorage.setItem("cvDraftId", newDraftId);
-        } catch {}
+        } else {
+          console.log("🔄 Updating existing draft:", draftId);
+        }
 
         setLastSaved(new Date());
         console.log("✅ Draft saved/updated successfully:", newDraftId);
-
-        // 🔁 return the id so callers can use it
-        return newDraftId;
       } catch (error) {
         console.error("❌ Failed to save draft:", error);
         throw error; // Re-throw to handle in calling component
@@ -242,21 +240,28 @@ export function useCVSimplified() {
   );
 
   // Generate AI Experience
+  // Generate AI Experience
   const generateExperience = useCallback(
-    async (params: {
-      startDate: string;
-      endDate?: string;
-      targetJobTitle: string;
-      targetCompany: string;
-      targetIndustry: string;
-    }): Promise<ExperienceAIResult | null> => {
+    async (
+      context: ExperienceGenContext
+    ): Promise<ExperienceAIResult | null> => {
       if (!cvId) {
         console.warn("⚠️ No cvId available for AI experience generation");
         return null;
       }
+
       try {
-        const res = await cvService.generateExperience(cvId, params);
-        return res; // { description, achievements } (and legacy fields if present)
+        // Map UI shape -> service API shape
+        const payload = {
+          targetJobTitle: context.targetRole,
+          targetIndustry: context.industry,
+          startDate: context.startDate,
+          endDate: context.endDate,
+          targetCompany: context.targetCompany,
+        };
+
+        const res = await cvService.generateExperience(cvId, payload);
+        return res; // { description, achievements }
       } catch (error) {
         console.error("Failed to generate experience:", error);
         return null;

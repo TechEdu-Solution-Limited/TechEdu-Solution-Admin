@@ -1,5 +1,5 @@
 // src/components/resume/CustomSectionRenderer.tsx
-import { CustomSection } from "@/types/cv";
+import { CustomSection } from "@/types/cv/index";
 
 interface Props {
   heading: string;

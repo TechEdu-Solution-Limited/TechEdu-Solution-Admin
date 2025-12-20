@@ -1,7 +1,7 @@
 "use client";
 
 import { Trophy } from "lucide-react";
-import { Award as AwardType } from "@/types/cv";
+import { Award as AwardType } from "@/types/cv/index";
 import GenericSection from "./GenericSection";
 import RichTextEditor from "./RichTextEditor";
 

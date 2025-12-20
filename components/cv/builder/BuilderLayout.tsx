@@ -11,7 +11,7 @@ import SimpleTemplateConfig from "./SimpleTemplateConfig";
 import { SectionList } from "./SectionList";
 import { SectionModal } from "./modals/SectionModal";
 import { SectionContentRenderer } from "./SectionContentRenderer";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 
 interface BuilderLayoutProps {
   children: ReactNode;
@@ -99,7 +99,6 @@ interface BuilderLayoutProps {
   onUpdateInterest?: (id: string, field: string, value: any) => void;
   onImageUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage?: () => void;
-  onShowAIConsent?: () => void;
   aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
   onCheckExistingConsent?: (
     cvId: string
@@ -108,6 +107,7 @@ interface BuilderLayoutProps {
     sectionId: string,
     updates: Partial<ResumeSection>
   ) => void;
+  onShowAIConsent?: () => void;
 }
 
 export default function BuilderLayout(props: BuilderLayoutProps) {
@@ -187,6 +187,7 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
     aiConsent,
     onCheckExistingConsent,
     onPreviewClick, // <— preview handler from parent
+    previewData,
   } = props;
 
   const [template, setTemplate] = useState<TemplateLayout | null>(null);
@@ -260,8 +261,13 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
     [handleCloseSectionModal, onSaveDraft, onCreateCV, onUpdateCV, mode]
   );
 
+  // forward to parent (let parent show the modal)
+  const openConsent = useCallback(() => {
+    onShowAIConsent?.();
+  }, [onShowAIConsent]);
+
   return (
-    <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-900 dark:to-gray-800">
+    <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50/30">
       <ResumeNav
         onChangeTemplate={onChangeTemplate}
         builderMode={builderMode}
@@ -334,8 +340,8 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
       )}
 
       {/* MAIN: single column (preview removed) */}
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 gap-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-16 w-full">
+        <div className="grid grid-cols-2 gap-6">
           <div className="overflow-y-auto relative">
             {builderMode === "content" ? (
               <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -403,7 +409,6 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
                         break;
                     }
                   }}
-                  onShowAIConsent={onShowAIConsent}
                   aiConsent={aiConsent}
                   cvId={cvId}
                   onCheckExistingConsent={onCheckExistingConsent}
@@ -454,9 +459,24 @@ export default function BuilderLayout(props: BuilderLayoutProps) {
                   onImageUpload={onImageUpload}
                   onRemoveImage={onRemoveImage}
                   onUpdateSection={onUpdateSection}
+                  onShowAIConsent={() => {
+                    if (!aiConsent?.aiTraining) openConsent();
+                  }}
                 />
               )}
             </SectionModal>
+          </div>
+          <div className="hidden lg:block">
+            <div
+              className="overflow-hidden cursor-zoom-in p-0"
+              onClick={onPreviewClick}
+            >
+              {previewData ? (
+                <div className="transform scale-[1] origin-top-left h-full overflow-hidden">
+                  {previewData}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

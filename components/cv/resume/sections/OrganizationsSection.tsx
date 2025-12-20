@@ -1,5 +1,5 @@
 // src/components/resume/OrganizationsSection.tsx
-import { Organization } from "@/types/cv";
+import { Organization } from "@/types/cv/index";
 
 interface Props {
   heading: string;

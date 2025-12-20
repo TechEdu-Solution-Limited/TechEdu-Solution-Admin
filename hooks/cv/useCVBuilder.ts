@@ -1,3 +1,7 @@
+// hooks/cv/useCVBuilder.ts
+
+"use client";
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { CVBuilderState, AutoSaveConfig } from "@/types/cv/cv-builder";
 import {
@@ -15,7 +19,7 @@ import {
   Template,
   Section,
   ResumeSection,
-} from "@/types/cv";
+} from "@/types/cv/index";
 import {
   User,
   Briefcase,
@@ -291,19 +295,19 @@ export function useCVBuilder({
         localStorage.setItem("cv-builder-state", JSON.stringify(state));
 
         // Also save to API as draft - use a simpler approach for auto-save
-        const request = {
-          title: `${state.personalInfo.firstName} ${state.personalInfo.lastName} - CV Draft`,
-          sections: state.resumeData.map((section: any) => ({
-            type: section.type,
-            heading: section.heading,
-            visible: section.visible,
-            data: section.data,
-          })),
-          consent: {
-            aiProcessing: false,
-            aiTraining: false,
-          },
-        };
+        // const request = {
+        //   title: `${state.personalInfo.firstName} ${state.personalInfo.lastName} - CV Draft`,
+        //   sections: state.resumeData.map((section: any) => ({
+        //     type: section.type,
+        //     heading: section.heading,
+        //     visible: section.visible,
+        //     data: section.data,
+        //   })),
+        //   consent: {
+        //     aiProcessing: false,
+        //     aiTraining: false,
+        //   },
+        // };
 
         // Auto-save CV and draft - only if we have a cvId
         if (cvApi.cvId) {

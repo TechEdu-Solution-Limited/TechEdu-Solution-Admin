@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
-import { Project } from "@/types/cv";
+import { Project } from "@/types/cv/index";
 import GenericSection from "./GenericSection";
 import RichTextEditor from "./RichTextEditor";
 

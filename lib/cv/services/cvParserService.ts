@@ -10,7 +10,7 @@ import {
   Project,
   Interest,
   ProfessionalSummary,
-} from "@/types/cv";
+} from "@/types/cv/index";
 
 export interface ParsedCVData {
   personalInfo: PersonalInfo;

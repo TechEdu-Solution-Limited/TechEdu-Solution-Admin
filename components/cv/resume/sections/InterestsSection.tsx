@@ -1,6 +1,6 @@
 // src/components/resume/InterestsSection.tsx
 import React from "react";
-import { Interest } from "@/types/cv";
+import { Interest } from "@/types/cv/index";
 
 interface Props {
   heading: string;

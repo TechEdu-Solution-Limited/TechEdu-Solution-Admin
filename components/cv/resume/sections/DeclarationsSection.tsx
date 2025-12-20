@@ -1,6 +1,6 @@
 // components/resume/sections/DeclarationsSection.tsx
 import React from "react";
-import { Declaration } from "@/types/cv";
+import { Declaration } from "@/types/cv/index";
 
 interface Props {
   heading: string;

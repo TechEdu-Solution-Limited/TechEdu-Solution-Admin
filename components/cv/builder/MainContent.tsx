@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Section } from "@/types/cv";
+import { Section } from "@/types/cv/index";
 
 interface MainContentProps {
   children: ReactNode;

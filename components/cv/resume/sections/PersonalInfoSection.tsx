@@ -1,5 +1,5 @@
 // src/components/resume/PersonalInfoSection.tsx
-import { PersonalInfo } from "@/types/cv";
+import { PersonalInfo } from "@/types/cv/index";
 
 interface Props {
   heading: string;

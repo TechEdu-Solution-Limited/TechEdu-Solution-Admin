@@ -1,7 +1,7 @@
 "use client";
 
 import { Languages, Trash2 } from "lucide-react";
-import { Language } from "@/types/cv";
+import { Language } from "@/types/cv/index";
 
 interface LanguagesSectionProps {
   languages: Language[];

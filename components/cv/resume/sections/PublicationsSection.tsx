@@ -1,5 +1,5 @@
 // src/components/resume/PublicationsSection.tsx
-import { Publication } from "@/types/cv";
+import { Publication } from "@/types/cv/index";
 
 interface Props {
   heading: string;

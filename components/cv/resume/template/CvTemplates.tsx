@@ -9,7 +9,7 @@
 import * as React from "react";
 import { sectionRenderers } from "../sections/SectionRenderers";
 // If your types live elsewhere, adjust this import:
-import type { ResumeSection } from "@/types/cv";
+import type { ResumeSection } from "@/types/cv/index";
 
 /**
  * Shared style contract for templates. Your existing sections already accept a `templateStyles`

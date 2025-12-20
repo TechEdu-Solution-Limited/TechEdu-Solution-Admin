@@ -1,7 +1,7 @@
 "use client";
 
 import { Heart, Trash2 } from "lucide-react";
-import { Interest } from "@/types/cv";
+import { Interest } from "@/types/cv/index";
 
 interface InterestsSectionProps {
   interests: Interest[];

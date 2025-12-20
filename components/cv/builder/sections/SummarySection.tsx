@@ -1,18 +1,18 @@
-// src/components/builder/sections/SummarySection.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
-import { ProfessionalSummary, PersonalInfo } from "@/types/cv";
+import { ProfessionalSummary, PersonalInfo } from "@/types/cv/index";
 import { Button } from "@/components/ui/button";
 import { cvService } from "@/services/cv/cvServiceOptimized";
+import { aiConsentService } from "@/services/auth/aiConsentService"; // ⬅️ NEW
 import QuillTextEditor, { EditorApi } from "./QuillTextEditor";
 
 interface ProfessionalSummarySectionProps {
   professionalSummary: ProfessionalSummary;
   personalInfo: PersonalInfo;
   onUpdateProfessionalSummary: (updates: Partial<ProfessionalSummary>) => void;
-  onShowAIConsent?: () => void;
+  onShowAIConsent?: () => void; // training-only modal
   aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
   cvId?: string;
   onCheckExistingConsent?: (
@@ -53,6 +53,33 @@ function buildHtml({
   return blocks.join("");
 }
 
+// Small helper to detect the backend "processing not permitted" error
+function isProcessingNotPermitted(err: any): boolean {
+  try {
+    const code = err?.error?.code || err?.code;
+    const details: string[] =
+      err?.error?.details ||
+      err?.details ||
+      err?.response?.data?.error?.details ||
+      [];
+    const msg = (err?.message || err?.error?.message || "")
+      .toString()
+      .toLowerCase();
+    return (
+      (code === "VALIDATION_ERROR" &&
+        (details || []).some((d) =>
+          (d || "")
+            .toString()
+            .toLowerCase()
+            .includes("processing not permitted")
+        )) ||
+      msg.includes("processing not permitted")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function ProfessionalSummarySection({
   professionalSummary,
   personalInfo,
@@ -61,7 +88,7 @@ export default function ProfessionalSummarySection({
   aiConsent,
   cvId,
 }: ProfessionalSummarySectionProps) {
-  // --- Editor state (controlled) ---
+  // --- Editor state ---
   const incoming = professionalSummary?.summary || "";
   const [localSummary, setLocalSummary] = useState<string>(incoming);
   const [isLocalDirty, setIsLocalDirty] = useState(false);
@@ -90,20 +117,20 @@ export default function ProfessionalSummarySection({
   const [ai, setAi] = useState<AISummary | null>(null);
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [insertMode, setInsertMode] = useState<"append" | "replace">("append");
-  // const editorRef = useRef<QuillTextEditorHandle | null>(null);
 
   // default mode: replace when editor empty, else append
   useEffect(() => {
     const empty = normalizeHtml(localSummary).length === 0;
     setInsertMode(empty ? "replace" : "append");
-  }, []); // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectedBullets = useMemo(() => {
     if (!ai?.bullets?.length) return [];
     return ai.bullets.filter((_, idx) => !!selected[idx]);
   }, [ai, selected]);
 
-  // --- Insert helpers (update editor + notify parent) ---
+  // --- Insert helpers ---
   const commitHtml = (html: string, mode: "append" | "replace") => {
     let next = html;
     if (mode === "append" && normalizeHtml(localSummary).length) {
@@ -115,52 +142,7 @@ export default function ProfessionalSummarySection({
     onUpdateProfessionalSummary({ summary: next });
   };
 
-  const insertContent = () => {
-    if (!ai?.content?.trim()) return;
-    const html = buildHtml({
-      content: ai.content,
-      bullets: [],
-      includeContent: true,
-      includeBullets: false,
-    });
-    if (html) commitHtml(html, insertMode);
-  };
-
-  const addSelectedBullets = () => {
-    const bullets = selectedBullets;
-    if (!bullets.length) return;
-    const html = buildHtml({
-      content: undefined,
-      bullets,
-      includeContent: false,
-      includeBullets: true,
-    });
-    if (html) commitHtml(html, insertMode);
-  };
-
-  const addAllBullets = () => {
-    const bullets = ai?.bullets ?? [];
-    if (!bullets.length) return;
-    const html = buildHtml({
-      content: undefined,
-      bullets,
-      includeContent: false,
-      includeBullets: true,
-    });
-    if (html) commitHtml(html, insertMode);
-  };
-
-  const replaceWithAll = () => {
-    const html = buildHtml({
-      content: ai?.content,
-      bullets: ai?.bullets,
-      includeContent: !!ai?.content?.trim(),
-      includeBullets: !!(ai?.bullets && ai.bullets.length),
-    });
-    if (html) commitHtml(html, "replace");
-  };
-
-  // --- AI request ---
+  // --- AI request (training-gated; processing auto-accepted) ---
   const generateAISuggestion = async () => {
     if (!personalInfo?.targetedJobTitle?.trim()) {
       alert("Please fill in your targeted job title in Personal Information.");
@@ -171,28 +153,54 @@ export default function ProfessionalSummarySection({
       return;
     }
 
+    // 1) Ensure processing consent (silent, idempotent)
+    await aiConsentService.acceptProcessing();
+
+    // 2) Gate on aiTraining only (UI/flow requirement)
     try {
-      const cv = await cvService.getCV(String(cvId));
-      const ok = !!cv?.consent?.aiProcessing && !!cv?.consent?.aiTraining;
-      if (!ok && !(aiConsent?.aiProcessing && aiConsent?.aiTraining)) {
-        onShowAIConsent ? onShowAIConsent() : alert("AI consent is required.");
+      const cv = await cvService.getCV(String(cvId)).catch(() => null);
+      const trainingAllowed =
+        !!cv?.consent?.aiTraining || !!aiConsent?.aiTraining;
+      if (!trainingAllowed) {
+        onShowAIConsent?.();
         return;
       }
     } catch {
-      if (!aiConsent?.aiProcessing || !aiConsent?.aiTraining) {
-        onShowAIConsent ? onShowAIConsent() : alert("AI consent is required.");
+      if (!aiConsent?.aiTraining) {
+        onShowAIConsent?.();
         return;
       }
     }
 
+    // 3) Call AI (with smart retry on processing error)
     setIsGeneratingAI(true);
     try {
-      // NEW: service now returns { content, bullets }
-      const { content = "", bullets = [] } = await cvService.generateSummary(
-        String(cvId),
-        "professional and concise"
-      );
+      const run = async () => {
+        return await cvService.generateSummary(
+          String(cvId),
+          "professional and concise"
+        );
+      };
 
+      let result: { content?: string; bullets?: string[] } | null = null;
+
+      try {
+        result = await run();
+      } catch (err1: any) {
+        if (isProcessingNotPermitted(err1)) {
+          // Accept & retry once
+          const ok = await aiConsentService.acceptProcessing();
+          if (ok) {
+            result = await run();
+          } else {
+            throw err1;
+          }
+        } else {
+          throw err1;
+        }
+      }
+
+      const { content = "", bullets = [] } = result || {};
       setAi({ content, bullets });
       setSelected({});
 
@@ -203,7 +211,6 @@ export default function ProfessionalSummarySection({
         return;
       }
 
-      // Build HTML for Quill
       const html = buildHtml({
         content,
         bullets,
@@ -211,11 +218,9 @@ export default function ProfessionalSummarySection({
         includeBullets: hasBullets,
       });
 
-      // Replace if editor empty; otherwise honor toggle
       const editorIsEmpty = normalizeHtml(localSummary).length === 0;
       const mode: "append" | "replace" = editorIsEmpty ? "replace" : insertMode;
 
-      // 1) Update controlled state FIRST (prevents overwrite by child effect)
       let next = html;
       if (mode === "append" && normalizeHtml(localSummary).length) {
         next = `${localSummary}\n<p></p>\n${html}`;
@@ -225,7 +230,6 @@ export default function ProfessionalSummarySection({
       onUpdateProfessionalSummary({ summary: next });
       if (mode === "replace") setInsertMode("append");
 
-      // 2) Paste into Quill on the next frame (avoids race with value-sync effect)
       requestAnimationFrame(() => {
         const api = editorApiRef.current;
         if (!api || !api.isReady()) {
@@ -238,7 +242,11 @@ export default function ProfessionalSummarySection({
       });
     } catch (e) {
       console.error("AI summary error:", e);
-      alert("Failed to generate AI summary. Please try again.");
+      alert(
+        isProcessingNotPermitted(e)
+          ? "AI processing consent is required and could not be set. Please try again."
+          : "Failed to generate AI summary. Please try again."
+      );
     } finally {
       setIsGeneratingAI(false);
     }
@@ -301,8 +309,8 @@ export default function ProfessionalSummarySection({
                   ? "Please fill in your targeted job title first"
                   : !cvId
                   ? "CV must be created first"
-                  : !aiConsent?.aiProcessing || !aiConsent?.aiTraining
-                  ? "AI consent required - clicking will prompt for consent"
+                  : aiConsent && !aiConsent.aiTraining
+                  ? "AI training consent required, clicking will prompt"
                   : "Generate AI suggestions"
               }
             >
@@ -321,7 +329,6 @@ export default function ProfessionalSummarySection({
           </div>
         </div>
 
-        {/* Quill editor */}
         <QuillTextEditor
           value={localSummary}
           onChange={(value) => {

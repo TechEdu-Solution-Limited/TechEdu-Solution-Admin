@@ -20,7 +20,7 @@ import {
   CustomSection,
   ProfessionalSummary,
   ResumeSection,
-} from "@/types/cv";
+} from "@/types/cv/index";
 import { TemplateLayout } from "@/types/cv/template";
 
 // Helper function to get persisted data from secure draft

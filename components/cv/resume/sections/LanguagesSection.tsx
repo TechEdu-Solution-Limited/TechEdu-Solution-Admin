@@ -1,5 +1,5 @@
 // src/components/resume/LanguagesSection.tsx
-import { Language } from "@/types/cv";
+import { Language } from "@/types/cv/index";
 
 interface Props {
   heading: string;

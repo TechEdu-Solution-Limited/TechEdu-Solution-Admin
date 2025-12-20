@@ -9,7 +9,10 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
-import { uploadCV, UploadResult } from "@/lib/firebase/uploadService";
+import { STORAGE_FOLDERS, uploadFileToFirebase } from "@/lib/firebase";
+import { UploadResult } from "firebase/storage";
+
+type TemplateKey = "classic" | "modern" | "minimal" | "elegant";
 
 interface CVUploadModalProps {
   isOpen: boolean;
@@ -17,10 +20,12 @@ interface CVUploadModalProps {
   onUploadSuccess: (result: UploadResult & { file: File }) => void;
 }
 
+type Phase = "idle" | "uploading" | "ingesting" | "success" | "error";
+
 interface UploadStatus {
-  status: "idle" | "uploading" | "success" | "error";
+  status: Phase;
   message: string;
-  progress: number;
+  progress: number; // only used during "uploading"
 }
 
 export default function CVUploadModal({
@@ -34,6 +39,14 @@ export default function CVUploadModal({
     message: "",
     progress: 0,
   });
+
+  // NEW: request-body controls
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<TemplateKey>("classic");
+  const [aiSegment, setAiSegment] = useState(true);
+  const [createDraft, setCreateDraft] = useState(true);
+  const [redact, setRedact] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -77,7 +90,7 @@ export default function CVUploadModal({
         progress: 0,
       });
 
-      // Simulate progress updates
+      // Simulate visible progress while Firebase uploads
       const progressInterval = setInterval(() => {
         setUploadStatus((prev) => ({
           ...prev,
@@ -85,21 +98,68 @@ export default function CVUploadModal({
         }));
       }, 200);
 
-      const result = await uploadCV(file);
+      // 1) Upload to Firebase -> returns public download URL string
+      const fileUrl = await uploadFileToFirebase(
+        file,
+        STORAGE_FOLDERS.ATTACHMENTS,
+        "cvs"
+      );
 
       clearInterval(progressInterval);
 
+      // Show full upload completion
       setUploadStatus({
-        status: "success",
-        message: "CV uploaded successfully!",
+        status: "ingesting",
+        message: "Processing your CV (AI segmentation)…",
         progress: 100,
       });
 
-      // Wait a moment to show success message
+      // 2) Ingest via your API with EXACT body you requested
+      const res = await fetch("/api/cv/ingest-from-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: fileUrl,
+          template: selectedTemplate, // "classic" | "modern" | …
+          aiSegment,
+          createDraft,
+          redact,
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        throw new Error(msg || "Ingestion failed");
+      }
+
+      // If you need the response, you can parse it here:
+      // const data = await res.json();
+
+      setUploadStatus({
+        status: "success",
+        message: "CV uploaded and processed successfully!",
+        progress: 100,
+      });
+
+      // Give the user a brief success moment, then callback + close
       setTimeout(() => {
-        onUploadSuccess({ ...result, file });
-        onClose();
-      }, 1500);
+        // Keep the callback signature intact (drop-in safety).
+        // We pass a minimal object and cast to UploadResult to satisfy the type.
+        onUploadSuccess({
+          // These fields are not used by Firebase's UploadResult in your flow,
+          // but we keep the signature by casting.
+          ref: {} as any,
+          metadata: {} as any,
+          state: "success" as any,
+          task: {} as any,
+          bytesTransferred: 0 as any,
+          totalBytes: 0 as any,
+          // include original file for convenience
+          file,
+        } as unknown as UploadResult & { file: File });
+
+        handleClose();
+      }, 900);
     } catch (error) {
       setUploadStatus({
         status: "error",
@@ -128,8 +188,12 @@ export default function CVUploadModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      // role="dialog"
+      // aria-modal="true"
+    >
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -138,27 +202,76 @@ export default function CVUploadModal({
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[10px] transition-colors"
+            aria-label="Close"
           >
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Upload Area */}
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Request-body options */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Template
+              </label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) =>
+                  setSelectedTemplate(e.target.value as TemplateKey)
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[10px] bg-white dark:bg-gray-800 text-sm"
+              >
+                <option value="classic">Classic</option>
+                <option value="modern">Modern</option>
+                <option value="minimal">Minimal</option>
+                <option value="elegant">Elegant</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={aiSegment}
+                  onChange={(e) => setAiSegment(e.target.checked)}
+                />
+                AI segment content
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={createDraft}
+                  onChange={(e) => setCreateDraft(e.target.checked)}
+                />
+                Create draft
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={redact}
+                  onChange={(e) => setRedact(e.target.checked)}
+                />
+                Redact PII
+              </label>
+            </div>
+          </div>
+
+          {/* Upload Area / Status */}
           {uploadStatus.status === "idle" && (
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`
-                border-2 border-dashed rounded-[12px] p-8 text-center transition-all duration-300
-                ${
-                  isDragOver
-                    ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                }
-              `}
+              className={`border-2 border-dashed rounded-[12px] p-8 text-center transition-all duration-300 ${
+                isDragOver
+                  ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                  : "border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              }`}
             >
               <div className="space-y-4">
                 <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto">
@@ -192,16 +305,18 @@ export default function CVUploadModal({
             </div>
           )}
 
-          {/* Upload Status */}
-          {(uploadStatus.status === "uploading" ||
-            uploadStatus.status === "success" ||
-            uploadStatus.status === "error") && (
+          {uploadStatus.status !== "idle" && (
             <div className="space-y-6">
               {/* Status Icon */}
               <div className="flex justify-center">
                 {uploadStatus.status === "uploading" && (
                   <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
                     <Loader2 className="h-8 w-8 text-blue-600 dark:text-blue-400 animate-spin" />
+                  </div>
+                )}
+                {uploadStatus.status === "ingesting" && (
+                  <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-indigo-600 dark:text-indigo-400 animate-spin" />
                   </div>
                 )}
                 {uploadStatus.status === "success" && (
@@ -216,7 +331,7 @@ export default function CVUploadModal({
                 )}
               </div>
 
-              {/* Status Message */}
+              {/* Status Message + Progress */}
               <div className="text-center">
                 <h3
                   className={`text-lg font-semibold mb-2 ${
@@ -224,13 +339,14 @@ export default function CVUploadModal({
                       ? "text-green-600 dark:text-green-400"
                       : uploadStatus.status === "error"
                       ? "text-red-600 dark:text-red-400"
+                      : uploadStatus.status === "ingesting"
+                      ? "text-indigo-600 dark:text-indigo-400"
                       : "text-blue-600 dark:text-blue-400"
                   }`}
                 >
                   {uploadStatus.message}
                 </h3>
 
-                {/* Progress Bar */}
                 {uploadStatus.status === "uploading" && (
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
@@ -241,7 +357,7 @@ export default function CVUploadModal({
                 )}
               </div>
 
-              {/* Error Actions */}
+              {/* Error actions */}
               {uploadStatus.status === "error" && (
                 <div className="flex justify-center space-x-3">
                   <button
@@ -262,29 +378,34 @@ export default function CVUploadModal({
           )}
 
           {/* Info Section */}
-          <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]">
+          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]">
             <div className="flex items-start space-x-3">
               <FileText className="h-5 w-5 text-gray-500 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 <p className="font-medium mb-1">What happens next?</p>
                 <ul className="space-y-1 text-xs">
+                  <li>• Your CV is securely uploaded</li>
+                  <li>• We analyze and extract information from your CV</li>
                   <li>
-                    • Your CV will be securely uploaded and stored temporarily
+                    • You’ll edit the extracted data with your chosen template
                   </li>
                   <li>
-                    • Our AI will analyze and extract information from your CV
-                  </li>
-                  <li>
-                    • You'll be able to select a template and edit the extracted
-                    data
-                  </li>
-                  <li>
-                    • Uploaded files are automatically deleted after 7 days
+                    • Uploaded files may be deleted after a retention period
                   </li>
                 </ul>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={handleClose}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[10px]"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

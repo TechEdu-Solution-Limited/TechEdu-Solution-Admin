@@ -66,6 +66,7 @@ export default function CVsPage() {
   const fetchCVs = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = getTokenFromCookies();
       if (!token) {
         throw new Error("Authentication token not found");
@@ -301,7 +302,7 @@ export default function CVsPage() {
     );
   }
 
-  if (error) {
+  if (error && cvs.length) {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">

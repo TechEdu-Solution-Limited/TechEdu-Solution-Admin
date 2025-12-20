@@ -85,7 +85,6 @@ export default function QuillTextEditor({
       // initial content from prop
       externalPasteRef.current = true;
       programmaticRef.current = true;
-      // Use object form to satisfy Quill v2 typings ({ html, text })
       const initialDelta = quill.clipboard.convert({ html: value || "" });
       quill.setContents(initialDelta, "silent");
       programmaticRef.current = false;

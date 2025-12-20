@@ -1,5 +1,5 @@
 // src/components/resume/SummarySection.tsx
-import { ProfessionalSummary } from "@/types/cv";
+import { ProfessionalSummary } from "@/types/cv/index";
 
 interface Props {
   heading: string;

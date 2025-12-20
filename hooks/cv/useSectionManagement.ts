@@ -9,7 +9,7 @@ import {
   Project,
   Interest,
   CustomSection,
-} from "@/types/cv";
+} from "@/types/cv/index";
 import { SectionManager } from "@/types/cv/cv-builder";
 
 interface UseSectionManagementProps {

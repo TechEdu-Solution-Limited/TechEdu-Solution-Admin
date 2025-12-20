@@ -1,7 +1,7 @@
 "use client";
 
 import { GraduationCap } from "lucide-react";
-import { Education } from "@/types/cv";
+import { Education } from "@/types/cv/index";
 import AccordionSection from "./AccordionSection";
 
 interface EducationSectionProps {

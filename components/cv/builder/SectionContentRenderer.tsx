@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { ResumeSection, Skill } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import PersonalInfoSection from "./sections/PersonalInfoSection";
 import ExperienceSection from "./sections/ExperienceSection";
 import EducationSection from "./sections/EducationSection";
@@ -13,6 +13,7 @@ import AwardsSection from "./sections/AwardsSection";
 import ProjectsSection from "./sections/ProjectsSection";
 import InterestsSection from "./sections/InterestsSection";
 import CertificationsSection from "./sections/CertificationsSection";
+import { ShowAIConsent } from "@/types/cv/consent"; // ← NEW
 
 interface SectionContentRendererProps {
   section: ResumeSection;
@@ -23,7 +24,9 @@ interface SectionContentRendererProps {
     updates: Partial<ResumeSection>
   ) => void;
 
-  onShowAIConsent?: () => void;
+  // CHANGE: accept callable that optionally takes a continuation
+  onShowAIConsent?: ShowAIConsent; // ← UPDATED
+
   aiConsent?: { aiProcessing: boolean; aiTraining: boolean } | null;
   cvId?: string;
   onCheckExistingConsent?: (
@@ -161,7 +164,6 @@ export function SectionContentRenderer({
       );
 
     case "skills":
-      // ✅ Make Skills behave like Languages: pass through props directly
       return (
         <SkillsSection
           skills={skills}

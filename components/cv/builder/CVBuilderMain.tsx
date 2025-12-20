@@ -30,7 +30,7 @@ import SimplePreviewModal from "@/components/cv/builder/modals/SimplePreviewModa
 import JobMatchScore from "./JobMatchScore";
 import { useCVBuilder } from "@/hooks/cv/useCVBuilder";
 import { CVBuilderProps } from "@/types/cv/cv-builder";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import {
   useOnboardingTour,
   CVBuilderTourSteps,
@@ -45,6 +45,8 @@ import VersionManager from "./VersionManager";
 import SharingPanel from "./SharingPanel";
 import JobBoardIntegration from "./JobBoardIntegration";
 import { SectionArrangement } from "./SectionArrangement";
+import { cvService } from "@/services/cv/cvServiceOptimized";
+import { ShowAIConsent } from "@/types/cv/consent";
 
 export default function CVBuilderMain({
   initialState,
@@ -58,16 +60,46 @@ export default function CVBuilderMain({
 
   // AI Consent Modal state
   const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [afterConsent, setAfterConsent] = useState<(() => void) | null>(null);
 
-  const handleConsentAccept = (consent: {
-    aiProcessing: boolean;
-    aiTraining: boolean;
-  }) => {
-    // TODO: Save consent to secure draft API instead of localStorage
-    // This will be implemented with the useSecureDraft hook
-    console.log("AI consent would be saved to secure draft:", consent);
-    setShowAIConsentModal(false);
-    console.log("Consent accepted:", consent);
+  // open consent (optionally with continuation)
+  const openConsent: ShowAIConsent = (onAccepted?: () => void) => {
+    if (onAccepted) setAfterConsent(() => onAccepted);
+    setShowAIConsentModal(true);
+  };
+
+  // CVBuilderMain.tsx
+  const handleConsentAccept = async (consent?: { aiTraining: boolean }) => {
+    try {
+      const accepted = !!consent?.aiTraining;
+
+      // Only update aiTraining (aiProcessing is default true)
+      if (cvApi && cvApi.cvId) {
+        await cvApi.updateCV(state.personalInfo, state.resumeData, {
+          aiTraining: accepted,
+        });
+      } else if (cvApi) {
+        const newId = await cvApi.createCV(
+          state.personalInfo,
+          state.resumeData,
+          { aiTraining: accepted },
+          state.selectedTemplate
+        );
+        console.log("Created CV for consent, cvId:", newId);
+      }
+    } catch (error) {
+      console.error("Failed to persist AI training consent:", error);
+    } finally {
+      setShowAIConsentModal(false);
+      // Continue pending action only if accepted
+      if (consent?.aiTraining && afterConsent) {
+        const cont = afterConsent;
+        setAfterConsent(null);
+        cont();
+      } else {
+        setAfterConsent(null);
+      }
+    }
   };
 
   const {
@@ -205,259 +237,6 @@ export default function CVBuilderMain({
     },
     [state.resumeData, updateState]
   );
-
-  // Load dummy data handler
-  const handleLoadDummyData = () => {
-    const dummyData = generateDummyData();
-    updateState({
-      personalInfo: dummyData.personalInfo,
-      professionalSummary: dummyData.professionalSummary,
-      experiences: dummyData.experiences,
-      educations: dummyData.educations,
-      skills: dummyData.skills,
-      languages: dummyData.languages,
-      certifications: dummyData.certifications,
-      awards: dummyData.awards,
-      projects: dummyData.projects,
-      interests: dummyData.interests,
-      resumeData: [
-        {
-          id: "personal-info",
-          type: "personal-info",
-          data: dummyData.personalInfo,
-          heading: "Personal Information",
-          visible: true,
-        },
-        {
-          id: "education",
-          type: "education",
-          data: dummyData.educations,
-          heading: "Education",
-          visible: true,
-        },
-        {
-          id: "work-experience",
-          type: "work-experience",
-          data: dummyData.experiences,
-          heading: "Work Experience",
-          visible: true,
-        },
-        {
-          id: "skills",
-          type: "skills",
-          data: dummyData.skills,
-          heading: "Skills",
-          visible: true,
-        },
-        {
-          id: "professional-summary",
-          type: "professional-summary",
-          data: dummyData.professionalSummary,
-          heading: "Professional Summary",
-          visible: true,
-        },
-        {
-          id: "languages",
-          type: "languages",
-          data: dummyData.languages,
-          heading: "Languages",
-          visible: true,
-        },
-        {
-          id: "certifications",
-          type: "certifications",
-          data: dummyData.certifications,
-          heading: "Certifications",
-          visible: true,
-        },
-        {
-          id: "awards",
-          type: "awards",
-          data: dummyData.awards,
-          heading: "Awards",
-          visible: true,
-        },
-        {
-          id: "projects",
-          type: "projects",
-          data: dummyData.projects,
-          heading: "Projects",
-          visible: true,
-        },
-        {
-          id: "interests",
-          type: "interests",
-          data: dummyData.interests,
-          heading: "Interests",
-          visible: true,
-        },
-      ],
-    });
-  };
-
-  // Generate dummy data for template previews
-  const generateDummyData = () => {
-    return {
-      personalInfo: {
-        id: "personal-info",
-        firstName: "John",
-        lastName: "Doe",
-        targetedJobTitle: "Senior Software Engineer",
-        email: "john.doe@email.com",
-        phone: "+1 (555) 123-4567",
-        location: "San Francisco, CA",
-        linkedin: "linkedin.com/in/johndoe",
-        github: "github.com/johndoe",
-        website: "johndoe.dev",
-        image:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-      },
-      professionalSummary: {
-        id: "professional-summary",
-        summary:
-          "Experienced software developer with 5+ years of expertise in building scalable web applications using React, Node.js, and cloud technologies. Passionate about creating user-friendly solutions and leading cross-functional teams to deliver high-quality products.",
-      },
-      experiences: [
-        {
-          id: "exp-1",
-          position: "Senior Software Engineer",
-          company: "TechCorp Inc.",
-          startDate: "2021-01",
-          endDate: "2024-01",
-          location: "San Francisco, CA",
-          description:
-            "<ul><li>Led development of microservices architecture serving 1M+ users</li><li>Mentored 3 junior developers and improved team productivity by 40%</li><li>Implemented CI/CD pipelines reducing deployment time by 60%</li><li>Collaborated with product team to define technical requirements</li></ul>",
-        },
-        {
-          id: "exp-2",
-          position: "Full Stack Developer",
-          company: "StartupXYZ",
-          startDate: "2019-06",
-          endDate: "2020-12",
-          location: "Remote",
-          description:
-            "<ul><li>Built responsive web applications using React and Node.js</li><li>Integrated third-party APIs and payment processing systems</li><li>Optimized database queries improving performance by 50%</li><li>Participated in agile development process and code reviews</li></ul>",
-        },
-      ],
-      educations: [
-        {
-          id: "edu-1",
-          degree: "Bachelor of Science in Computer Science",
-          institution: "University of California, Berkeley",
-          field: "Computer Science",
-          startDate: "2015-09",
-          endDate: "2019-05",
-          location: "Berkeley, CA",
-          gpa: "3.8/4.0",
-        },
-      ],
-      skills: [
-        {
-          id: "skill-1",
-          name: "JavaScript",
-          level: "Expert" as const,
-        },
-        { id: "skill-2", name: "React", level: "Advanced" as const },
-        { id: "skill-3", name: "Node.js", level: "Advanced" as const },
-        {
-          id: "skill-4",
-          name: "TypeScript",
-          level: "Expert" as const,
-        },
-        { id: "skill-5", name: "AWS", level: "Intermediate" as const },
-        { id: "skill-6", name: "Docker", level: "Intermediate" as const },
-        { id: "skill-7", name: "MongoDB", level: "Advanced" as const },
-        { id: "skill-8", name: "Git", level: "Expert" as const },
-      ],
-      languages: [
-        {
-          id: "lang-1",
-          name: "English",
-          level: "Native" as const,
-        },
-        {
-          id: "lang-2",
-          name: "Spanish",
-          level: "Professional" as const,
-        },
-        {
-          id: "lang-3",
-          name: "French",
-          level: "Conversational" as const,
-        },
-      ],
-      certifications: [
-        {
-          id: "cert-1",
-          name: "AWS Certified Solutions Architect",
-          issuer: "Amazon Web Services",
-          date: "2023-06",
-          credentialId: "AWS-SAA-123456",
-        },
-        {
-          id: "cert-2",
-          name: "Google Cloud Professional Developer",
-          issuer: "Google Cloud",
-          date: "2023-03",
-          credentialId: "GCP-PD-789012",
-        },
-      ],
-      awards: [
-        {
-          id: "award-1",
-          title: "Employee of the Year",
-          issuer: "TechCorp Inc.",
-          date: "2023-12",
-          description:
-            "Recognized for outstanding contribution to the microservices architecture project",
-        },
-        {
-          id: "award-2",
-          title: "Best Innovation Award",
-          issuer: "Tech Conference 2023",
-          date: "2023-09",
-          description: "Awarded for innovative CI/CD pipeline implementation",
-        },
-      ],
-      projects: [
-        {
-          id: "proj-1",
-          name: "E-commerce Platform",
-          description:
-            "Built a full-stack e-commerce platform using React, Node.js, and MongoDB. Features include user authentication, payment processing, and inventory management.",
-          technologies: ["React", "Node.js", "MongoDB", "Stripe API"],
-          url: "https://ecommerce-demo.com",
-          githubUrl: "https://github.com/johndoe/ecommerce-platform",
-        },
-        {
-          id: "proj-2",
-          name: "Task Management App",
-          description:
-            "Developed a collaborative task management application with real-time updates and team collaboration features.",
-          technologies: ["React", "Socket.io", "Express", "PostgreSQL"],
-          url: "https://taskmanager-demo.com",
-          githubUrl: "https://github.com/johndoe/task-manager",
-        },
-      ],
-      interests: [
-        {
-          id: "int-1",
-          name: "Machine Learning",
-          description: "Exploring AI and ML applications in web development",
-        },
-        {
-          id: "int-2",
-          name: "Open Source",
-          description: "Contributing to various open source projects",
-        },
-        {
-          id: "int-3",
-          name: "Photography",
-          description: "Digital photography and photo editing",
-        },
-      ],
-    };
-  };
 
   // Load saved state on component mount (optional override)
   useEffect(() => {
@@ -729,7 +508,8 @@ export default function CVBuilderMain({
               }
             }}
             onAddSection={() => updateState({ showAddSectionModal: true })}
-            onShowAIConsent={() => setShowAIConsentModal(true)}
+            onShowAIConsent={openConsent}
+            cvId={cvApi.cvId}
             personalInfo={state.personalInfo}
             professionalSummary={state.professionalSummary}
             experiences={state.experiences}
@@ -1020,7 +800,9 @@ export default function CVBuilderMain({
       <AIConsentModal
         isOpen={showAIConsentModal}
         onClose={() => setShowAIConsentModal(false)}
-        onAccept={handleConsentAccept}
+        onAccept={(c) => {
+          void handleConsentAccept(c);
+        }} // ⬅️ wrap async, discard promise
       />
     </ErrorBoundary>
   );

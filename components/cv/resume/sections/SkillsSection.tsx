@@ -1,5 +1,5 @@
 // src/components/resume/SkillsSection.tsx
-import { Skill } from "@/types/cv";
+import { Skill } from "@/types/cv/index";
 
 interface Props {
   heading: string;

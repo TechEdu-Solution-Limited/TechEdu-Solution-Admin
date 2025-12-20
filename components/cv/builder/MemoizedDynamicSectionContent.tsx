@@ -14,7 +14,7 @@ import {
   Project,
   Interest,
   CustomSection,
-} from "@/types/cv";
+} from "@/types/cv/index";
 
 interface MemoizedDynamicSectionContentProps {
   activeSection: string;
@@ -23,6 +23,7 @@ interface MemoizedDynamicSectionContentProps {
   onRemoveSection: (sectionType: string) => void;
   onAddSection: () => void;
   onShowAIConsent?: () => void;
+  cvId: string | undefined;
   personalInfo: PersonalInfo;
   professionalSummary: ProfessionalSummary;
   experiences: Experience[];

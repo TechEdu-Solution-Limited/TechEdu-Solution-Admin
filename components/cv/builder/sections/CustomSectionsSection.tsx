@@ -1,7 +1,7 @@
 "use client";
 
 import { Settings2 } from "lucide-react";
-import { CustomSection } from "@/types/cv";
+import { CustomSection } from "@/types/cv/index";
 import GenericSection from "./GenericSection";
 import RichTextEditor from "./RichTextEditor";
 

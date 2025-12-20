@@ -1,5 +1,9 @@
+// hooks/cv/useCV.ts
+
+"use client";
+
 import { useState, useCallback } from "react";
-import { ResumeSection } from "@/types/cv";
+import { ResumeSection } from "@/types/cv/index";
 import { mapResumePropsToSections } from "@/utils/cv/resumeSectionMapper";
 import {
   cvService,
@@ -99,10 +103,6 @@ export function useCV({
           visible: section.visible,
           data: section.data,
         })),
-        consent: {
-          aiProcessing: false,
-          aiTraining: false,
-        },
       };
 
       const response = await cvService.createCV(request);
@@ -147,19 +147,19 @@ export function useCV({
         projects,
       });
 
-      const request: CreateCVRequest = {
-        title: `${personalInfo.firstName} ${personalInfo.lastName} - CV Draft`,
-        sections: resumeData.map((section) => ({
-          type: section.type,
-          heading: section.heading,
-          visible: section.visible,
-          data: section.data,
-        })),
-        consent: {
-          aiProcessing: false,
-          aiTraining: false,
-        },
-      };
+      // const request: CreateCVRequest = {
+      //   title: `${personalInfo.firstName} ${personalInfo.lastName} - CV Draft`,
+      //   sections: resumeData.map((section) => ({
+      //     type: section.type,
+      //     heading: section.heading,
+      //     visible: section.visible,
+      //     data: section.data,
+      //   })),
+      //   consent: {
+      //     aiProcessing: false,
+      //     aiTraining: false,
+      //   },
+      // };
 
       const response = await cvService.createOrUpdateDraft({
         working: resumeData,

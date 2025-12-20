@@ -29,62 +29,90 @@ interface SimpleTemplateConfigProps {
   debounceMs?: number; // default 200
 }
 
-/** Enforce safe defaults (e.g., body size = 16) without mutating the source */
+/** Safely clone a template and fill only missing fields with sensible defaults.
+ *  Existing template values are preserved 1:1.
+ */
 function withDefaults(tmpl: TemplateLayout): TemplateLayout {
-  const t = tmpl.styles?.typography ?? ({} as any);
-  const spacing = tmpl.styles?.spacing ?? ({} as any);
-  const layout = tmpl.styles?.layout ?? ({} as any);
+  const styles = tmpl.styles ?? ({} as any);
+  const t = styles.typography ?? ({} as any);
+  const spacing = styles.spacing ?? ({} as any);
+  const layout = styles.layout ?? ({} as any);
+  const colors = styles.colors ?? ({} as any);
+
   return {
     ...tmpl,
     styles: {
-      ...tmpl.styles,
+      // keep any unknown style keys from the incoming template
+      ...(styles || {}),
       typography: {
+        ...t,
         fontFamily: t.fontFamily ?? "Helvetica, sans-serif",
-        bodySize: t.bodySize ?? 16, // default body size = 16px
-        headingSize: t.headingSize ?? 18,
-        lineHeight: t.lineHeight ?? 1.5,
+        bodySize: typeof t.bodySize === "number" ? t.bodySize : 16,
+        headingSize: typeof t.headingSize === "number" ? t.headingSize : 18,
+        lineHeight: typeof t.lineHeight === "number" ? t.lineHeight : 1.5,
         headingStyle: t.headingStyle ?? "bold",
         headingCase: t.headingCase ?? "uppercase",
         sectionHeadingStyle: t.sectionHeadingStyle ?? "bold",
         sectionHeadingCase: t.sectionHeadingCase ?? "uppercase",
-        nameSize: t.nameSize ?? 48,
-        titleSize: t.titleSize ?? 24,
-        smallSize: t.smallSize ?? 14,
-        contactSize: t.contactSize ?? t.bodySize ?? 16,
+        nameSize: typeof t.nameSize === "number" ? t.nameSize : 48,
+        titleSize: typeof t.titleSize === "number" ? t.titleSize : 24,
+        smallSize: typeof t.smallSize === "number" ? t.smallSize : 14,
+        contactSize:
+          typeof t.contactSize === "number"
+            ? t.contactSize
+            : typeof t.bodySize === "number"
+            ? t.bodySize
+            : 16,
       },
       spacing: {
-        padding: spacing.padding ?? 32,
-        margin: spacing.margin ?? 16,
-        sectionGap: spacing.sectionGap ?? 24,
-        horizontalMargin: spacing.horizontalMargin ?? 0,
-        verticalMargin: spacing.verticalMargin ?? 0,
-        entrySpacing: spacing.entrySpacing ?? 8,
-        headerPadding: spacing.headerPadding ?? 32,
+        ...spacing,
+        padding: typeof spacing.padding === "number" ? spacing.padding : 32,
+        margin: typeof spacing.margin === "number" ? spacing.margin : 16,
+        sectionGap:
+          typeof spacing.sectionGap === "number" ? spacing.sectionGap : 24,
+        horizontalMargin:
+          typeof spacing.horizontalMargin === "number"
+            ? spacing.horizontalMargin
+            : 0,
+        verticalMargin:
+          typeof spacing.verticalMargin === "number"
+            ? spacing.verticalMargin
+            : 0,
+        entrySpacing:
+          typeof spacing.entrySpacing === "number" ? spacing.entrySpacing : 8,
+        headerPadding:
+          typeof spacing.headerPadding === "number"
+            ? spacing.headerPadding
+            : 32,
       },
       layout: {
+        ...layout,
         pageWidth: layout.pageWidth ?? "210mm",
         pageHeight: layout.pageHeight ?? "297mm",
-        borderRadius: layout.borderRadius ?? 8,
+        borderRadius:
+          typeof layout.borderRadius === "number" ? layout.borderRadius : 8,
         shadow: layout.shadow ?? "0 4px 6px -1px rgba(0,0,0,0.1)",
-        headerBorder: layout.headerBorder ?? undefined,
+        headerBorder: layout.headerBorder ?? layout.headerBorder, // preserve if defined
         // NEW: page vertical padding + header behavior for PDF
         pagePaddingV:
-          typeof layout.pagePaddingV === "number" ? layout.pagePaddingV : 24, // px
+          typeof layout.pagePaddingV === "number" ? layout.pagePaddingV : 24,
         firstPageHeaderFlush:
           typeof layout.firstPageHeaderFlush === "boolean"
             ? layout.firstPageHeaderFlush
             : true,
       },
       colors: {
-        ...tmpl.styles.colors,
-        primary: tmpl.styles.colors.primary ?? "#1e3a8a",
-        secondary: tmpl.styles.colors.secondary ?? "#64748b",
-        background: tmpl.styles.colors.background ?? "#ffffff",
-        text: tmpl.styles.colors.text ?? "#111827",
-        accent: tmpl.styles.colors.accent ?? "#f59e0b",
-        headerBackground: tmpl.styles.colors.headerBackground ?? "#60a5fa",
+        ...colors,
+        primary: colors.primary ?? "#1e3a8a",
+        secondary: colors.secondary ?? "#64748b",
+        background: colors.background ?? "#ffffff",
+        text: colors.text ?? "#111827",
+        accent: colors.accent ?? "#f59e0b",
+        headerBackground: colors.headerBackground ?? "#60a5fa",
       },
     },
+    // never touch columns; preserve selected template’s column model entirely
+    columns: Array.isArray(tmpl.columns) ? tmpl.columns : tmpl.columns,
   };
 }
 
@@ -95,6 +123,8 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
   onReset,
   debounceMs = 200,
 }: SimpleTemplateConfigProps) {
+  // Always start from the CURRENT/SELECTED template (respect its values),
+  // only filling truly missing ones.
   const initial = useMemo(() => withDefaults(template), [template]);
   const [localTemplate, setLocalTemplate] = useState<TemplateLayout>(initial);
   const [activeTab, setActiveTab] = useState<TabId>("typography");
@@ -104,20 +134,22 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
   const isInitialMount = useRef(true);
   const debouncedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // sync when template prop actually changes
+  // sync when template prop actually changes (e.g. user selected a new template)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
     const same =
-      templateRef.current.id === template.id &&
-      templateRef.current.metadata?.updatedAt === template.metadata?.updatedAt;
+      templateRef.current?.id === template?.id &&
+      templateRef.current?.metadata?.updatedAt ===
+        template?.metadata?.updatedAt;
+
     if (!same) {
       templateRef.current = template;
       setLocalTemplate(withDefaults(template));
     }
-  }, [template.id, template.metadata?.updatedAt, template]);
+  }, [template?.id, template?.metadata?.updatedAt, template]);
 
   // debounced propagate
   const propagate = useCallback(
@@ -145,25 +177,32 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
   const updateStyles = useCallback(
     (styleUpdates: Partial<TemplateLayout["styles"]>) => {
       setLocalTemplate((prev) => {
+        const prevStyles = prev.styles ?? ({} as any);
         const merged: TemplateLayout = {
           ...prev,
           styles: {
-            ...prev.styles,
+            ...prevStyles,
             ...styleUpdates,
-            // deep merge for nested styles
-            colors: { ...prev.styles.colors, ...(styleUpdates as any)?.colors },
+            // deep/safe merges:
+            colors: {
+              ...(prevStyles.colors ?? {}),
+              ...((styleUpdates as any)?.colors ?? {}),
+            },
             typography: {
-              ...prev.styles.typography,
-              ...(styleUpdates as any)?.typography,
+              ...(prevStyles.typography ?? {}),
+              ...((styleUpdates as any)?.typography ?? {}),
             },
             spacing: {
-              ...prev.styles.spacing,
-              ...(styleUpdates as any)?.spacing,
+              ...(prevStyles.spacing ?? {}),
+              ...((styleUpdates as any)?.spacing ?? {}),
             },
-            layout: { ...prev.styles.layout, ...(styleUpdates as any)?.layout },
+            layout: {
+              ...(prevStyles.layout ?? {}),
+              ...((styleUpdates as any)?.layout ?? {}),
+            },
             sectionHeadings: {
-              ...prev.styles.sectionHeadings,
-              ...(styleUpdates as any)?.sectionHeadings,
+              ...(prevStyles.sectionHeadings ?? {}),
+              ...((styleUpdates as any)?.sectionHeadings ?? {}),
             },
           },
         };
@@ -175,6 +214,8 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
   );
 
   const handleReset = useCallback(() => {
+    // Reset to the PRESENT/SELECTED template’s own values (with safe fill-ins),
+    // not global hardcoded defaults.
     const next = withDefaults(template);
     setLocalTemplate(next);
     onReset();
@@ -188,28 +229,28 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
   const hasTwoColumns =
     Array.isArray(localTemplate.columns) && localTemplate.columns.length === 2;
   const leftIndex = hasTwoColumns
-    ? localTemplate.columns.findIndex((c) => c.id === "left")
+    ? localTemplate.columns.findIndex((c: any) => c.id === "left")
     : -1;
   const rightIndex = hasTwoColumns
-    ? localTemplate.columns.findIndex((c) => c.id === "right")
+    ? localTemplate.columns.findIndex((c: any) => c.id === "right")
     : -1;
   const canAdjustTwoCols = hasTwoColumns && leftIndex >= 0 && rightIndex >= 0;
   const leftWidth = canAdjustTwoCols
-    ? localTemplate.columns[leftIndex].width
+    ? (localTemplate.columns as any[])[leftIndex].width
     : undefined;
 
   const setTwoColumnWidth = (left: number) => {
     if (!canAdjustTwoCols) return;
     const clampedLeft = Math.max(20, Math.min(80, Math.round(left)));
     const right = 100 - clampedLeft;
-    const nextCols = [...localTemplate.columns];
+    const nextCols = [...(localTemplate.columns as any[])];
     nextCols[leftIndex] = { ...nextCols[leftIndex], width: clampedLeft };
     nextCols[rightIndex] = { ...nextCols[rightIndex], width: right };
-    updateTemplate({ columns: nextCols });
+    updateTemplate({ columns: nextCols } as any);
   };
 
   const bodySize = localTemplate.styles.typography.bodySize ?? 16;
-  const pagePaddingV = localTemplate.styles.layout.pagePaddingV ?? 32;
+  const pagePaddingV = localTemplate.styles.layout.pagePaddingV ?? 24;
   const firstPageHeaderFlush =
     localTemplate.styles.layout.firstPageHeaderFlush ?? true;
 
@@ -229,7 +270,7 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
           <button
             onClick={handleReset}
             className="inline-flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-            title="Reset all settings to defaults"
+            title="Reset all settings to this template’s defaults"
           >
             <RotateCcw className="h-4 w-4" />
             <span>Reset</span>
@@ -447,37 +488,37 @@ const SimpleTemplateConfig = memo(function SimpleTemplateConfig({
                 <ColorRow
                   label="Left Column Background"
                   value={
-                    localTemplate.columns[leftIndex].styles?.backgroundColor ??
-                    "#1e3a8a"
+                    (localTemplate.columns as any[])[leftIndex]?.styles
+                      ?.backgroundColor ?? "#1e3a8a"
                   }
                   onChange={(v) => {
-                    const nextCols = [...localTemplate.columns];
+                    const nextCols = [...(localTemplate.columns as any[])];
                     nextCols[leftIndex] = {
                       ...nextCols[leftIndex],
                       styles: {
-                        ...nextCols[leftIndex].styles,
+                        ...(nextCols[leftIndex]?.styles ?? {}),
                         backgroundColor: v,
                       },
                     };
-                    updateTemplate({ columns: nextCols });
+                    updateTemplate({ columns: nextCols } as any);
                   }}
                 />
                 <ColorRow
                   label="Left Column Text"
                   value={
-                    localTemplate.columns[leftIndex].styles?.textColor ??
-                    "#f9fafb"
+                    (localTemplate.columns as any[])[leftIndex]?.styles
+                      ?.textColor ?? "#f9fafb"
                   }
                   onChange={(v) => {
-                    const nextCols = [...localTemplate.columns];
+                    const nextCols = [...(localTemplate.columns as any[])];
                     nextCols[leftIndex] = {
                       ...nextCols[leftIndex],
                       styles: {
-                        ...nextCols[leftIndex].styles,
+                        ...(nextCols[leftIndex]?.styles ?? {}),
                         textColor: v,
                       },
                     };
-                    updateTemplate({ columns: nextCols });
+                    updateTemplate({ columns: nextCols } as any);
                   }}
                 />
               </div>

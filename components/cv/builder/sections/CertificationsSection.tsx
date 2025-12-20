@@ -1,7 +1,7 @@
 "use client";
 
 import { FileCheck } from "lucide-react";
-import { Certification } from "@/types/cv";
+import { Certification } from "@/types/cv/index";
 import GenericSection from "./GenericSection";
 
 interface CertificationsSectionProps {
@@ -19,7 +19,7 @@ export default function CertificationsSection({
 }: CertificationsSectionProps) {
   return (
     <GenericSection
-      title="/* Certifications */"
+      title="Certifications"
       items={certifications}
       emptyStateIcon={FileCheck}
       emptyStateTitle="No certifications added yet"

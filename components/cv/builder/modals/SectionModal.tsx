@@ -57,7 +57,7 @@ export function SectionModal({
   if (!isOpen || !section) return null;
 
   return (
-    <div className="absolute inset-0 z-50 bg-white shadow-xl rounded-[10px]">
+    <div className="absolute inset-0 z-[20] bg-white shadow-xl rounded-[10px]">
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 flex-shrink-0">

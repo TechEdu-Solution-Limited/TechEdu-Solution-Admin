@@ -1,6 +1,6 @@
 // components/resume/sections/ReferencesSection.tsx
 import React from "react";
-import { Reference } from "@/types/cv";
+import { Reference } from "@/types/cv/index";
 
 interface Props {
   heading: string;

@@ -6,7 +6,8 @@ import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-const templates = [
+// All available templates
+const allTemplates = [
   {
     id: "classic",
     name: "Classic",
@@ -73,7 +74,7 @@ export default function TemplateSelection() {
 
         {/* Template Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {templates.map((template) => (
+          {allTemplates.map((template) => (
             <div
               key={template.id}
               className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 transition-all cursor-pointer ${
@@ -127,7 +128,7 @@ export default function TemplateSelection() {
             className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-[10px] transition-colors text-lg"
           >
             Continue with{" "}
-            {templates.find((t) => t.id === selectedTemplate)?.name}
+            {allTemplates.find((t) => t.id === selectedTemplate)?.name}
           </button>
         </div>
       </div>

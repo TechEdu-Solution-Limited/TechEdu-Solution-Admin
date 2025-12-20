@@ -1,5 +1,5 @@
 // components/resume/sections/EducationSection.tsx
-import { Education } from "@/types/cv";
+import { Education } from "@/types/cv/index";
 
 interface Props {
   heading: string;

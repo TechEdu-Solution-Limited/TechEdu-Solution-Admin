@@ -1,5 +1,5 @@
 // components/resume/sections/CertificationsSection.tsx
-import { Certification } from "@/types/cv";
+import { Certification } from "@/types/cv/index";
 
 interface Props {
   heading: string;

@@ -1,5 +1,5 @@
 // /components/resume/sections/AwardsSection.tsx
-import { Award } from "@/types/cv";
+import { Award } from "@/types/cv/index";
 
 interface Props {
   heading: string;

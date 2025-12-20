@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { PersonalInfo } from "@/types/cv";
-import RichTextEditor from "./RichTextEditor";
+import { PersonalInfo } from "@/types/cv/index";
 import {
   User,
   Mail,
@@ -42,7 +41,7 @@ export default function PersonalInfoSection({
     if (!sectionConfig?.id) return false;
 
     // Hide image upload for Two Column and Minimal templates
-    const templatesWithoutImage = ["two-column", "minimal"];
+    const templatesWithoutImage = ["two-column", "minimal", "classic"];
     const shouldHide = templatesWithoutImage.includes(sectionConfig.id);
     console.log("PersonalInfoSection - shouldHide:", shouldHide);
     return shouldHide;
