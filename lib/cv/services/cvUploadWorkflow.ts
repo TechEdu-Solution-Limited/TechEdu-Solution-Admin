@@ -193,12 +193,21 @@ function convertResumeSectionsToProps(sections: ResumeSection[]): any {
     customSections: [],
   };
   sections.forEach((section) => {
-    switch (section.type) {
+    // Normalize summary sections: convert type "summary" to "professional-summary"
+    // and transform data.content to data.summary
+    // Note: Backend may return "summary" type which is not in the ResumeSection union
+    const sectionType = section.type as string;
+    const normalizedType = sectionType === "summary" ? "professional-summary" : section.type;
+    const normalizedData = sectionType === "summary" 
+      ? { summary: (section.data as any)?.content || (section.data as any)?.summary || "" }
+      : section.data;
+
+    switch (normalizedType) {
       case "personal-info":
-        props.personalInfo = { ...props.personalInfo, ...section.data };
+        props.personalInfo = { ...props.personalInfo, ...normalizedData };
         break;
       case "professional-summary":
-        props.professionalSummary = section.data;
+        props.professionalSummary = normalizedData;
         break;
       case "work-experience":
         props.experiences = section.data;

@@ -501,14 +501,29 @@ export default function TemplateBuilderPage({
       );
       const personalInfo = personalInfoSection?.data || {};
 
-      // Extract other sections
-      const resumeData = cv.sections.map((section: any) => ({
-        id: section.id,
-        type: section.type,
-        heading: section.heading,
-        visible: section.visible,
-        data: section.data,
-      }));
+      // Extract other sections and normalize them
+      const resumeData = cv.sections.map((section: any) => {
+        // Normalize summary sections: convert type "summary" to "professional-summary"
+        // and transform data.content to data.summary
+        if (section.type === "summary") {
+          return {
+            id: section.id,
+            type: "professional-summary",
+            heading: section.heading || "Professional Summary",
+            visible: section.visible,
+            data: {
+              summary: section.data?.content || section.data?.summary || "",
+            },
+          };
+        }
+        return {
+          id: section.id,
+          type: section.type,
+          heading: section.heading,
+          visible: section.visible,
+          data: section.data,
+        };
+      });
 
       // Update template builder with CV data
       templateBuilder.setPersonalInfo(personalInfo);
