@@ -137,8 +137,8 @@ export const PX_TO_PT = 0.75 as const;
 // Section Order
 export const SECTION_ORDER = [
   "professional-summary",
-  "education",
   "work-experience",
+  "education",
   "skills",
   "certifications",
   "languages",

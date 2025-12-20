@@ -144,8 +144,8 @@ export default function DynamicSectionContent({
       // Define the default order for sections - only show first 5 essential sections initially
       const defaultOrder = [
         "personal-info",
-        "education",
         "work-experience",
+        "education",
         "skills",
         "professional-summary",
       ];

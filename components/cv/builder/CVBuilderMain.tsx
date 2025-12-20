@@ -162,8 +162,8 @@ export default function CVBuilderMain({
     if (state.resumeData.length > 0) {
       const defaultOrder = [
         "personal-info",
-        "education",
         "work-experience",
+        "education",
         "skills",
         "professional-summary",
         "languages",
