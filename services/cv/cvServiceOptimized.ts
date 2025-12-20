@@ -2,9 +2,9 @@
 
 import { getTokenFromCookies } from "@/lib/cookies";
 
-/* -----------------------------------------------------------------------------
-   Safe JSON helpers: prune Window/DOM/React objects and break cycles
------------------------------------------------------------------------------ */
+/* ----------------------------------------------------------------------------- */
+/* Safe JSON helpers: prune Window/DOM/React objects and break cycles            */
+/* ----------------------------------------------------------------------------- */
 
 const PRUNE_KEYS = new Set([
   "window",
@@ -40,12 +40,9 @@ function isWindowLike(v: any) {
 
 function safeJsonStringify(input: any): string {
   const seen = new WeakSet<object>();
-
   return JSON.stringify(input, function (key, value) {
-    // Drop known problematic keys early
     if (PRUNE_KEYS.has(key)) return undefined;
 
-    // Functions / symbols / undefined => drop
     if (
       typeof value === "function" ||
       typeof value === "symbol" ||
@@ -81,14 +78,13 @@ function safeJsonStringify(input: any): string {
       if (value instanceof URL) return value.toString();
       if (value instanceof RegExp) return value.toString();
     }
-
     return value;
   });
 }
 
-/* -----------------------------------------------------------------------------
-   Types
------------------------------------------------------------------------------ */
+/* ----------------------------------------------------------------------------- */
+/* Types                                                                         */
+/* ----------------------------------------------------------------------------- */
 
 interface CVSection {
   id?: string;
@@ -140,14 +136,28 @@ interface DraftResponse {
   message?: string;
 }
 
-// Normalized shapes the UI can rely on
+export type ExperienceAIResult = {
+  description?: string;
+  achievements?: string[];
+  seniority?: "junior" | "mid" | "senior" | "lead";
+  minYears?: number;
+  topSkills?: string[];
+  rationale?: string;
+};
+
+type ExperienceAIRequest = {
+  startDate?: string;
+  endDate?: string;
+  targetJobTitle?: string;
+  targetCompany?: string;
+  targetIndustry?: string;
+};
+
 export type ExperienceAssessment = {
   seniority: "junior" | "mid" | "senior" | "lead";
-  minYears: number; // >= 0
-  // topSkills: string[]; // unique, non-empty
-  // rationale: string; // string (may be empty)
-  achievements: string[];
+  minYears: number;
   description: string;
+  achievements: string[];
 };
 
 export type SkillItem = {
@@ -157,35 +167,47 @@ export type SkillItem = {
 };
 
 export type SkillsAssessment = {
-  skills: SkillItem[]; // deduped by name
-  top: string[]; // unique names
+  skills: SkillItem[];
+  top: string[];
 };
 
-/*===========================================================================*/
-/*===========================================================================*/
-/*===============================AI NORMALIZER===============================*/
-/*===========================================================================*/
-/*===========================================================================*/
-
-// Add near other types
-export type ExperienceAIResult = {
-  description?: string;
-  achievements?: string[];
-  // keep legacy fields in case you still surface them somewhere
-  seniority?: "junior" | "mid" | "senior" | "lead";
-  minYears?: number;
-  topSkills?: string[];
-  rationale?: string;
+// ---- CV rating result types ----
+export type CVRatingResult = {
+  ok: boolean;
+  reviewId: string;
+  rating: {
+    overall: number;
+    sections: Record<string, number>;
+    strengths: string[];
+    gaps: string[];
+    atsFriendly: boolean;
+    keywordCoverage: number;
+    seniority: string; // e.g. "junior" | "mid" | "senior" | "lead"
+    notes?: string;
+    match?: {
+      score: number;
+      missingSkills?: string[];
+      reasons?: string[];
+    };
+  };
+  fileMeta?: {
+    bytes?: number;
+    mime?: string;
+    pages?: number;
+    ext?: string;
+  };
 };
 
-// helper: pick the best item based on jobTitle/company/current
+/* ----------------------------------------------------------------------------- */
+/* AI NORMALIZERS                                                                */
+/* ----------------------------------------------------------------------------- */
+
 function pickBestItem(
   items: any[] = [],
   sel?: { jobTitle?: string; company?: string; preferCurrent?: boolean }
 ) {
   const jt = (sel?.jobTitle || "").toLowerCase().trim();
   const co = (sel?.company || "").toLowerCase().trim();
-
   let best = items[0] || null;
   let bestScore = -1;
 
@@ -216,29 +238,16 @@ function normalizeExperienceV2(
 ): ExperienceAIResult {
   const payload = raw?.data?.data ?? raw?.data ?? raw;
 
-  // New shape: { ok: true, workExperience: { description, achievements, ... } }
-  if (payload?.workExperience) {
-    const workExp = payload.workExperience;
-    return {
-      description: String(workExp?.description ?? "").trim(),
-      achievements: Array.isArray(workExp?.achievements)
-        ? workExp.achievements.map((s: any) => String(s).trim()).filter(Boolean)
-        : [],
-    };
-  }
-
-  // New shape: { ok, items: [...] }
   if (Array.isArray(payload?.items) && payload.items.length) {
     const chosen = pickBestItem(payload.items, sel) || payload.items[0];
     return {
-      description: String(chosen?.description ?? "").trim(),
+      description: String(chosen?.description || "").trim(),
       achievements: Array.isArray(chosen?.achievements)
         ? chosen.achievements.map((s: any) => String(s).trim()).filter(Boolean)
         : [],
     };
   }
 
-  // Legacy shape: { seniority, minYears, topSkills, rationale }
   if (payload?.rationale || payload?.topSkills) {
     return {
       description: String(payload?.rationale ?? "").trim(),
@@ -251,28 +260,57 @@ function normalizeExperienceV2(
       rationale: payload?.rationale,
     };
   }
-
   return {};
 }
 
-// Add this near the "Types" section
+function normalizeExperienceV3(raw: any): ExperienceAIResult {
+  const p = raw?.data ?? raw;
+  const w = p?.workExperience ?? p?.data?.workExperience;
+  if (w) {
+    return {
+      description: String(w?.description ?? "").trim(),
+      achievements: Array.isArray(w?.achievements)
+        ? w.achievements.map((s: any) => String(s).trim()).filter(Boolean)
+        : [],
+    };
+  }
+  const items = p?.items ?? p?.data?.items;
+  if (Array.isArray(items) && items.length) {
+    const chosen = items[0];
+    return {
+      description: String(chosen?.description ?? "").trim(),
+      achievements: Array.isArray(chosen?.achievements)
+        ? chosen.achievements.map((s: any) => String(s).trim()).filter(Boolean)
+        : [],
+    };
+  }
+  if (p?.rationale || p?.topSkills) {
+    return {
+      description: String(p?.rationale ?? "").trim(),
+      achievements: Array.isArray(p?.topSkills)
+        ? p.topSkills.map((s: any) => String(s).trim()).filter(Boolean)
+        : [],
+      seniority: p?.seniority,
+      minYears: p?.minYears,
+      topSkills: p?.topSkills,
+      rationale: p?.rationale,
+    };
+  }
+  return {};
+}
+
 export type AiSummary = { content: string; bullets: string[] };
 
 function normalizeSummary(raw: any): AiSummary {
-  // 1) plain string => treat as content only
   if (typeof raw === "string") return { content: raw.trim(), bullets: [] };
   if (!raw || typeof raw !== "object") return { content: "", bullets: [] };
 
-  // 2) common shapes the frontend may see
-  // a) { success, data: { content, bullets } }
   if (raw.success && raw.data && (raw.data.content || raw.data.bullets)) {
     return {
       content: String(raw.data.content ?? "").trim(),
       bullets: Array.isArray(raw.data.bullets) ? raw.data.bullets : [],
     };
   }
-
-  // b) axios-like: { data: { success, data: { content, bullets } } }
   if (raw.data && raw.data.success && raw.data.data) {
     const d = raw.data.data;
     return {
@@ -280,38 +318,30 @@ function normalizeSummary(raw: any): AiSummary {
       bullets: Array.isArray(d.bullets) ? d.bullets : [],
     };
   }
-
-  // c) axios-like: { data: { content, bullets } } or { data: { summary } }
   if (raw.data && (raw.data.content || raw.data.bullets || raw.data.summary)) {
     return {
       content: String(raw.data.content ?? raw.data.summary ?? "").trim(),
       bullets: Array.isArray(raw.data.bullets) ? raw.data.bullets : [],
     };
   }
-
-  // d) flat: { content, bullets } or { summary }
   if (raw.content || raw.bullets || raw.summary) {
     return {
       content: String(raw.content ?? raw.summary ?? "").trim(),
       bullets: Array.isArray(raw.bullets) ? raw.bullets : [],
     };
   }
-
   return { content: "", bullets: [] };
 }
 
 function normalizeExperience(raw: any): ExperienceAssessment {
-  // unwrap common axios/wrapper shapes
   const d = (raw?.data?.data ?? raw?.data ?? raw) as {
     seniority?: unknown;
     minYears?: unknown;
-    // topSkills?: unknown;
-    // rationale?: unknown;
-    achievements?: unknown;
+    topSkills?: unknown;
     description?: unknown;
+    achievements?: unknown;
   };
 
-  // seniority
   let seniority = String(d?.seniority ?? "").toLowerCase();
   const valid = new Set<ExperienceAssessment["seniority"]>([
     "junior",
@@ -321,42 +351,39 @@ function normalizeExperience(raw: any): ExperienceAssessment {
   ]);
   if (!valid.has(seniority as any)) seniority = "mid";
 
-  // minYears
   const minYearsRaw = Number(d?.minYears);
   let minYears = Number.isFinite(minYearsRaw) ? minYearsRaw : 0;
   if (minYears < 0) minYears = 0;
 
-  // topSkills (force element type to string)
-  const achievementsInput = Array.isArray(d?.achievements)
-    ? (d!.achievements as unknown[])
+  const topSkillsInput = Array.isArray(d?.topSkills)
+    ? (d!.topSkills as unknown[])
     : [];
-  const achievements: string[] = Array.from(
+  const topSkills: string[] = Array.from(
     new Set<string>(
-      achievementsInput
+      topSkillsInput
         .map((s) => String(s).trim())
         .filter((s): s is string => s.length > 0)
     )
   );
 
-  // rationale
   const description = String(d?.description ?? "").trim();
+  const achievements = Array.isArray(d?.achievements)
+    ? (d.achievements as unknown[])
+    : [];
 
   return {
     seniority: seniority as ExperienceAssessment["seniority"],
     minYears,
-    achievements,
     description,
+    achievements: achievements as ExperienceAssessment["achievements"],
   };
 }
 
 function normalizeSkills(raw: any): SkillsAssessment {
-  // unwrap common axios/wrapper shapes
   const d = (raw?.data?.data ?? raw?.data ?? raw) as {
     skills?: unknown;
     top?: unknown;
   };
-
-  // skills[]
   const incomingSkills = Array.isArray(d?.skills)
     ? (d.skills as unknown[])
     : [];
@@ -389,7 +416,6 @@ function normalizeSkills(raw: any): SkillsAssessment {
   }
   const skills = Array.from(skillsMap.values());
 
-  // top[] as string[]
   const topInput = Array.isArray(d?.top) ? (d.top as unknown[]) : [];
   const top: string[] = Array.from(
     new Set<string>(
@@ -402,77 +428,35 @@ function normalizeSkills(raw: any): SkillsAssessment {
   return { skills, top };
 }
 
-/* -----------------------------------------------------------------------------
-   Optimized CV service
------------------------------------------------------------------------------ */
+/* ----------------------------------------------------------------------------- */
+/* Optimized CV service                                                          */
+/* ----------------------------------------------------------------------------- */
+// lib/apiBase.ts
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+
+const apiUrl = (path: string) =>
+  /^https?:\/\//i.test(path)
+    ? path
+    : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
 class OptimizedCVService {
-  // Generic API request method
   private async apiRequest<T>(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" = "GET",
     body?: any
   ): Promise<T> {
-    // Safe JSON stringify function for logging
-    const safeStringify = (obj: any) => {
-      try {
-        return JSON.stringify(
-          obj,
-          (key, value) => {
-            if (value && typeof value === "object") {
-              // Handle all HTML elements
-              if (
-                value.constructor &&
-                value.constructor.name.startsWith("HTML")
-              ) {
-                return `[${value.constructor.name}]`;
-              }
-              // Handle SVG elements
-              if (
-                value.constructor &&
-                value.constructor.name.startsWith("SVG")
-              ) {
-                return `[${value.constructor.name}]`;
-              }
-              // Handle React Fiber nodes
-              if (value.__reactFiber$ || value.__reactInternalInstance) {
-                return "[ReactElement]";
-              }
-              // Handle circular references
-              if (value.constructor && value.constructor.name === "FiberNode") {
-                return "[FiberNode]";
-              }
-              // Handle any other DOM-like objects
-              if (value.nodeType || value.tagName || value.ownerDocument) {
-                return "[DOMElement]";
-              }
-            }
-            return value;
-          },
-          2
-        );
-      } catch (error) {
-        return "[Circular Reference Error]";
-      }
-    };
-
-    console.log(`🌐 API Request: ${method} ${endpoint}`, {
-      hasBody: !!body,
-      bodyKeys: body ? Object.keys(body) : [],
-      bodyPreview: body ? safeStringify(body).substring(0, 500) + "..." : null,
-    });
-
     const token = getTokenFromCookies();
     if (!token) {
       console.error("❌ Authentication token not found");
       throw new Error("Authentication token not found");
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const url = `${baseUrl}${endpoint}`;
+    const url = apiUrl(endpoint);
 
-    console.log(`🔗 Full URL: ${url}`);
-    console.log(`🚀 API Call: ${method} ${url}`);
+    console.log(`🚀 API Call: ${method} ${url}`, {
+      endpoint,
+      hasBody: !!body,
+    });
 
     const response = await fetch(url, {
       method,
@@ -480,14 +464,9 @@ class OptimizedCVService {
         "Content-Type": "application/json; charset=utf-8",
         Authorization: `Bearer ${token}`,
       },
-      body: body ? safeJsonStringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
 
-    console.log(
-      `📡 Response status: ${response.status} ${response.statusText}`
-    );
-
-    // Safer parsing: tolerate non-JSON error responses
     const raw = await response.text();
     let parsed: any = null;
     try {
@@ -496,38 +475,19 @@ class OptimizedCVService {
       parsed = { message: raw || "Non-JSON response" };
     }
 
-    console.log(`📥 Response data:`, parsed);
-
     if (!response.ok) {
-      console.error(`❌ API Error: ${response.status}`, {
-        status: response.status,
-        statusText: response.statusText,
-        parsed,
-        url: response.url,
-        method,
-        endpoint,
-      });
+      console.error(`❌ API Error ${response.status} for ${url}`, parsed);
       throw new Error(
         parsed?.message || `HTTP ${response.status}: ${response.statusText}`
       );
     }
 
-    console.log(`✅ API Success: ${method} ${endpoint}`);
     return parsed as T;
   }
 
-  // CV Operations
+  // CV CRUD
   async createCV(data: CreateCVRequest): Promise<string> {
-    console.log("🔧 createCV called with:", {
-      hasTitle: !!data.title,
-      hasSections: !!data.sections,
-      sectionsCount: data.sections?.length,
-      hasConsent: !!data.consent,
-    });
-
     const response = await this.apiRequest<CVResponse>("/api/cv", "POST", data);
-
-    console.log("✅ New CV created:", response.data.id);
     return response.data.id;
   }
 
@@ -540,25 +500,14 @@ class OptimizedCVService {
     id: string,
     data: Partial<CreateCVRequest>
   ): Promise<CVResponse["data"]> {
-    console.log("🔧 updateCV called with:", {
-      id,
-      hasTitle: !!data.title,
-      hasSections: !!data.sections,
-      sectionsCount: data.sections?.length,
-      hasConsent: !!data.consent,
-    });
-
     const response = await this.apiRequest<CVResponse>(
       `/api/cv/${id}`,
       "PATCH",
       data
     );
-
-    console.log("✅ CV updated successfully:", response.data.id);
     return response.data;
   }
 
-  // Get all CVs for authenticated user
   async getAllCVs(): Promise<CVResponse["data"][]> {
     const response = await this.apiRequest<{
       success: boolean;
@@ -571,7 +520,7 @@ class OptimizedCVService {
     await this.apiRequest(`/api/cv/${id}`, "DELETE");
   }
 
-  // Draft Operations
+  // Drafts
   async getDraft(id: string): Promise<DraftResponse["data"]> {
     const response = await this.apiRequest<DraftResponse>(
       `/api/cv/drafts/${id}`,
@@ -580,7 +529,6 @@ class OptimizedCVService {
     return response.data;
   }
 
-  // Try to find a draft by associated CV id
   async getDraftIdForCv(cvId: string): Promise<string | null> {
     try {
       const response = await this.apiRequest<{
@@ -591,16 +539,12 @@ class OptimizedCVService {
     } catch (error) {
       console.warn(
         "No existing draft found for cvId or endpoint unavailable:",
-        {
-          cvId,
-          error,
-        }
+        { cvId, error }
       );
       return null;
     }
   }
 
-  // Create draft with working data (template draft or with cvId)
   async createDraft(data: {
     cvId?: string;
     working: any[];
@@ -616,45 +560,31 @@ class OptimizedCVService {
     return response.data._id;
   }
 
-  // Create or update draft - prevents multiple drafts
   async createOrUpdateDraft(data: {
     cvId?: string;
     working: any[];
     isDirty?: boolean;
     aiSuggestions?: any;
     template?: string;
-    draftId?: string; // If provided, update existing draft
+    draftId?: string;
   }): Promise<string> {
-    console.log("🔧 createOrUpdateDraft called with:", {
-      cvId: data.cvId,
-      draftId: data.draftId,
-      hasWorking: data.working?.length,
-    });
-
     if (data.draftId) {
-      console.log("🔄 Updating existing draft:", data.draftId);
-      // Remove draftId from the request body since it's in the URL
       const { draftId, ...updateData } = data;
       const response = await this.apiRequest<DraftResponse>(
-        `/api/cv/drafts/${data.draftId}`,
+        `/api/cv/drafts/${draftId}`,
         "PATCH",
         updateData
       );
-      console.log("✅ Draft updated successfully:", response.data._id);
       return response.data._id;
     }
-
-    console.log("🆕 Creating new draft for cvId:", data.cvId);
     const response = await this.apiRequest<DraftResponse>(
       "/api/cv/drafts",
       "POST",
       data
     );
-    console.log("✅ New draft created:", response.data._id);
     return response.data._id;
   }
 
-  // Publish CV from draft
   async publishCV(draftId: string): Promise<string> {
     const response = await this.apiRequest<CVResponse>(
       `/api/cv/publish`,
@@ -664,15 +594,11 @@ class OptimizedCVService {
     return response.data.id;
   }
 
-  /*****************************************************************
- *****************************************************************
-// AI OPERATIONS
-******************************************************************
-******************************************************************/
-  // GENERATE SUMMARY
+  /* ------------------------------ AI OPERATIONS ------------------------------ */
+
   async generateSummary(
     cvId: string,
-    tone: string = "professional and concise"
+    tone = "professional and concise"
   ): Promise<AiSummary> {
     const response = await this.apiRequest<any>(
       `/api/cv/ai/summary?cvId=${encodeURIComponent(cvId)}`,
@@ -682,92 +608,129 @@ class OptimizedCVService {
     return normalizeSummary(response);
   }
 
-  // EXPERIENCE: returns ExperienceAssessment
-  // services/cv/cvServiceOptimized.ts
-
-  // … keep the rest …
-
-  // EXPERIENCE: returns normalized { description, achievements } (and legacy fields if present)
+  /**
+   * Robust experience generator: tries known endpoints until one succeeds.
+   * Many backends use different route names across versions:
+   *  - /api/cv/ai/work-entry-generate   (recommended)
+   *  - /api/cv/ai/experience
+   *  - /api/cv/ai/work-experience
+   */
   async generateExperience(
     cvId: string,
-    params: {
-      startDate: string;
-      endDate?: string;
-      targetJobTitle: string;
-      targetCompany: string;
-      targetIndustry: string;
-    }
+    payload: ExperienceAIRequest
   ): Promise<ExperienceAIResult> {
     if (!cvId) throw new Error("CV must be created first");
 
-    const body: {
-      startDate: string;
-      endDate?: string;
-      targetJobTitle: string;
-      targetCompany: string;
-      targetIndustry: string;
-    } = {
-      startDate: params.startDate,
-      targetJobTitle: params.targetJobTitle,
-      targetCompany: params.targetCompany,
-      targetIndustry: params.targetIndustry,
+    const endpoints = [
+      `/api/cv/ai/work-entry-generate?cvId=${encodeURIComponent(cvId)}`,
+    ];
+
+    // ✅ build body explicitly so startDate/endDate are always considered
+    const body: Record<string, any> = {
+      cvId,
+      // prefer camelCase; also include snake_case for older handlers
+      startDate: payload.startDate ?? null,
+      endDate: payload.endDate ?? null,
+      start_date: payload.startDate ?? null,
+      end_date: payload.endDate ?? null,
     };
 
-    // Only include endDate if provided (it's optional)
-    if (params.endDate) {
-      body.endDate = params.endDate;
+    if (typeof payload.targetJobTitle === "string")
+      body.targetJobTitle = payload.targetJobTitle;
+    if (typeof payload.targetCompany === "string")
+      body.targetCompany = payload.targetCompany;
+    if (typeof payload.targetIndustry === "string")
+      body.targetIndustry = payload.targetIndustry;
+
+    let lastErr: any = null;
+
+    for (const ep of endpoints) {
+      try {
+        const res = await this.apiRequest<any>(ep, "POST", body);
+
+        if (res?.data?.ok === false) {
+          const reason =
+            res?.error?.details?.[0] ||
+            res?.data?.reason ||
+            res?.message ||
+            "AI generation failed";
+          throw new Error(reason);
+        }
+
+        // Prefer newest normalizer but tolerate older shapes
+        const v3 = normalizeExperienceV3(res);
+        const hasV3 =
+          (v3.description && v3.description.length > 0) ||
+          (Array.isArray(v3.achievements) && v3.achievements.length > 0);
+        if (hasV3) return v3;
+
+        const v2 = normalizeExperienceV2(res, {
+          jobTitle: payload.targetJobTitle,
+          company: payload.targetCompany,
+          preferCurrent: !payload.endDate,
+        });
+        if (
+          (v2.description && v2.description.length > 0) ||
+          (v2.achievements && v2.achievements.length > 0)
+        ) {
+          return v2;
+        }
+
+        // Legacy fallback
+        return normalizeExperience(res);
+      } catch (e: any) {
+        lastErr = e;
+        const msg = (e?.message || "").toString().toLowerCase();
+        if (
+          msg.includes("cannot post") ||
+          msg.includes("not found") ||
+          msg.includes("404")
+        ) {
+          continue; // try next variant
+        }
+        break; // non-404 error → stop trying
+      }
     }
 
-    const res = await this.apiRequest<any>(
-      `/api/cv/ai/work-entry-generate?cvId=${encodeURIComponent(cvId)}`,
-      "POST",
-      body
+    throw new Error(
+      lastErr?.message ||
+        "AI experience generation failed (no compatible endpoint found). Please ensure your backend route is enabled."
     );
-
-    // Surface server-side failure reasons
-    if (res?.data?.ok === false) {
-      const reason =
-        res?.error?.details?.[0] ||
-        res?.data?.reason ||
-        res?.message ||
-        "AI experience generation failed";
-      throw new Error(reason);
-    }
-
-    return normalizeExperienceV2(res);
   }
 
-  /**
-   * Call once if backend requires explicit AI processing consent
-   * POST /api/auth/ai/consent/accept  -> { ok: true }
-   */
+  /** Explicit AI-processing consent; returns true on { success, data: { ok: true } } */
   async acceptAIProcessing() {
-    const json = await this.apiRequest<any>(
-      `/api/auth/ai/consent/accept`,
-      "POST"
-    );
-    if (!json?.ok) throw new Error("Failed to accept AI processing consent");
-    return true;
+    const json = await this.apiRequest<{
+      success: boolean;
+      data?: { ok?: boolean };
+    }>(`/api/auth/ai/consent/accept`, "POST", {});
+    return json?.data?.ok === true;
   }
 
-  // SKILLS: returns SkillsAssessment
   async generateSkills(
     cvId: string,
     level: "all" | "top-5" = "all",
     prompt?: string,
     context?: { targetRole: string; industry: string | undefined }
   ): Promise<SkillsAssessment> {
-    const body: any = { level };
+    // ✅ include cvId in the body (and snake_case for legacy handlers)
+    const body: any = {
+      cvId,
+      cv_id: cvId,
+      level,
+    };
     if (prompt) body.prompt = prompt;
     if (context) body.context = context;
 
     const res = await this.apiRequest<any>(
+      // keep query param for existing route variants
       `/api/cv/ai/skills?cvId=${encodeURIComponent(cvId)}`,
       "POST",
       body
     );
     return normalizeSkills(res);
   }
+
 
   async generateProjects(
     cvId: string,
@@ -797,12 +760,36 @@ class OptimizedCVService {
     return response;
   }
 
+  /** Rate a CV directly from a file URL. Returns the plain rating payload. */
+  async rateFromUrl(fileUrl: string, redact = false): Promise<CVRatingResult> {
+    // POST /api/cv/rate-from-url { url, redact }
+    const res = await this.apiRequest<any>("/api/cv/rate-from-url", "POST", {
+      url: fileUrl,
+      redact,
+    });
+
+    // tolerate both plain and wrapped shapes
+    const data: any =
+      res?.data &&
+      (res.success || res?.data?.ok !== undefined || res?.data?.rating)
+        ? res.data
+        : res;
+
+    if (!data?.ok) {
+      const msg =
+        data?.message ||
+        res?.message ||
+        "Rating failed: backend returned an unsuccessful response.";
+      throw new Error(msg);
+    }
+    return data as CVRatingResult;
+  }
+
   // Helpers
   transformPersonalInfo(personalInfo: any): any {
     const firstName = personalInfo.firstName || "User";
     const lastName = personalInfo.lastName || "Name";
     const fullName = `${firstName} ${lastName}`.trim();
-
     return { ...personalInfo, fullName };
   }
 
@@ -829,15 +816,19 @@ class OptimizedCVService {
       return section;
     });
 
-    return {
+    const payload: CreateCVRequest = {
       title: `${transformedPersonalInfo.fullName} - CV`,
       sections: transformedSections,
-      consent: consent || { aiProcessing: false, aiTraining: false },
-      template: template,
+      template,
     };
+
+    if (typeof consent !== "undefined") {
+      payload.consent = consent;
+    }
+
+    return payload;
   }
 }
 
-// Export singleton instance
 export const cvService = new OptimizedCVService();
 export type { CreateCVRequest, CVResponse, CVSection, ConsentSettings };
