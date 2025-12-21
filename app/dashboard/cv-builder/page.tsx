@@ -18,6 +18,7 @@ import type { CVRatingResult } from "@/services/cv/cvServiceOptimized";
 import RatingModal from "@/components/cv/builder/modals/CVReatingModal";
 // Remove the import since we'll use the existing one
 import CVUploadModal from "@/components/cv/CVUploadModal";
+import AIConsentModal from "@/components/cv/builder/modals/AIConsentModal";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "react-toastify";
 
@@ -89,6 +90,10 @@ export default function ResumeBuilder() {
   const [showCVRatingModal, setShowCVRatingModal] = useState(false);
   const [cvRatingLoading, setCvRatingLoading] = useState(false);
   const [cvRatingResult, setCvRatingResult] = useState<CVRatingResult | null>(null);
+
+  // AI Consent modal state
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [aiConsent, setAiConsent] = useState<{ aiTraining: boolean } | null>(null);
 
   // Role and authentication
   const { isAuthenticated, userData } = useRole();
@@ -214,7 +219,7 @@ export default function ResumeBuilder() {
     router.push(`/dashboard/cv-builder/template-selection`);
   };
 
-  async function ingestCvFromUrl(fileUrl: string, templateId: string) {
+  async function ingestCvFromUrl(fileUrl: string, templateId: string, consent?: { aiTraining: boolean }) {
     const token = getTokenFromCookies();
     setIngesting(true);
 
@@ -232,6 +237,7 @@ export default function ResumeBuilder() {
           aiSegment: true,
           createDraft: true,
           redact: false,
+          aiTraining: consent?.aiTraining ?? false,
         }),
       });
 
@@ -470,7 +476,8 @@ export default function ResumeBuilder() {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!uploadedFile?.url) return;
-                          setTemplateOpen(true);
+                          // Show AI consent modal first
+                          setShowAIConsentModal(true);
                         }}
                         className="px-4 py-2 bg-green-600 text-white rounded-[10px] hover:bg-green-700 transition-colors"
                       >
@@ -655,13 +662,25 @@ export default function ResumeBuilder() {
         </div>
       </div>
 
+      {/* AI Consent Modal */}
+      <AIConsentModal
+        isOpen={showAIConsentModal}
+        onClose={() => setShowAIConsentModal(false)}
+        onAccept={(consent) => {
+          setAiConsent(consent || { aiTraining: false });
+          setShowAIConsentModal(false);
+          // Open template selector after consent
+          setTemplateOpen(true);
+        }}
+      />
+
       {/* Template Modal */}
       <TemplateSelectorModal
         isOpen={templateOpen}
         onClose={() => setTemplateOpen(false)}
         onTemplateSelect={async (templateId: string) => {
           if (!uploadedFile?.url) return;
-          await ingestCvFromUrl(uploadedFile.url, templateId);
+          await ingestCvFromUrl(uploadedFile.url, templateId, aiConsent || undefined);
         }}
       />
 
