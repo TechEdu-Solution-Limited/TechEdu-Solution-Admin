@@ -721,7 +721,7 @@ export default function ProductEditPage() {
           subcategory || restForm.productSubcategoryName || undefined,
         nonBookableService: !isBookable,
         instructorId: instructorRequired ? form.instructorId || null : null,
-        discountPercentage: Number(form.discountPercentage) || 0,
+        discountPercentage: Number(pricing.discountPercentage) || 0,
         maxParticipants: Number(form.maxParticipants) || 1,
         programLength: Number(form.programLength) || 0,
         durationInMinutes: Number(form.durationInMinutes) || 0,
@@ -746,12 +746,126 @@ export default function ProductEditPage() {
         allowedCurrencies.includes(currency as any) ? currency : "gbp"
       ) as (typeof allowedCurrencies)[number];
 
+      /**
+       * Pricing Update Types by Model
+       * 
+       * 1. FREE MODEL:
+       * {
+       *   model: "free";
+       *   currency: "usd" | "eur" | "gbp" | "cad" | "aud" | "jpy" | "inr" | "ngn";
+       * }
+       * 
+       * 2. SUBSCRIPTION MODEL (flat basis):
+       * {
+       *   model: "subscription";
+       *   priceBasis: "flat";
+       *   currency: Currency;
+       *   basePrice: number;              // Required
+       *   subscriptionPrice: number;     // Same as basePrice
+       *   interval: "day" | "week" | "month" | "year";
+       *   intervalCount: number;          // Default: 1
+       *   trialDays?: number;             // Default: 0
+       *   setupFee?: number;              // Default: 0
+       *   autoRenew?: boolean;            // Default: true
+       *   minTermMonths?: number;         // Default: 0
+       *   proration?: boolean;            // Default: true
+       *   allowInstallments: false;      // Always false for subscriptions
+       *   taxInclusive?: boolean;
+       *   vatPercentage?: number;
+       * }
+       * 
+       * 3. SUBSCRIPTION MODEL (per_unit basis):
+       * {
+       *   model: "subscription";
+       *   priceBasis: "per_unit";
+       *   currency: Currency;
+       *   basePrice: 0;                  // Always 0 for per_unit
+       *   subscriptionPrice: 0;           // Always 0 for per_unit
+       *   unitName: "participant" | "team";
+       *   minQty: number;                 // Default: 1
+       *   maxQty: number;                  // Default: max(minQty, 1000)
+       *   tierType: "volume" | "stairstep";
+       *   tiers: Array<{
+       *     upTo: number;                 // Cap for this tier
+       *     unitPrice: number;            // Price per unit in this tier
+       *   }>;
+       *   interval: Interval;
+       *   intervalCount: number;
+       *   trialDays?: number;
+       *   setupFee?: number;
+       *   autoRenew?: boolean;
+       *   minTermMonths?: number;
+       *   proration?: boolean;
+       *   allowInstallments: false;
+       *   taxInclusive?: boolean;
+       *   vatPercentage?: number;
+       * }
+       * 
+       * 4. ONE_TIME MODEL (flat basis, no installments):
+       * {
+       *   model: "one_time";
+       *   priceBasis: "flat";
+       *   currency: Currency;
+       *   basePrice: number;             // Required
+       *   taxInclusive?: boolean;         // Default: false
+       *   vatPercentage?: number;         // Default: 0
+       *   allowInstallments: false;
+       * }
+       * 
+       * 5. ONE_TIME MODEL (flat basis, with installments):
+       * {
+       *   model: "one_time";
+       *   priceBasis: "flat";
+       *   currency: Currency;
+       *   basePrice: number;
+       *   taxInclusive?: boolean;
+       *   vatPercentage?: number;
+       *   allowInstallments: true;
+       *   installments: {
+       *     enabled: true;
+       *     count: number;                // Min: 2
+       *     interval: "day" | "week" | "month" | "year";
+       *     intervalCount: number;        // Default: 1
+       *     downPaymentType: "percent" | "amount";
+       *     downPaymentValue: number;     // Min: 0
+       *     allowEarlyPayoff?: boolean;   // Default: false
+       *     provider?: string;            // Default: "in_house"
+       *   };
+       * }
+       * 
+       * 6. ONE_TIME MODEL (per_unit basis, no installments):
+       * {
+       *   model: "one_time";
+       *   priceBasis: "per_unit";
+       *   currency: Currency;
+       *   basePrice: 0;                  // Always 0 for per_unit
+       *   unitName: "participant" | "team";
+       *   minQty: number;                 // Default: 1
+       *   maxQty: number;                 // Default: max(minQty, 1000)
+       *   tierType: "volume" | "stairstep";
+       *   tiers: Array<{
+       *     upTo: number;
+       *     unitPrice: number;
+       *   }>;
+       *   taxInclusive?: boolean;
+       *   vatPercentage?: number;
+       *   allowInstallments: false;
+       * }
+       * 
+       * 7. ONE_TIME MODEL (per_unit basis, with installments):
+       * Same as #6 but with:
+       * {
+       *   allowInstallments: true;
+       *   installments: { ... }           // Same structure as #5
+       * }
+       */
       const toBackendPricing = (p: Pricing) => {
         // FREE
         if (p.model === "free") {
           return {
             model: "free",
             currency: safeCurrency,
+            discountPercentage: 0,
           };
         }
 
@@ -769,6 +883,7 @@ export default function ProductEditPage() {
             minTermMonths: p.minTermMonths ?? 0,
             proration: p.proration ?? true,
             allowInstallments: false,
+            discountPercentage: Number(p.discountPercentage || 0),
           };
 
           if (payload.priceBasis === "flat") {
@@ -807,6 +922,7 @@ export default function ProductEditPage() {
           currency: safeCurrency,
           taxInclusive: p.taxInclusive ?? false,
           vatPercentage: p.vatPercentage ?? 0,
+          discountPercentage: Number(p.discountPercentage || 0),
         };
 
         if (priceBasis === "flat") {
@@ -844,12 +960,38 @@ export default function ProductEditPage() {
             allowEarlyPayoff: p.installments!.allowEarlyPayoff ?? false,
             provider: p.installments!.provider || "in_house",
           };
+        } else {
+          // Explicitly remove installments field when allowInstallments is false
+          // Backend validation requires this field to be absent when disabled
+          delete (payload as any).installments;
         }
 
         return payload;
       };
 
       const sanitizedPricing = toBackendPricing(normalized);
+
+      // CRITICAL: Final safety check - Backend validation strictly requires installments 
+      // to be completely absent (not just undefined) when allowInstallments is false
+      // This handles edge cases where the field might persist from previous state
+      if (sanitizedPricing.allowInstallments === false || !sanitizedPricing.allowInstallments) {
+        // Explicitly remove installments field - backend validation will fail if it exists
+        delete (sanitizedPricing as any).installments;
+        // Ensure allowInstallments is explicitly false (not undefined)
+        sanitizedPricing.allowInstallments = false;
+        safeConsole.log("[Edit Product] Removed installments field - allowInstallments is false");
+      }
+
+      // Verify the final state before sending - this should never trigger if code is correct
+      if (sanitizedPricing.allowInstallments === false && (sanitizedPricing as any).installments) {
+        safeConsole.error("[Edit Product] ERROR: allowInstallments is false but installments field still exists! Force removing...");
+        delete (sanitizedPricing as any).installments;
+      }
+
+      // Verify installments structure when enabled
+      if (sanitizedPricing.allowInstallments === true && !(sanitizedPricing as any).installments) {
+        safeConsole.warn("[Edit Product] WARNING: allowInstallments is true but installments field is missing!");
+      }
 
       try {
         safeConsole.log("[Edit Product] Pricing model:", normalized.model);
@@ -863,10 +1005,32 @@ export default function ProductEditPage() {
         });
       } catch { }
 
+      // Final cleanup: Remove any undefined/null fields and ensure installments is completely absent when disabled
+      // This is critical for PATCH requests which merge with existing data
+      const cleanPricingPayload: any = { ...sanitizedPricing };
+
+      // Remove undefined/null values
+      Object.keys(cleanPricingPayload).forEach((key) => {
+        if (cleanPricingPayload[key] === undefined || cleanPricingPayload[key] === null) {
+          delete cleanPricingPayload[key];
+        }
+      });
+
+      // CRITICAL: If allowInstallments is false, ensure installments is completely removed
+      // Backend validation will fail if installments exists when allowInstallments is false
+      if (cleanPricingPayload.allowInstallments === false || !cleanPricingPayload.allowInstallments) {
+        delete cleanPricingPayload.installments;
+        cleanPricingPayload.allowInstallments = false; // Explicitly set to false
+      }
+
+      safeConsole.log("[Edit Product] Final cleaned pricing payload:", cleanPricingPayload);
+      safeConsole.log("[Edit Product] Installments field present?", "installments" in cleanPricingPayload);
+      safeConsole.log("[Edit Product] allowInstallments value:", cleanPricingPayload.allowInstallments);
+
       const [rootRes, pricingRes] = await Promise.all([
         updateApiRequest(`/api/products/${params.id}`, token, rootPayload),
         patchApiRequest(`/api/products/${params.id}/pricing`, token, {
-          pricing: sanitizedPricing,
+          pricing: cleanPricingPayload,
         }),
       ]);
 
@@ -1275,8 +1439,8 @@ export default function ProductEditPage() {
                     value={form.instructorId || ""}
                     onChange={handleChange}
                     className={`w-full px-4 py-3 bg-white/50 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${instructorRequired && !form.instructorId
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-slate-200"
+                      ? "border-red-300 focus:ring-red-500"
+                      : "border-slate-200"
                       }`}
                     disabled={!isBookable || instructorsLoading}
                     required={instructorRequired}
@@ -1568,11 +1732,10 @@ export default function ProductEditPage() {
                       <span className="mr-2 font-medium">Format:</span>
                       <button
                         type="button"
-                        className={`px-2 py-1 rounded-md font-semibold ${
-                          descriptionFormats.bold
+                        className={`px-2 py-1 rounded-md font-semibold ${descriptionFormats.bold
                             ? "bg-blue-100 text-blue-700"
                             : "hover:bg-slate-100"
-                        }`}
+                          }`}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           descriptionEditorRef.current?.focus();
@@ -1587,11 +1750,10 @@ export default function ProductEditPage() {
                       </button>
                       <button
                         type="button"
-                        className={`px-2 py-1 rounded-md italic ${
-                          descriptionFormats.italic
+                        className={`px-2 py-1 rounded-md italic ${descriptionFormats.italic
                             ? "bg-blue-100 text-blue-700"
                             : "hover:bg-slate-100"
-                        }`}
+                          }`}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           descriptionEditorRef.current?.focus();
@@ -1606,11 +1768,10 @@ export default function ProductEditPage() {
                       </button>
                       <button
                         type="button"
-                        className={`px-2 py-1 rounded-md underline ${
-                          descriptionFormats.underline
+                        className={`px-2 py-1 rounded-md underline ${descriptionFormats.underline
                             ? "bg-blue-100 text-blue-700"
                             : "hover:bg-slate-100"
-                        }`}
+                          }`}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           descriptionEditorRef.current?.focus();
@@ -1625,11 +1786,10 @@ export default function ProductEditPage() {
                       </button>
                       <button
                         type="button"
-                        className={`px-2 py-1 rounded-md ${
-                          descriptionFormats.bullet
+                        className={`px-2 py-1 rounded-md ${descriptionFormats.bullet
                             ? "bg-blue-100 text-blue-700"
                             : "hover:bg-slate-100"
-                        }`}
+                          }`}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           descriptionEditorRef.current?.focus();
@@ -1644,11 +1804,10 @@ export default function ProductEditPage() {
                       </button>
                       <button
                         type="button"
-                        className={`px-2 py-1 rounded-md ${
-                          descriptionFormats.numbered
+                        className={`px-2 py-1 rounded-md ${descriptionFormats.numbered
                             ? "bg-blue-100 text-blue-700"
                             : "hover:bg-slate-100"
-                        }`}
+                          }`}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           descriptionEditorRef.current?.focus();
