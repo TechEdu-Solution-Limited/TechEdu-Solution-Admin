@@ -296,6 +296,16 @@ export default function CreateProductPage() {
     }
   }, [form.productType, form.category, form.subcategory]);
 
+  // Sync description content to contentEditable div when navigating to step 3
+  React.useEffect(() => {
+    if (step === 3 && descriptionEditorRef.current) {
+      // Only update if the innerHTML doesn't match the form state
+      if (descriptionEditorRef.current.innerHTML !== form.description) {
+        descriptionEditorRef.current.innerHTML = form.description || "";
+      }
+    }
+  }, [step, form.description]);
+
   const nextStep = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
@@ -1742,8 +1752,8 @@ export default function CreateProductPage() {
                     <button
                       type="button"
                       className={`px-2 py-1 rounded-md font-semibold ${descriptionFormats.bold
-                          ? "bg-blue-100 text-blue-700"
-                          : "hover:bg-slate-100"
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-slate-100"
                         }`}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -1760,8 +1770,8 @@ export default function CreateProductPage() {
                     <button
                       type="button"
                       className={`px-2 py-1 rounded-md italic ${descriptionFormats.italic
-                          ? "bg-blue-100 text-blue-700"
-                          : "hover:bg-slate-100"
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-slate-100"
                         }`}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -1778,8 +1788,8 @@ export default function CreateProductPage() {
                     <button
                       type="button"
                       className={`px-2 py-1 rounded-md underline ${descriptionFormats.underline
-                          ? "bg-blue-100 text-blue-700"
-                          : "hover:bg-slate-100"
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-slate-100"
                         }`}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -1796,8 +1806,8 @@ export default function CreateProductPage() {
                     <button
                       type="button"
                       className={`px-2 py-1 rounded-md ${descriptionFormats.bullet
-                          ? "bg-blue-100 text-blue-700"
-                          : "hover:bg-slate-100"
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-slate-100"
                         }`}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -1814,8 +1824,8 @@ export default function CreateProductPage() {
                     <button
                       type="button"
                       className={`px-2 py-1 rounded-md ${descriptionFormats.numbered
-                          ? "bg-blue-100 text-blue-700"
-                          : "hover:bg-slate-100"
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-slate-100"
                         }`}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -2273,9 +2283,9 @@ export default function CreateProductPage() {
                     <div className="sm:col-span-2">
                       <span className="font-medium">Description:</span>{" "}
                       <div
-                  className="prose prose-slate max-w-none text-slate-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: form.description }}
-                ></div>
+                        className="prose prose-slate max-w-none text-slate-700 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: form.description }}
+                      ></div>
                     </div>
                     <div>
                       <span className="font-medium">Tags:</span>{" "}
