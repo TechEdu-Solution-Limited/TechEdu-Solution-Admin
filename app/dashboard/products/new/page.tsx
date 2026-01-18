@@ -454,6 +454,19 @@ export default function CreateProductPage() {
       return;
     }
 
+    if (name === "slug") {
+      const cleanedValue = value
+        .replace(/^\s+/, "") // Remove leading spaces
+        .replace(/\s+$/, "") // Remove trailing spaces
+        .replace(/\s+/g, "-") // Replace internal spaces with hyphens
+        .replace(/[^a-zA-Z0-9-]/g, ""); // Remove any other invalid characters
+      setForm((prev: any) => ({
+        ...prev,
+        slug: cleanedValue,
+      }));
+      return;
+    }
+
     setForm((prev: any) => ({
       ...prev,
       [name]:
